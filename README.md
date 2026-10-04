@@ -17,7 +17,7 @@ Open [localhost:3000](http://localhost:3000). Visit **Family settings** to renam
 
 - **Family overview:** today’s agenda, chores, dinner, shopping, and a pinned family note.
 - **Calendar:** week, month and agenda views; individual family filters; add, edit and delete events; weekly recurrence; locations and notes; `.ics` export. Editing a recurring event changes the entire series.
-- **Meals:** breakfast, lunch and dinner slots; weekly navigation; six complete recipes; ingredient checklists and cooking steps; add or swap a meal; add missing ingredients to shopping.
+- **Meals:** breakfast, lunch and dinner slots; weekly navigation; 60 detailed recipes, including 24 West African dishes; country and ingredient search; West African, quick and meat-free filters; ingredient checklists, preparation/cooking/rest times, tips and serving suggestions; add or swap a meal; add missing ingredients to shopping.
 - **Shopping:** categorised lists; quick entry; quantities; search; mark items bought; clear bought items; text-file export. Existing unchecked ingredients are not duplicated. Quantities are not automatically combined when planning repeated meals.
 - **Chores:** assignments, due dates, overdue indicators, priority, progress, and completed-item filters.
 - **Family board:** editable coloured notes, authors, and pinning.
@@ -91,7 +91,7 @@ To check it is running, look at **Integrations → Cron** in Supabase, or run `s
 - Dates and times represent local household wall-clock time, without travel-time-zone conversion. Calendar exports use floating local times. Events can be all day, span several days (including overnight) and repeat weekly, every two weeks, monthly or yearly.
 - Event locations can be searched as you type. Suggestions come from [Photon](https://photon.komoot.io) (OpenStreetMap data, no API key): what you type in **Where?** is sent to that service. A chosen place is shown on an OpenStreetMap map, and **Open in Maps** opens directions in Google Maps. Typed text is saved even if search is unavailable.
 - Reminders appear inside the app and, once set up, as phone notifications (see above). Email reminders and two-way Google/Outlook calendar sync are not implemented.
-- The recipe library is curated. Custom recipes, dietary/allergy verification and nutrition calculations are not implemented. Food photographs are illustrative.
+- The recipe library is curated. West African entries link to recipe authors for background and clearly label home adaptations. Custom recipes, dietary/allergy verification and nutrition calculations are not implemented. New food images are AI-generated serving illustrations, hosted locally as compressed WebP files.
 - The home-screen manifest supports installing the app. Its service worker only shows reminders; it does not cache pages, so the planner needs a connection.
 - New families start empty. The fictional sample family in `src/lib/data.ts` is only used by the tests. No real family information is included in the repository.
 

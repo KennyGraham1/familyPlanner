@@ -4777,3 +4777,24 @@ input[type="checkbox"] {
   flex-shrink: 0;
   color: var(--subtle);
 }
+
+/* Recipe browsing and cooking notes */
+.recipe-result-count, .recipe-timing, .recipe-source { font-size: 12px; line-height: 1.7; color: #66576e; }
+.recipe-result-count { margin: -8px 0 18px; }
+.recipe-timing { padding: 10px 14px; border-radius: 8px; background: #f5f0e8; }
+.recipe-cuisine { display: block; margin: 8px 0 0; font-size: 12px; color: #66576e; }
+.recipe-load-more { display: flex; justify-content: center; margin: 24px 0; }
+.recipe-picker-search { margin-bottom: 16px; min-width: 0; }
+.recipe-notes { background: #faf6ef; border-radius: 10px; padding: 16px; margin-top: 18px; font-size: 13px; line-height: 1.8; color: #5e5064; }
+.recipe-notes h3 { font-size: 13px; margin: 0 0 8px; }
+.recipe-notes ul { padding-left: 20px; }
+.recipe-notes li + li { margin-top: 6px; }
+.recipe-notes p { margin: 0; }
+.recipe-source { margin-top: 16px; }
+.recipe-source a { text-decoration: underline; text-underline-offset: 3px; }
+.recipe-library-toolbar .family-filters { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .recipe-library-toolbar .family-filters { width: 100%; }
+  .ingredient-list > label { align-items: flex-start; }
+  .ingredient-list strong { max-width: 45%; text-align: right; }
+}

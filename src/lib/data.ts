@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { extraRecipes } from "./recipe-library";
 
 export const colors = [
   "lavender",
@@ -234,6 +235,16 @@ export type Recipe = {
   category: string;
   image: string;
   color: string;
+  cuisine?: string;
+  region?: "West Africa" | "Everyday";
+  diet?: "Plant-based" | "Vegetarian" | "Meat & fish";
+  prepTime?: number;
+  cookTime?: number;
+  restTime?: number;
+  restLabel?: string;
+  servingSuggestion?: string;
+  tips?: string[];
+  source?: { name: string; url: string };
   ingredients: {
     name: string;
     quantity: string;
@@ -446,6 +457,16 @@ export function ingredientsToShopping(
 export const recipes: Recipe[] = [
   {
     id: "pasta",
+    cuisine: "Italian-inspired",
+    region: "Everyday",
+    diet: "Vegetarian",
+    prepTime: 10,
+    cookTime: 15,
+    servingSuggestion: "Serve with a green salad or steamed green beans.",
+    tips: [
+      "Choose vegetarian hard cheese if needed; traditional Parmesan uses animal rennet.",
+      "A splash of reserved pasta water loosens the sauce without diluting it too much.",
+    ],
     name: "Creamy tomato pasta",
     subtitle: "A little comfort in every forkful.",
     time: 25,
@@ -460,16 +481,32 @@ export const recipes: Recipe[] = [
       { name: "Fresh basil", quantity: "1 bunch", category: "Produce" },
       { name: "Parmesan", quantity: "50 g", category: "Dairy & eggs" },
       { name: "Garlic", quantity: "3 cloves", category: "Produce" },
+      { name: "Olive oil", quantity: "1 tbsp", category: "Pantry" },
+      { name: "Salt", quantity: "to taste", category: "Pantry" },
+      { name: "Black pepper", quantity: "¼ tsp", category: "Pantry" },
     ],
     steps: [
-      "Bring a large pot of salted water to the boil. Cook the pasta according to the packet, reserving a mug of pasta water before draining.",
-      "Warm a little olive oil in a large pan. Add the chopped garlic and halved tomatoes. Cook for 8–10 minutes until the tomatoes soften.",
-      "Stir in the cream and a splash of pasta water. Simmer for 2 minutes, then toss in the pasta.",
-      "Fold in torn basil and grated parmesan. Season to taste and serve warm.",
+      "Put a large pan of salted water on to boil. Halve the tomatoes, finely chop garlic, grate the cheese and tear the basil leaves.",
+      "Add pasta to the boiling water and cook according to the packet. Before draining, reserve a mug of the starchy water.",
+      "Meanwhile heat the olive oil in a wide pan over medium heat. Cook garlic for 30 seconds, stirring so it does not brown.",
+      "Add tomatoes and cook for 8–10 minutes until soft, pressing a few with the back of a spoon to release their juices.",
+      "Stir in cream and 3 tablespoons pasta water. Simmer for 2 minutes, then add drained pasta and toss until coated.",
+      "Fold in basil and cheese. Add more pasta water if needed and season with salt and black pepper before serving.",
     ],
   },
   {
     id: "tacos",
+    cuisine: "Mexican-inspired",
+    region: "Everyday",
+    diet: "Vegetarian",
+    prepTime: 15,
+    cookTime: 15,
+    servingSuggestion:
+      "Put the fillings in separate bowls and let everyone build their own tacos.",
+    tips: [
+      "Drain and rinse canned beans before warming them.",
+      "Leave out cheese and add extra avocado for a plant-based version.",
+    ],
     name: "Build-your-own tacos",
     subtitle: "Everyone gets to make their favourite.",
     time: 30,
@@ -484,19 +521,35 @@ export const recipes: Recipe[] = [
       { name: "Tomatoes", quantity: "3", category: "Produce" },
       { name: "Limes", quantity: "2", category: "Produce" },
       { name: "Cheddar cheese", quantity: "100 g", category: "Dairy & eggs" },
+      { name: "Ground cumin", quantity: "1 tsp", category: "Pantry" },
+      { name: "Paprika", quantity: "1 tsp", category: "Pantry" },
+      { name: "Salt", quantity: "to taste", category: "Pantry" },
     ],
     steps: [
-      "Drain the beans and warm in a saucepan with a splash of water, cumin, paprika and a pinch of salt for 10 minutes.",
-      "Dice the tomatoes and avocado. Grate the cheese and cut the limes into wedges.",
-      "Warm the tortillas in a dry frying pan for 30 seconds on each side.",
-      "Put everything in bowls on the table and let everyone assemble their tacos.",
+      "Drain and rinse beans. Put them in a saucepan with 100 ml water, cumin, paprika and a pinch of salt.",
+      "Bring to a gentle simmer and warm for 10 minutes, stirring occasionally. Mash a spoonful of beans to lightly thicken the liquid.",
+      "Meanwhile dice tomatoes and avocado. Grate cheese and cut limes into wedges.",
+      "Squeeze a little lime over the avocado to help keep its colour, and transfer the fillings to separate serving bowls.",
+      "Warm tortillas in a dry frying pan for about 30 seconds on each side, then cover with a clean tea towel to keep soft.",
+      "Let everyone fill two tortillas with beans, tomatoes, avocado and cheese. Finish with lime juice to taste.",
     ],
   },
   {
     id: "salmon",
+    cuisine: "Everyday favourites",
+    region: "Everyday",
+    diet: "Meat & fish",
+    prepTime: 10,
+    cookTime: 30,
+    servingSuggestion:
+      "Serve the fish, potatoes and broccoli together with roasted lemon juices.",
+    tips: [
+      "Cut potatoes into pieces no larger than 2 cm so they cook quickly.",
+      "If potatoes are still firm after 15 minutes, roast a little longer before adding the fish.",
+    ],
     name: "Lemon & herb salmon",
     subtitle: "One tray. Happy plates. Less washing up.",
-    time: 35,
+    time: 40,
     servings: 4,
     category: "One-pan wonder",
     color: "sage",
@@ -507,16 +560,31 @@ export const recipes: Recipe[] = [
       { name: "Broccoli", quantity: "1 head", category: "Produce" },
       { name: "Lemons", quantity: "2", category: "Produce" },
       { name: "Fresh dill", quantity: "1 bunch", category: "Produce" },
+      { name: "Olive oil", quantity: "2 tbsp", category: "Pantry" },
+      { name: "Salt", quantity: "to taste", category: "Pantry" },
     ],
     steps: [
-      "Heat the oven to 200°C. Halve the baby potatoes, toss with oil and salt, and roast on a lined tray for 15 minutes.",
-      "Add the salmon and broccoli florets to the tray. Drizzle with olive oil and lemon juice.",
-      "Roast for another 12–15 minutes, until the salmon reaches 63°C in the thickest part.",
-      "Scatter over fresh dill and serve with lemon wedges.",
+      "Heat oven to 200°C conventional or 180°C fan. Cut potatoes into pieces no larger than 2 cm and broccoli into small florets.",
+      "Toss potatoes with 1 tablespoon oil and a little salt on a large tray. Roast for 15 minutes until starting to soften.",
+      "Check fish for bones and pat dry. Add fish and broccoli to the tray, keeping everything in a single layer.",
+      "Drizzle with remaining oil and the juice of one lemon. Add wedges of the other lemon around the tray.",
+      "Roast for 12–15 minutes until salmon reaches 63°C in its thickest part. Check potatoes are tender; leave them a little longer if needed.",
+      "Scatter chopped dill over the fish and spoon the lemony pan juices over each serving.",
     ],
   },
   {
     id: "curry",
+    cuisine: "Indian-inspired",
+    region: "Everyday",
+    diet: "Plant-based",
+    prepTime: 10,
+    cookTime: 20,
+    servingSuggestion:
+      "Spoon the curry over rice; add cucumber salad if desired.",
+    tips: [
+      "Choose a plant-based curry paste if needed and start with a mild variety.",
+      "Add a splash of water if the coconut sauce becomes too thick.",
+    ],
     name: "Golden chickpea curry",
     subtitle: "Cosy, colourful and full of good things.",
     time: 30,
@@ -531,16 +599,30 @@ export const recipes: Recipe[] = [
       { name: "Basmati rice", quantity: "300 g", category: "Pantry" },
       { name: "Curry paste", quantity: "2 tbsp", category: "Pantry" },
       { name: "Onions", quantity: "1", category: "Produce" },
+      { name: "Vegetable oil", quantity: "1 tbsp", category: "Pantry" },
+      { name: "Salt", quantity: "to taste", category: "Pantry" },
     ],
     steps: [
-      "Cook the rice according to the packet instructions.",
-      "Soften the chopped onion in a little oil for 5 minutes, then stir in curry paste and cook for 1 minute.",
-      "Add drained chickpeas and coconut milk. Simmer gently for 15 minutes.",
-      "Stir in the spinach until wilted. Taste, season, and serve over fluffy rice.",
+      "Start cooking rice in a separate saucepan according to its packet. Drain and rinse chickpeas, dice onion and rinse spinach.",
+      "Heat oil in a deep frying pan over medium heat. Cook onion for 5 minutes until softened.",
+      "Stir in curry paste and cook for 1 minute, scraping the bottom so the paste does not stick.",
+      "Add chickpeas and coconut milk. Bring to a gentle simmer and cook for 12 minutes, stirring occasionally.",
+      "Add spinach in handfuls and stir for 2 minutes until wilted. Loosen with a splash of water if the sauce is too thick.",
+      "Taste for salt, fluff the cooked rice and divide between bowls. Spoon the curry over the rice and serve hot.",
     ],
   },
   {
     id: "pizza",
+    cuisine: "Italian-inspired",
+    region: "Everyday",
+    diet: "Vegetarian",
+    prepTime: 10,
+    cookTime: 15,
+    servingSuggestion: "Cut into wedges and serve with crunchy salad.",
+    tips: [
+      "These timings use ready-made pizza bases; follow the packaging if different.",
+      "Thin vegetable slices and a light layer of toppings help keep the base crisp.",
+    ],
     name: "Friday night pizza",
     subtitle: "Flour on the counter. Smiles all around.",
     time: 25,
@@ -556,14 +638,27 @@ export const recipes: Recipe[] = [
       { name: "Mushrooms", quantity: "150 g", category: "Produce" },
     ],
     steps: [
-      "Heat the oven to 220°C with a baking tray inside.",
-      "Spread passata over the pizza bases, leaving a small border.",
-      "Top with mozzarella and thinly sliced vegetables. Let everyone decorate their own half.",
-      "Bake on the hot tray for 12–15 minutes until the cheese is bubbling and the edges are crisp.",
+      "Heat oven to 220°C conventional or 200°C fan with a large baking tray inside. Check the pizza-base packet for any different instructions.",
+      "Thinly slice peppers and mushrooms. Drain mozzarella well and tear or grate into small pieces.",
+      "Put the ready-made bases on baking paper and spread each with half the passata, leaving a 1 cm border.",
+      "Distribute cheese and vegetables evenly. Avoid piling toppings too thickly, especially in the middle.",
+      "Carefully slide the pizzas on their paper onto the hot tray. Bake for 12–15 minutes until the edges are crisp and the cheese bubbles.",
+      "Transfer to a board, stand for 2 minutes and slice into wedges. Cook in batches if both pizzas will not fit.",
     ],
   },
   {
     id: "pancakes",
+    cuisine: "Everyday favourites",
+    region: "Everyday",
+    diet: "Vegetarian",
+    prepTime: 10,
+    cookTime: 10,
+    servingSuggestion:
+      "Makes about 12 small pancakes; serve three per person with berries and maple syrup.",
+    tips: [
+      "Stir only until no dry flour remains; a few lumps are fine.",
+      "Lower the heat if the outside browns before the middle is cooked.",
+    ],
     name: "Fluffy weekend pancakes",
     subtitle: "For slow mornings and second helpings.",
     time: 20,
@@ -578,14 +673,22 @@ export const recipes: Recipe[] = [
       { name: "Baking powder", quantity: "2 tsp", category: "Pantry" },
       { name: "Mixed berries", quantity: "200 g", category: "Produce" },
       { name: "Maple syrup", quantity: "to serve", category: "Pantry" },
+      {
+        name: "Butter",
+        quantity: "20 g, for the pan",
+        category: "Dairy & eggs",
+      },
     ],
     steps: [
-      "Mix the flour and baking powder in a large bowl. Whisk the eggs and milk together, then stir into the dry ingredients.",
-      "Heat a non-stick pan over medium heat with a little butter.",
-      "Pour small rounds of batter into the pan. Cook until bubbles appear, then flip and cook the other side for 1–2 minutes, until cooked through.",
-      "Stack up and top with berries and a drizzle of maple syrup.",
+      "Mix flour and baking powder in a bowl. In a jug, whisk eggs and milk until evenly combined.",
+      "Pour the wet ingredients into the dry mixture and stir just until no dry flour remains. Do not beat out every small lump.",
+      "Heat a large non-stick frying pan over medium heat and melt a little of the butter, swirling to coat.",
+      "Spoon in small rounds of batter, leaving room between them. Cook for 2–3 minutes until bubbles appear and the edges begin to set.",
+      "Flip carefully and cook for another 1–2 minutes until golden and fully cooked in the centre. Repeat in batches, adding butter as needed.",
+      "Divide the warm pancakes between plates, top with washed berries and add maple syrup to taste.",
     ],
   },
+  ...extraRecipes,
 ];
 
 export function createFamily(name: string, familyName: string): PlannerData {

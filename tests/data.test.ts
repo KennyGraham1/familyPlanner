@@ -150,7 +150,18 @@ describe("safe planner updates", () => {
     assert(!items.some((i) => i.name === "Cherry tomatoes"));
     assert(!items.some((i) => i.name === "Penne pasta"));
     assert.equal(new Set(items.map((i) => i.name)).size, items.length);
-    assert.equal(items.length, 4);
+    assert.deepEqual(
+      items.map((i) => i.name).sort(),
+      [
+        "Cream",
+        "Fresh basil",
+        "Parmesan",
+        "Garlic",
+        "Olive oil",
+        "Salt",
+        "Black pepper",
+      ].sort(),
+    );
   });
   it("can buy an ingredient again after it was checked off", () => {
     const seed = createSeed();

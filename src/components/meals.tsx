@@ -29,6 +29,7 @@ import {
   type Recipe,
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
+import { isMeatFree, matchesRecipe } from "@/lib/recipe-helpers";
 import { Field, Modal, SectionHeader } from "./ui";
 import type { ViewProps } from "./overview";
 
@@ -95,12 +96,12 @@ export function RecipeModal({
       <img
         className="recipe-modal-photo"
         src={recipe.image}
-        alt={recipe.name}
+        alt={recipe.image.endsWith(".svg") ? "Food illustration" : recipe.name}
       />
       <div className="recipe-modal-meta">
         <span>
           <Clock3 size={16} />
-          {recipe.time} minutes
+          {recipe.time} minutes total
         </span>
         <span>
           <Users size={16} />
@@ -110,16 +111,26 @@ export function RecipeModal({
           <Leaf size={16} />
           {recipe.category}
         </span>
+        <span>{recipe.cuisine}</span>
       </div>
+      {recipe.prepTime !== undefined && (
+        <p className="recipe-timing">
+          Prep {recipe.prepTime} min · Cook {recipe.cookTime} min
+          {!!recipe.restTime &&
+            ` · ${recipe.restLabel ?? "Rest"} ${recipe.restTime} min`}
+        </p>
+      )}
       <div className="recipe-tabs">
         <button
           className={tab === "ingredients" ? "active" : ""}
+          aria-pressed={tab === "ingredients"}
           onClick={() => setTab("ingredients")}
         >
           Ingredients
         </button>
         <button
           className={tab === "method" ? "active" : ""}
+          aria-pressed={tab === "method"}
           onClick={() => setTab("method")}
         >
           Let’s make it
@@ -159,14 +170,41 @@ export function RecipeModal({
           </button>
         </>
       ) : (
-        <ol className="method-list">
-          {recipe.steps.map((step, i) => (
-            <li key={step}>
-              <span>{i + 1}</span>
-              <p>{step}</p>
-            </li>
-          ))}
-        </ol>
+        <>
+          <ol className="method-list">
+            {recipe.steps.map((step, i) => (
+              <li key={step}>
+                <span>{i + 1}</span>
+                <p>{step}</p>
+              </li>
+            ))}
+          </ol>
+          {!!recipe.tips?.length && (
+            <div className="recipe-notes">
+              <h3>Cooking tips & substitutions</h3>
+              <ul>
+                {recipe.tips.map((tip) => (
+                  <li key={tip}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {recipe.source && (
+            <p className="recipe-source">
+              Explore this dish:{" "}
+              <a href={recipe.source.url} target="_blank" rel="noreferrer">
+                {recipe.source.name}
+              </a>
+              . Our recipe is a home-kitchen adaptation.
+            </p>
+          )}
+        </>
+      )}
+      {recipe.servingSuggestion && (
+        <div className="recipe-notes">
+          <h3>To serve</h3>
+          <p>{recipe.servingSuggestion}</p>
+        </div>
       )}
       <form className="plan-meal-form" onSubmit={planMeal}>
         <h3>
@@ -222,6 +260,8 @@ export function Meals({ openRecipe }: ViewProps) {
   const [slot, setSlot] = useState<Meal["slot"]>("Dinner");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All recipes");
+  const [limit, setLimit] = useState(12);
+  const [pickerSearch, setPickerSearch] = useState("");
   const [pickDate, setPickDate] = useState<string | null>(null);
   const [chosen, setChosen] = useState<Recipe | null>(null);
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
@@ -230,16 +270,11 @@ export function Meals({ openRecipe }: ViewProps) {
   );
   const visible = recipes.filter(
     (r) =>
-      r.name.toLowerCase().includes(search.toLowerCase()) &&
+      matchesRecipe(r, search) &&
       (filter === "All recipes" ||
-        (filter === "Quick & easy" && r.time <= 25) ||
-        (filter === "Meat-free" &&
-          [
-            "Vegetarian",
-            "Plant-based",
-            "Breakfast",
-            "Family favourite",
-          ].includes(r.category))),
+        (filter === "West African" && r.region === "West Africa") ||
+        (filter === "Quick & easy" && r.time <= 30) ||
+        (filter === "Meat-free" && isMeatFree(r))),
   );
   async function shopWeek() {
     const items = ingredientsToShopping(
@@ -374,44 +409,62 @@ export function Meals({ openRecipe }: ViewProps) {
       </section>
       <div className="recipe-library-heading">
         <SectionHeader icon={BookOpen} title="Recipes" />
+        <p>
+          {recipes.length} recipes for your family, including{" "}
+          {recipes.filter((r) => r.region === "West Africa").length} from across
+          West Africa.
+        </p>
       </div>
       <div className="recipe-library-toolbar">
         <div className="family-filters">
-          {["All recipes", "Quick & easy", "Meat-free"].map((f) => (
-            <button
-              className={`filter-chip ${filter === f ? "active" : ""}`}
-              key={f}
-              onClick={() => setFilter(f)}
-            >
-              {f === "Meat-free" && <Leaf size={14} />} {f}
-            </button>
-          ))}
+          {["All recipes", "West African", "Quick & easy", "Meat-free"].map(
+            (f) => (
+              <button
+                className={`filter-chip ${filter === f ? "active" : ""}`}
+                key={f}
+                aria-pressed={filter === f}
+                onClick={() => {
+                  setFilter(f);
+                  setLimit(12);
+                }}
+              >
+                {f === "Meat-free" && <Leaf size={14} />} {f}
+              </button>
+            ),
+          )}
         </div>
         <label className="search-field">
           <Search size={17} />
           <input
             aria-label="Search recipes"
-            placeholder="Find something delicious…"
+            placeholder="Dish, country or ingredient…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setLimit(12);
+            }}
           />
         </label>
       </div>
+      <p className="recipe-result-count" aria-live="polite">
+        Showing {Math.min(limit, visible.length)} of {visible.length} recipes
+      </p>
       <div className="recipe-grid">
-        {visible.map((r) => (
+        {visible.slice(0, limit).map((r) => (
           <button
             className="card recipe-card"
             key={r.id}
             onClick={() => openRecipe(r)}
           >
             <div className="recipe-card-image">
-              <img src={r.image} alt={r.name} loading="lazy" />
+              <img src={r.image} alt="" loading="lazy" />
               <span className="recipe-heart">
                 <Heart size={17} />
               </span>
             </div>
             <div className="recipe-card-content">
               <span className={`recipe-category ${r.color}`}>{r.category}</span>
+              <span className="recipe-cuisine">{r.cuisine}</span>
               <h3>{r.name}</h3>
               <p>{r.subtitle}</p>
               <div className="recipe-meta">
@@ -429,6 +482,16 @@ export function Meals({ openRecipe }: ViewProps) {
           </button>
         ))}
       </div>
+      {visible.length > limit && (
+        <div className="recipe-load-more">
+          <button
+            className="button secondary"
+            onClick={() => setLimit(limit + 12)}
+          >
+            Show {Math.min(12, visible.length - limit)} more recipes
+          </button>
+        </div>
+      )}
       {!visible.length && (
         <p className="no-results">No recipes found. Try another search.</p>
       )}
@@ -438,20 +501,36 @@ export function Meals({ openRecipe }: ViewProps) {
           subtitle={`Choose something delicious for ${formatDate(pickDate, { weekday: "long", day: "numeric", month: "long" })}.`}
           onClose={() => setPickDate(null)}
         >
+          <label className="search-field recipe-picker-search">
+            <Search size={17} />
+            <input
+              aria-label="Search meals for this day"
+              placeholder="Dish, country or ingredient…"
+              value={pickerSearch}
+              onChange={(e) => setPickerSearch(e.target.value)}
+            />
+          </label>
           <div className="recipe-picker">
-            {recipes.map((r) => (
-              <button key={r.id} onClick={() => setChosen(r)}>
-                <img src={r.image} alt="" />
-                <span>
-                  <strong>{r.name}</strong>
-                  <small>
-                    {r.time} min · Serves {r.servings}
-                  </small>
-                </span>
-                <Plus size={18} />
-              </button>
-            ))}
+            {recipes
+              .filter((r) => matchesRecipe(r, pickerSearch))
+              .map((r) => (
+                <button key={r.id} onClick={() => setChosen(r)}>
+                  <img src={r.image} alt="" />
+                  <span>
+                    <strong>{r.name}</strong>
+                    <small>
+                      {r.cuisine} · {r.time} min · Serves {r.servings}
+                    </small>
+                  </span>
+                  <Plus size={18} />
+                </button>
+              ))}
           </div>
+          {!recipes.some((r) => matchesRecipe(r, pickerSearch)) && (
+            <p className="no-results" role="status">
+              No recipes found. Try a dish, country or ingredient.
+            </p>
+          )}
         </Modal>
       )}
       {chosen && (

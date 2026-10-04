@@ -93,7 +93,7 @@ begin
       end if;
       if collection in ('events','meals') and to_char((item->>'date')::date,'YYYY-MM-DD') <> item->>'date' then return false; end if;
       if collection = 'tasks' and to_char((item->>'due')::date,'YYYY-MM-DD') <> item->>'due' then return false; end if;
-      if collection = 'meals' and item->>'recipeId' not in ('pasta','tacos','salmon','curry','pizza','pancakes') then return false; end if;
+      if collection = 'meals' and item->>'recipeId' not in ('pasta','tacos','salmon','curry','pizza','pancakes','nigerian-jollof','ghanaian-jollof','red-red','waakye','kelewele','groundnut-soup','tatale','egusi-soup','efo-riro','akara','moi-moi','ewa-riro','chicken-suya','asaro','chicken-yassa','thieboudienne','ndambe','beef-maafe','domoda','vegetable-benachin','kedjenou','attieke-fish','fonio-pilaf','plasas','lentil-bolognese','chicken-traybake','vegetable-couscous','overnight-oats','shakshuka','egg-fried-rice','chicken-stir-fry','crispy-tofu-bowls','minestrone','tomato-bean-soup','three-bean-chilli','beef-chilli','salmon-fishcakes','tuna-pasta-bake','chicken-noodle-soup','mushroom-risotto','spinach-frittata','stuffed-sweet-potatoes','chickpea-wraps','turkey-meatballs','shepherds-pie','vegetable-noodles','teriyaki-salmon','peanut-noodles','breakfast-burritos','apple-porridge','yoghurt-granola-bowls','vegetable-lasagne','chicken-fajitas','lemon-pea-orzo') then return false; end if;
     end loop;
   end loop;
   return true;

@@ -171,7 +171,7 @@ test("meal planning connects recipes to dinner and deduplicates shopping ingredi
   await dialog
     .getByRole("button", { name: "Add missing ingredients to shopping list" })
     .click();
-  await expect(page.getByRole("status")).toContainText("4 ingredients added");
+  await expect(page.getByRole("status")).toContainText("7 ingredients added");
   const length = (await saved(page)).shopping.length;
   await dialog
     .getByRole("button", { name: "Add missing ingredients to shopping list" })
