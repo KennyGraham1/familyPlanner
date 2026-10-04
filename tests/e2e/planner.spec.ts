@@ -6,6 +6,13 @@ const storage = "kinfolk-planner-v1";
 // New visitors start with an empty family; these tests use the sample family as a fixture.
 // Only seed when nothing is stored, so reloads keep the changes a test made.
 test.beforeEach(async ({ page }) => {
+  // Keep tests offline: no place search results or map tiles unless a test adds them.
+  await page.route("https://photon.komoot.io/**", (route) =>
+    route.fulfill({ json: { features: [] } }),
+  );
+  await page.route("https://www.openstreetmap.org/**", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<html></html>" }),
+  );
   await page.addInitScript(
     ([key, value]) => {
       try {
@@ -503,4 +510,107 @@ test("unsaved preference edits are kept while other fields stay live", async ({
   await expect(
     other.getByLabel("Your family space", { exact: true }),
   ).toHaveValue("Our draft name");
+});
+
+test("event locations can be searched and shown on a map", async ({ page }) => {
+  const searches: string[] = [];
+  await page.route("https://photon.komoot.io/**", (route) => {
+    searches.push(new URL(route.request().url()).searchParams.get("q") ?? "");
+    return route.fulfill({
+      json: {
+        features: [
+          {
+            geometry: { coordinates: [174.7448, -36.8695] },
+            properties: {
+              osm_type: "W",
+              osm_id: 1,
+              name: "Oakwood Primary School",
+              district: "Kingsland",
+              city: "Auckland",
+              country: "New Zealand",
+            },
+          },
+          {
+            geometry: { coordinates: [174.75, -36.86] },
+            properties: {
+              osm_type: "N",
+              osm_id: 2,
+              name: "Oakwood Park",
+              city: "Auckland",
+              country: "New Zealand",
+            },
+          },
+        ],
+      },
+    });
+  });
+  await go(page, "calendar");
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("What's happening?").fill("Assembly");
+  const where = dialog.getByRole("combobox", { name: "Where?" });
+  await where.pressSequentially("Oakw");
+  await expect(
+    dialog.getByRole("option", { name: /Oakwood Primary School/ }),
+  ).toBeVisible();
+  expect(searches.at(-1)).toBe("Oakw");
+
+  // Escape closes the suggestions, not the dialog.
+  await where.press("Escape");
+  await expect(dialog.getByRole("listbox")).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+
+  await where.pressSequentially("o");
+  await expect(dialog.getByRole("listbox").getByRole("option")).toHaveCount(2);
+  await where.press("ArrowDown");
+  await where.press("Enter");
+  await expect(where).toHaveValue(
+    "Oakwood Primary School, Kingsland, Auckland",
+  );
+  await expect(dialog.locator("iframe.place-map")).toBeVisible();
+  await expect(
+    dialog.getByRole("link", { name: "Open in Maps" }),
+  ).toHaveAttribute("href", /destination=-36\.8695%2C174\.7448$/);
+  await dialog.getByRole("button", { name: "Add event", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  const assembly = (await saved(page)).events.find(
+    (e: { title: string }) => e.title === "Assembly",
+  );
+  expect(assembly).toMatchObject({
+    location: "Oakwood Primary School, Kingsland, Auckland",
+    place: { lat: -36.8695, lon: 174.7448 },
+  });
+
+  // Editing the text afterwards drops the old map position.
+  await page.getByRole("button", { name: "Search family planner" }).click();
+  await page.getByLabel("Search your family planner").fill("Assembly");
+  await dialog.getByRole("button", { name: /Assembly/ }).click();
+  await expect(dialog.locator("iframe.place-map")).toBeVisible();
+  await dialog.getByRole("combobox", { name: "Where?" }).fill("Gym hall");
+  await expect(dialog.locator("iframe.place-map")).toHaveCount(0);
+});
+
+test("multi-day dates stay in order while editing", async ({ page }) => {
+  await go(page, "calendar");
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("What's happening?").fill("School camp");
+  await dialog.getByLabel("Date", { exact: true }).fill("2026-11-10");
+  await dialog.getByLabel("Several days").check();
+  await expect(dialog.getByLabel("End date")).toHaveValue("2026-11-11");
+  await dialog.getByLabel("End date").fill("2026-11-13");
+  // Moving the start keeps the camp three days long.
+  await dialog.getByLabel("Date", { exact: true }).fill("2026-11-17");
+  await expect(dialog.getByLabel("End date")).toHaveValue("2026-11-20");
+  await expect(dialog.getByLabel("End date")).toHaveAttribute(
+    "min",
+    "2026-11-17",
+  );
+  await dialog.getByRole("button", { name: "Add event", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(
+    (await saved(page)).events.find(
+      (e: { title: string }) => e.title === "School camp",
+    ),
+  ).toMatchObject({ date: "2026-11-17", endDate: "2026-11-20" });
 });

@@ -89,6 +89,7 @@ To check it is running, look at **Integrations → Cron** in Supabase, or run `s
 
 - Local plans use `localStorage` under `kinfolk-planner-v1`. They persist through reloads and update other tabs on the same browser origin. Clearing browser data removes them; download regular backups.
 - Dates and times represent local household wall-clock time, without travel-time-zone conversion. Calendar exports use floating local times. Events can be all day, span several days (including overnight) and repeat weekly, every two weeks, monthly or yearly.
+- Event locations can be searched as you type. Suggestions come from [Photon](https://photon.komoot.io) (OpenStreetMap data, no API key): what you type in **Where?** is sent to that service. A chosen place is shown on an OpenStreetMap map, and **Open in Maps** opens directions in Google Maps. Typed text is saved even if search is unavailable.
 - Reminders appear inside the app and, once set up, as phone notifications (see above). Email reminders and two-way Google/Outlook calendar sync are not implemented.
 - The recipe library is curated. Custom recipes, dietary/allergy verification and nutrition calculations are not implemented. Food photographs are illustrative.
 - The home-screen manifest supports installing the app. Its service worker only shows reminders; it does not cache pages, so the planner needs a connection.

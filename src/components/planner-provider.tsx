@@ -313,8 +313,15 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           return true;
         } catch (e) {
           if (scopeRef.current === scope) {
+            const reason = errorMessage(
+              e,
+              "Your change was not saved. Please try again.",
+            );
             notify(
-              errorMessage(e, "Your change was not saved. Please try again."),
+              // The server rejects data its (older) database rules don't recognise.
+              reason === "The updated family data is not valid."
+                ? "The family database didn’t accept this change. If Kinfolk was just updated, its database script (supabase/schema.sql) needs to be run again."
+                : reason,
               true,
             );
             setSyncError("A change could not be saved. Please try again.");

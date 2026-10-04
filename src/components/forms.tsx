@@ -12,6 +12,8 @@ import {
   categories,
   colors,
   dateKey,
+  daysBetween,
+  shiftDate,
   uid,
   eventSchema,
   taskSchema,
@@ -30,6 +32,7 @@ import {
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, FormActions, Modal } from "./ui";
+import { PlaceInput } from "./place-input";
 
 export type Editor =
   | { kind: "event"; item?: FamilyEvent; date?: string }
@@ -61,6 +64,31 @@ export function EditorModal({
   const [multiDay, setMultiDay] = useState(
     Boolean(event?.endDate && event.endDate !== event.date),
   );
+  // Start and end dates move together, so the end can't fall behind the start.
+  const [startDate, setStartDate] = useState(
+    event?.date ??
+      (editor.kind === "event" ? editor.date : undefined) ??
+      dateKey(new Date()),
+  );
+  const [endDate, setEndDate] = useState(
+    event?.endDate ?? event?.date ?? startDate,
+  );
+  function changeStart(next: string) {
+    if (!next) return setStartDate(next);
+    // Keep the event's length when its start moves.
+    const length =
+      startDate && endDate >= startDate ? daysBetween(startDate, endDate) : 0;
+    setStartDate(next);
+    setEndDate(shiftDate(next, length));
+  }
+  function changeMultiDay(on: boolean) {
+    setMultiDay(on);
+    if (on && endDate <= startDate) setEndDate(shiftDate(startDate, 1));
+  }
+  const [location, setLocation] = useState(event?.location ?? "");
+  const [place, setPlace] = useState(event?.place);
+  // Bias place search toward the family's most recently used place.
+  const near = data.events.findLast((e) => e.place)?.place;
   const [repeat, setRepeat] = useState<(typeof repeats)[number]>(
     event?.repeat ?? "none",
   );
@@ -96,7 +124,7 @@ export function EditorModal({
     try {
       if (editor.kind === "event") {
         const date = get("date"),
-          endDate = multiDay ? get("endDate") : "",
+          lastDate = multiDay ? get("endDate") : "",
           until = repeat !== "none" ? get("until") : "";
         const value = eventSchema.parse({
           id,
@@ -110,9 +138,10 @@ export function EditorModal({
           notes: get("notes"),
           repeat,
           category: get("category"),
-          ...(endDate && endDate !== date ? { endDate } : {}),
+          ...(lastDate && lastDate !== date ? { endDate: lastDate } : {}),
           ...(until ? { until } : {}),
           ...(allDay ? { allDay: true } : {}),
+          ...(place ? { place } : {}),
         });
         success = await apply({
           collection: "events",
@@ -312,7 +341,7 @@ export function EditorModal({
                   <input
                     type="checkbox"
                     checked={multiDay}
-                    onChange={(e) => setMultiDay(e.target.checked)}
+                    onChange={(e) => changeMultiDay(e.target.checked)}
                   />{" "}
                   Several days
                 </label>
@@ -322,9 +351,8 @@ export function EditorModal({
                   <input
                     name="date"
                     type="date"
-                    defaultValue={
-                      editor.item?.date ?? editor.date ?? dateKey(new Date())
-                    }
+                    value={startDate}
+                    onChange={(e) => changeStart(e.target.value)}
                     required
                   />
                 </Field>
@@ -333,12 +361,9 @@ export function EditorModal({
                     <input
                       name="endDate"
                       type="date"
-                      defaultValue={
-                        editor.item?.endDate ??
-                        editor.item?.date ??
-                        editor.date ??
-                        dateKey(new Date())
-                      }
+                      value={endDate}
+                      min={startDate}
+                      onChange={(e) => setEndDate(e.target.value)}
                       required
                     />
                   </Field>
@@ -396,11 +421,15 @@ export function EditorModal({
                 </div>
               </div>
               <Field label="Where?">
-                <input
-                  name="location"
-                  placeholder="Add a place"
-                  defaultValue={editor.item?.location}
-                  maxLength={200}
+                <PlaceInput
+                  value={location}
+                  place={place}
+                  near={near}
+                  onChange={(text, picked) => {
+                    setLocation(text);
+                    // Typing changes the place, so its old map position no longer applies.
+                    setPlace(picked);
+                  }}
                 />
               </Field>
               <div className="form-grid">

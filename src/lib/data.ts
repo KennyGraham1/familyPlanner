@@ -58,6 +58,14 @@ export function dayNumber(key: string) {
 function keyFromDayNumber(n: number) {
   return new Date(n * 86400000).toISOString().slice(0, 10);
 }
+/** The date `days` after (or before) a YYYY-MM-DD key. */
+export function shiftDate(key: string, days: number) {
+  return keyFromDayNumber(dayNumber(key) + days);
+}
+/** Whole days from one YYYY-MM-DD key to another. */
+export function daysBetween(from: string, to: string) {
+  return dayNumber(to) - dayNumber(from);
+}
 export const eventSchema = z
   .object({
     id,
@@ -82,6 +90,13 @@ export const eventSchema = z
     /** Last day a repeating event may start on; absent repeats forever. */
     until: dateSchema.optional(),
     allDay: z.boolean().optional(),
+    /** Map position of the location, when it was picked from search results. */
+    place: z
+      .object({
+        lat: z.number().min(-90).max(90),
+        lon: z.number().min(-180).max(180),
+      })
+      .optional(),
   })
   .superRefine((e, ctx) => {
     const issue = (path: string, message: string) =>
@@ -90,11 +105,19 @@ export const eventSchema = z
     if (span < 0) issue("endDate", "End date can’t be before the start date");
     // Overnight and all-day events may end at an earlier clock time.
     if (span === 0 && !e.allDay && e.end <= e.start)
-      issue("end", "End time must be after start time");
+      issue(
+        "end",
+        e.endDate
+          ? "End time must be after start time, or choose a later end date"
+          : "End time must be after start time",
+      );
     if (e.until && e.until < e.date)
       issue("until", "The repeat can’t end before the event starts");
     if (e.repeat !== "none" && span >= repeatInterval[e.repeat])
-      issue("endDate", "A repeating event must end before it repeats");
+      issue(
+        "endDate",
+        `An event that repeats ${repeatLabels[e.repeat].toLowerCase()} can last at most ${repeatInterval[e.repeat]} days`,
+      );
   });
 export const taskSchema = z.object({
   id,

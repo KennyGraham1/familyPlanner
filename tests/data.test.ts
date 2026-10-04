@@ -291,7 +291,7 @@ describe("repeating and multi-day events", () => {
     );
     assert.equal(
       message({ repeat: "weekly", endDate: "2026-10-05" }),
-      "A repeating event must end before it repeats",
+      "An event that repeats every week can last at most 7 days",
     );
     assert.equal(
       message({ allDay: true, start: "00:00", end: "23:59" }),
