@@ -183,9 +183,7 @@ export function Calendar({ open }: ViewProps) {
                     />
                   ))
                 ) : (
-                  <p className="day-empty">
-                    Nothing planned. A little room to breathe.
-                  </p>
+                  <p className="day-empty">Nothing planned.</p>
                 )}
               </div>
             );
@@ -250,7 +248,7 @@ export function Calendar({ open }: ViewProps) {
                         onClick={() => open({ kind: "event", date: key })}
                       >
                         <Plus size={18} />
-                        <span>Make a little plan</span>
+                        <span>New event</span>
                       </button>
                     )}
                   </div>

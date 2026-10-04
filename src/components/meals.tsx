@@ -269,18 +269,6 @@ export function Meals({ openRecipe }: ViewProps) {
   }
   return (
     <>
-      <div className="meal-intro">
-        <span className="intro-icon peach">
-          <Utensils size={27} />
-        </span>
-        <div>
-          <h2>Good food. Less “what’s for dinner?”</h2>
-          <p>A little planning now, more time around the table later.</p>
-        </div>
-        <button className="button primary" onClick={shopWeek}>
-          <ShoppingBasket size={17} /> Shop this week
-        </button>
-      </div>
       <section className="card meal-week">
         <div className="meal-week-header">
           <div className="date-navigation">
@@ -302,16 +290,21 @@ export function Meals({ openRecipe }: ViewProps) {
               <ChevronRight size={18} />
             </button>
           </div>
-          <div className="segmented-control">
-            {(["Breakfast", "Lunch", "Dinner"] as const).map((s) => (
-              <button
-                key={s}
-                className={slot === s ? "active" : ""}
-                onClick={() => setSlot(s)}
-              >
-                {s}
-              </button>
-            ))}
+          <div className="toolbar-actions">
+            <div className="segmented-control">
+              {(["Breakfast", "Lunch", "Dinner"] as const).map((s) => (
+                <button
+                  key={s}
+                  className={slot === s ? "active" : ""}
+                  onClick={() => setSlot(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <button className="button secondary" onClick={shopWeek}>
+              <ShoppingBasket size={17} /> Shop this week
+            </button>
           </div>
         </div>
         <div className="meal-days">
@@ -366,11 +359,7 @@ export function Meals({ openRecipe }: ViewProps) {
                 ) : (
                   <button className="add-meal" onClick={() => setPickDate(key)}>
                     <Plus size={22} />
-                    <span>
-                      Plan a little
-                      <br />
-                      something
-                    </span>
+                    <span>Add a meal</span>
                   </button>
                 )}
               </div>
@@ -379,14 +368,12 @@ export function Meals({ openRecipe }: ViewProps) {
         </div>
         <div className="meal-week-footer">
           <Sparkles size={14} />
-          {weekMeals.length} meals planned this week. Future you says thanks!
+          {weekMeals.length} {weekMeals.length === 1 ? "meal" : "meals"} planned
+          this week
         </div>
       </section>
       <div className="recipe-library-heading">
-        <SectionHeader icon={BookOpen} title="A little recipe inspiration" />
-        <p>
-          Tried-and-loved ideas for your family table. Tap one to get cooking.
-        </p>
+        <SectionHeader icon={BookOpen} title="Recipes" />
       </div>
       <div className="recipe-library-toolbar">
         <div className="family-filters">

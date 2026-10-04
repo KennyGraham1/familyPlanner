@@ -6,8 +6,6 @@ import {
   Clock3,
   Download,
   Flag,
-  Heart,
-  Leaf,
   MoreHorizontal,
   Pin,
   Plus,
@@ -29,7 +27,6 @@ export function Shopping({ open }: ViewProps) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All items");
   const done = data.shopping.filter((i) => i.done).length;
-  const remaining = data.shopping.length - done;
   const visible = data.shopping.filter(
     (i) =>
       i.name.toLowerCase().includes(search.toLowerCase()) &&
@@ -89,40 +86,12 @@ export function Shopping({ open }: ViewProps) {
   }
   return (
     <>
-      <div className="shopping-banner">
-        <div className="shopping-banner-icon">🛒</div>
-        <div>
-          <span className="eyebrow">THE LITTLE THINGS WE NEED</span>
-          <h2>Full cupboards. Happy people.</h2>
-          <p>
-            {remaining
-              ? `${remaining} things to pick up. Let’s make it a good shop.`
-              : "Everything’s in the bag. You’re all stocked up!"}
-          </p>
-        </div>
-        <div
-          className="shopping-progress-circle"
-          style={
-            {
-              "--progress": `${data.shopping.length ? (done / data.shopping.length) * 100 : 0}%`,
-            } as React.CSSProperties
-          }
-        >
-          <div>
-            <strong>
-              {done}
-              <small>/{data.shopping.length}</small>
-            </strong>
-            <span>in the bag</span>
-          </div>
-        </div>
-      </div>
       <form className="quick-add-form card" onSubmit={add}>
         <Plus size={20} />
         <input
           name="item"
           aria-label="New shopping item"
-          placeholder="What do we need? Add it here…"
+          placeholder="Add an item…"
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={150}
@@ -245,7 +214,7 @@ export function Shopping({ open }: ViewProps) {
       {!visible.length && (
         <EmptyState
           icon={ShoppingBasket}
-          title={search ? "Nothing by that name" : "A lovely, clear list"}
+          title={search ? "Nothing by that name" : "The list is empty"}
           text={
             search
               ? "Try another search."
@@ -253,10 +222,6 @@ export function Shopping({ open }: ViewProps) {
           }
         />
       )}
-      <div className="help-note">
-        <Leaf size={16} /> A little reminder: take your reusable bags. The
-        planet says thanks.
-      </div>
     </>
   );
 }
@@ -278,27 +243,6 @@ export function Chores({ open }: ViewProps) {
   );
   return (
     <>
-      <div className="team-banner">
-        <span className="team-banner-art">🙌</span>
-        <div>
-          <span className="eyebrow">MANY HANDS, A HAPPY HOME</span>
-          <h2>Little things. A big team effort.</h2>
-          <p>Every small act of help makes home a little happier.</p>
-        </div>
-        <div className="team-progress">
-          <span>
-            <strong>{done}</strong> / {total} done
-          </span>
-          <div className="progress-track">
-            <span style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
-          </div>
-          <small>
-            {total && done === total
-              ? "Dream team. You did it!"
-              : "A little progress, every day."}
-          </small>
-        </div>
-      </div>
       <div className="view-toolbar">
         <div className="segmented-control">
           {["To do", "Due today", "Done", "All chores"].map((f) => (
@@ -344,7 +288,7 @@ export function Chores({ open }: ViewProps) {
                 <div className={`chore-column-heading ${m.color}`}>
                   <Avatar member={m} />
                   <div>
-                    <h3>{m.name}’s little list</h3>
+                    <h3>{m.name}</h3>
                     <small>
                       {memberDone} done · {tasks.length} shown
                     </small>
@@ -370,9 +314,7 @@ export function Chores({ open }: ViewProps) {
                               })) &&
                               !task.done
                             )
-                              notify(
-                                `Thanks, ${m.name}! One little thing makes a difference.`,
-                              );
+                              notify(`Done. Thanks, ${m.name}!`);
                           }}
                         />
                         <button
@@ -404,7 +346,7 @@ export function Chores({ open }: ViewProps) {
                   {!tasks.length && (
                     <div className="column-empty">
                       <Sparkles size={22} />
-                      <span>A little room to breathe.</span>
+                      <span>Nothing here</span>
                     </div>
                   )}
                 </div>
@@ -421,14 +363,10 @@ export function Chores({ open }: ViewProps) {
       {total > 0 && done === total && (
         <div className="celebration">
           <CheckSquare size={23} />
-          <h3>Look at you, dream team!</h3>
-          <p>Everything is done. Time for a little something fun.</p>
+          <h3>All chores done</h3>
+          <p>Nice work, everyone.</p>
         </div>
       )}
-      <div className="help-note">
-        <Heart size={15} /> It’s not about a perfect home. It’s about showing up
-        for each other.
-      </div>
     </>
   );
 }
@@ -445,14 +383,6 @@ export function Board({ open }: ViewProps) {
     );
   return (
     <>
-      <div className="board-heading">
-        <span>✳</span>
-        <div>
-          <h2>A little corner of us.</h2>
-          <p>Reminders, weekend dreams, and words that make someone’s day.</p>
-        </div>
-        <span>♡</span>
-      </div>
       <div className="view-toolbar">
         <div className="segmented-control">
           {["All notes", "Pinned"].map((f) => (
@@ -465,7 +395,6 @@ export function Board({ open }: ViewProps) {
             </button>
           ))}
         </div>
-        <span className="muted-label">{notes.length} little notes</span>
       </div>
       <div className="notes-grid">
         {notes.map((n) => (
@@ -474,7 +403,7 @@ export function Board({ open }: ViewProps) {
               <span>
                 {n.pinned ? (
                   <>
-                    <Pin size={13} /> PINNED WITH LOVE
+                    <Pin size={13} /> PINNED
                   </>
                 ) : (
                   <StickyNote size={18} />
@@ -533,8 +462,7 @@ export function Board({ open }: ViewProps) {
           <span>
             <Plus size={26} />
           </span>
-          <h3>Leave a little note</h3>
-          <p>Something worth sharing?</p>
+          <h3>New note</h3>
         </button>
       </div>
       {!notes.length && filter === "Pinned" && (

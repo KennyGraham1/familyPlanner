@@ -44,7 +44,7 @@ export function Settings({ open }: ViewProps) {
         },
       })
     )
-      notify("Your family space feels a little more like you.");
+      notify("Preferences saved.");
   }
   function download() {
     const url = URL.createObjectURL(
@@ -95,8 +95,9 @@ export function Settings({ open }: ViewProps) {
   return (
     <div className="settings-grid">
       <div>
+        <CloudSettings />
         <section className="card settings-card">
-          <SectionHeader icon={Heart} title="Make yourself at home" />
+          <SectionHeader icon={Heart} title="Preferences" />
           <form onSubmit={save}>
             <Field label="Your family space">
               <input
@@ -139,7 +140,7 @@ export function Settings({ open }: ViewProps) {
           </form>
         </section>
         <section className="card settings-card">
-          <SectionHeader icon={Users} title="Your favourite people" />
+          <SectionHeader icon={Users} title="Family members" />
           <div className="settings-members">
             {data.members.map((m) => (
               <button
@@ -170,9 +171,8 @@ export function Settings({ open }: ViewProps) {
         </section>
       </div>
       <div>
-        <CloudSettings />
         <section className="card settings-card">
-          <SectionHeader icon={ShieldCheck} title="Keep your plans safe" />
+          <SectionHeader icon={ShieldCheck} title="Backup" />
           <p className="settings-description">
             Take a copy of your family’s plans, lists and notes whenever you
             like.
@@ -218,15 +218,6 @@ export function Settings({ open }: ViewProps) {
             </div>
           )}
         </section>
-        <div className="settings-footnote">
-          <Heart size={18} />
-          <p>
-            Made for the beautifully busy business
-            <br />
-            of being a family.
-          </p>
-          <strong>kinfolk.</strong>
-        </div>
       </div>
       {imported && (
         <Modal
@@ -405,26 +396,25 @@ function CloudSettings() {
     }
   }
   return (
-    <section className="card settings-card cloud-card">
-      <SectionHeader icon={Cloud} title="Together, wherever you are" />
+    <section className="card settings-card cloud-card" id="account">
+      <SectionHeader icon={Cloud} title="Account" />
       <p className="settings-description">
-        Share plans across everyone’s devices with your own private family
-        space.
+        Sign in to share plans across everyone’s devices.
       </p>
       {!cloudConfigured ? (
         <>
           <div className="local-mode">
             <span className="status-dot" />
             <div>
-              <strong>Happily saved on this device</strong>
+              <strong>Sign-in isn’t set up yet</strong>
               <p>
-                Your changes stay in this browser. They aren’t shared with other
-                devices yet.
+                Plans are saved in this browser only. Connect a Supabase project
+                to turn on accounts.
               </p>
             </div>
           </div>
-          <details className="setup-details">
-            <summary>Set up family sharing</summary>
+          <details className="setup-details" open>
+            <summary>Set up sign-in</summary>
             <p>
               Connect this app to a Supabase project to enable secure accounts
               and shared plans.
@@ -590,10 +580,10 @@ function CloudSettings() {
             <button className="button primary full-width" disabled={loading}>
               <KeyRound size={16} />
               {loading
-                ? "One little moment…"
+                ? "One moment…"
                 : mode === "signin"
-                  ? "Welcome back"
-                  : "Create your account"}
+                  ? "Sign in"
+                  : "Create account"}
             </button>
           </form>
         </>

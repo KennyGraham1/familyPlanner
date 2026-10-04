@@ -8,11 +8,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Heart,
   MapPin,
   Plus,
   ShoppingBasket,
-  Sparkles,
   StickyNote,
   Utensils,
   Users,
@@ -112,64 +110,46 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
       Number(b.pinned) - Number(a.pinned) ||
       b.createdAt.localeCompare(a.createdAt),
   )[0];
-  const stats = [
-    {
-      label: "On the calendar",
-      count: todayEvents.length,
-      foot: "a little rhythm to your day",
-      Icon: CalendarDays,
-      color: "lavender",
-      view: "calendar" as View,
-    },
-    {
-      label: "On the menu",
-      count: dinner ? "Dinner, sorted" : "Let’s make a plan",
-      foot: dinner ? dinner.name : "Good food, good company",
-      Icon: Utensils,
-      color: "peach",
-      view: "meals" as View,
-    },
-    {
-      label: "On the shopping list",
-      count: remainingShopping.length,
-      foot: "little things to pick up",
-      Icon: ShoppingBasket,
-      color: "sage",
-      view: "shopping" as View,
-    },
-    {
-      label: "A little teamwork",
-      count: `${done} of ${todayTasks.length}`,
-      foot: "today’s chores, all done",
-      Icon: CheckSquare,
-      color: "blue",
-      view: "chores" as View,
-    },
-  ];
   return (
     <>
       <section className="welcome-banner">
         <div className="welcome-copy">
-          <span className="eyebrow">
-            <span className="little-sun">✳</span> A FRESH LITTLE START
+          <span className="date-eyebrow">
+            <span className="status-dot" />
+            {formatDate(new Date(), {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
           </span>
-          <h2>
+          <h1>
             {greeting}, {current.name}
             <span className="greeting-sun">☀</span>
-          </h2>
-          <p>Life gets busy. Let’s make room for what matters.</p>
+          </h1>
           <div className="welcome-summary">
             <span>
               <CalendarDays size={15} />
-              <strong>{todayEvents.length}</strong> events today
+              <strong>{todayEvents.length}</strong>{" "}
+              {todayEvents.length === 1 ? "event" : "events"}
             </span>
             <span className="summary-dot" />
             <span>
               <CheckSquare size={15} />
-              <strong>{remainingTasks.length}</strong> little to-dos
+              <strong>{remainingTasks.length}</strong>{" "}
+              {remainingTasks.length === 1 ? "chore" : "chores"} due
+            </span>
+            <span className="summary-dot" />
+            <span>
+              <ShoppingBasket size={15} />
+              <strong>{remainingShopping.length}</strong> to buy
             </span>
           </div>
-          <span className="welcome-signoff">You’ve got this, together.</span>
+          <button
+            className="button primary heading-action"
+            onClick={() => open({ kind: "quick" })}
+          >
+            <Plus size={17} /> Add something
+          </button>
         </div>
         <div className="welcome-art">
           <img
@@ -178,32 +158,7 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             fetchPriority="high"
           />
         </div>
-        <span className="welcome-flower">✻</span>
       </section>
-      <div className="stats-grid">
-        {stats.map(({ label, count, foot, Icon, color, view }) => (
-          <button
-            key={label}
-            className="stat-card"
-            onClick={() => navigate(view)}
-          >
-            <div className="stat-top">
-              <span>{label}</span>
-              <span className={`stat-icon ${color}`}>
-                <Icon size={19} />
-              </span>
-            </div>
-            <strong
-              className={
-                typeof count === "string" && count.length > 8 ? "stat-word" : ""
-              }
-            >
-              {count}
-            </strong>
-            <small>{foot}</small>
-          </button>
-        ))}
-      </div>
       <div className="dashboard-grid">
         <section className="card schedule-card">
           <SectionHeader
@@ -269,8 +224,8 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             ) : (
               <EmptyState
                 icon={CalendarDays}
-                title="A little breathing room"
-                text="No plans for this day. Enjoy the possibilities."
+                title="Nothing planned"
+                text="No events on this day."
               />
             )}
           </div>
@@ -295,16 +250,10 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                 onClick={() => openRecipe(dinner)}
               >
                 <img src={dinner.image} alt={dinner.name} />
-                <span className="photo-badge">
-                  <Sparkles size={13} /> FAMILY FAVOURITE
-                </span>
-                <span className="photo-view">
-                  View recipe <ArrowRight size={15} />
-                </span>
               </button>
               <div className="dinner-detail">
                 <div>
-                  <span className="mini-label">TONIGHT’S LITTLE COMFORT</span>
+                  <span className="mini-label">TONIGHT</span>
                   <h3>{dinner.name}</h3>
                   <p>{dinner.subtitle}</p>
                   <div className="recipe-meta">
@@ -323,15 +272,15 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                   className="button soft-purple full-width"
                   onClick={() => openRecipe(dinner)}
                 >
-                  Let’s get cooking <ArrowRight size={16} />
+                  View recipe <ArrowRight size={16} />
                 </button>
               </div>
             </>
           ) : (
             <EmptyState
               icon={Utensils}
-              title="Something delicious awaits"
-              text="Pick a family favourite and make tonight a little easier."
+              title="No dinner planned"
+              text="Pick a recipe for tonight."
               action={
                 <button
                   className="button primary"
@@ -346,14 +295,11 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
         <section className="card chores-preview">
           <SectionHeader
             icon={CheckSquare}
-            title="Little things, big help"
+            title="Today’s chores"
             action="All chores"
             onAction={() => navigate("chores")}
           />
           <div className="chore-progress">
-            <span>
-              Teamwork makes home work <Heart size={12} />
-            </span>
             <strong>
               {done}/{todayTasks.length} done
             </strong>
@@ -383,7 +329,7 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                       })) &&
                       !task.done
                     )
-                      notify("One little thing done. Thanks for helping!");
+                      notify("Chore done. Thanks for helping!");
                   }}
                 />
                 <button
@@ -400,19 +346,16 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             ))}
           </div>
           <button className="add-subtle" onClick={() => open({ kind: "task" })}>
-            <Plus size={16} /> Add a little to-do
+            <Plus size={16} /> Add a chore
           </button>
         </section>
         <section className="card shopping-preview">
           <SectionHeader
             icon={ShoppingBasket}
-            title="A quick shop"
+            title="Shopping"
             action="View list"
             onAction={() => navigate("shopping")}
           />
-          <p className="section-subtitle">
-            A few things for a well-stocked week.
-          </p>
           <div className="shopping-mini-list">
             {remainingShopping.slice(0, 4).map((item) => (
               <div className="shopping-mini-row" key={item.id}>
@@ -471,9 +414,6 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
           </button>
         </section>
       )}
-      <div className="page-footer">
-        <Heart size={13} /> A little more organised. A lot more together.
-      </div>
     </>
   );
 }

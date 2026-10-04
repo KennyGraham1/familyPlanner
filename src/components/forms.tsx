@@ -146,7 +146,7 @@ export function EditorModal({
         notify(
           item
             ? "Changes saved."
-            : `${titles[editor.kind].charAt(0).toUpperCase() + titles[editor.kind].slice(1)} added. A little more organised!`,
+            : `${titles[editor.kind].charAt(0).toUpperCase() + titles[editor.kind].slice(1)} added.`,
         );
         onClose();
       }
@@ -204,15 +204,13 @@ export function EditorModal({
     <Modal
       title={
         editor.kind === "quick"
-          ? "Make a little plan"
+          ? "Add something"
           : `${item ? "Edit" : "Add"} ${titles[editor.kind]}`
       }
       subtitle={
-        editor.kind === "quick"
-          ? "Big plans and little reminders, all in one place."
-          : editor.kind === "event" && editor.item?.repeat === "weekly"
-            ? "Changes apply to this entire weekly series."
-            : "A little organisation goes a long way."
+        editor.kind === "event" && editor.item?.repeat === "weekly"
+          ? "Changes apply to this entire weekly series."
+          : undefined
       }
       onClose={onClose}
     >
@@ -226,12 +224,7 @@ export function EditorModal({
                 "An event",
                 "Something to look forward to",
               ],
-              [
-                "task",
-                CheckSquare,
-                "A chore",
-                "A little help around the house",
-              ],
+              ["task", CheckSquare, "A chore", "A job around the house"],
               [
                 "shopping",
                 ShoppingBasket,
@@ -361,7 +354,7 @@ export function EditorModal({
                   </select>
                 </Field>
               </div>
-              <Field label="A little extra detail">
+              <Field label="Notes">
                 <textarea
                   name="notes"
                   rows={3}
@@ -456,7 +449,7 @@ export function EditorModal({
               <Field label="Give your note a title">
                 <input
                   name="title"
-                  placeholder="A little thought for the family…"
+                  placeholder="Title"
                   defaultValue={editor.item?.title}
                   required
                   maxLength={150}
@@ -467,7 +460,7 @@ export function EditorModal({
                 <textarea
                   name="body"
                   rows={5}
-                  placeholder="Plans, reminders, or just a little love."
+                  placeholder="What would you like to say?"
                   defaultValue={editor.item?.body}
                   required
                   maxLength={2000}
@@ -499,7 +492,7 @@ export function EditorModal({
               <Field label="Name">
                 <input
                   name="name"
-                  placeholder="Their lovely name"
+                  placeholder="Name"
                   defaultValue={editor.item?.name}
                   required
                   maxLength={150}

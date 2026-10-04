@@ -177,10 +177,6 @@ input[type="checkbox"] {
   background: var(--yellow);
   color: #685d34;
 }
-.muted-label {
-  color: var(--muted);
-  font-size: 12px;
-}
 .app-shell {
   min-height: 100vh;
 }
@@ -215,15 +211,6 @@ input[type="checkbox"] {
 }
 .brand-period {
   color: #6b5487;
-}
-.brand small {
-  display: block;
-  font-family: "DM Sans", sans-serif;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-  font-size: 11px;
-  color: #635e6b;
-  margin-top: 7px;
 }
 .brand-icon {
   height: 41px;
@@ -402,36 +389,6 @@ input[type="checkbox"] {
   margin-top: auto;
   padding-top: 36px;
 }
-.sidebar-reminder {
-  text-align: center;
-  background: #faf8fc;
-  border: 1px dashed #e9e0f1;
-  border-radius: 11px;
-  padding: 20px 5px 13px;
-  position: relative;
-  margin: 0 3px 20px;
-}
-.sidebar-reminder strong {
-  font-family: "Manrope", sans-serif;
-  font-size: 12px;
-  display: block;
-  margin: 9px 0 5px;
-}
-.sidebar-reminder p {
-  font-size: 12px;
-  line-height: 1.8;
-  color: #635e67;
-}
-.sidebar-reminder > svg {
-  margin-top: 10px;
-  color: #685b74;
-}
-.reminder-flower {
-  font-size: 42px;
-  line-height: 1;
-  color: #665c71;
-  display: block;
-}
 .settings-nav {
   width: 100%;
   font-size: 12px;
@@ -562,6 +519,11 @@ input[type="checkbox"] {
   width: 31px;
   height: 31px;
 }
+.signin-button {
+  min-height: 34px;
+  padding: 7px 14px;
+  white-space: nowrap;
+}
 .icon-button.mobile-menu,
 .sidebar-backdrop {
   display: none;
@@ -601,10 +563,6 @@ input[type="checkbox"] {
   font-size: 12px;
   color: #615e67;
   margin-top: 6px;
-}
-.tiny-flower {
-  font-size: 18px;
-  color: #665c71;
 }
 .status-dot {
   width: 6px;
@@ -738,10 +696,6 @@ input[type="checkbox"] {
   color: #675c6f;
   stroke-width: 1.7;
 }
-.section-subtitle {
-  font-size: 12px;
-  color: #615c65;
-}
 .welcome-banner {
   background: #eee9f5;
   position: relative;
@@ -758,6 +712,15 @@ input[type="checkbox"] {
   width: 59%;
   background: linear-gradient(90deg, #eee9f5 84%, #eee9f500);
 }
+.welcome-banner {
+  margin-bottom: 25px;
+}
+.welcome-copy .date-eyebrow {
+  margin-bottom: 0;
+}
+.welcome-copy .heading-action {
+  margin-top: 22px;
+}
 .eyebrow {
   display: flex;
   align-items: center;
@@ -767,11 +730,7 @@ input[type="checkbox"] {
   letter-spacing: 1.5px;
   color: #69587b;
 }
-.little-sun {
-  font-size: 16px;
-  line-height: 1;
-}
-.welcome-copy h2 {
+.welcome-copy h1 {
   font-size: 25px;
   letter-spacing: -0.65px;
   font-weight: 700;
@@ -812,13 +771,6 @@ input[type="checkbox"] {
   height: 3px;
   border-radius: 50%;
 }
-.welcome-signoff {
-  font-size: 12px;
-  color: #635b6b;
-  display: block;
-  margin-top: 20px;
-  font-style: italic;
-}
 .welcome-art {
   position: absolute;
   top: 0;
@@ -842,74 +794,6 @@ input[type="checkbox"] {
   inset: 0;
   z-index: 1;
   background: linear-gradient(90deg, #eee9f5 0%, transparent 25%);
-}
-.welcome-flower {
-  position: absolute;
-  right: 23px;
-  top: 14px;
-  font-size: 31px;
-  color: #665c70;
-  transform: rotate(12deg);
-}
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
-  margin-top: 22px;
-  margin-bottom: 25px;
-}
-.stat-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 17px 19px 16px;
-  background: white;
-  text-align: left;
-  box-shadow: var(--shadow);
-  transition:
-    transform 0.15s,
-    border-color 0.15s;
-}
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: #d9c9e8;
-}
-.stat-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 9px;
-}
-.stat-top > span:first-child {
-  font-size: 12px;
-  color: #625d68;
-}
-.stat-icon {
-  width: 31px;
-  height: 31px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9px;
-}
-.stat-card > strong {
-  display: block;
-  font-size: 25px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.6px;
-  font-family: "Manrope", sans-serif;
-}
-.stat-card > strong.stat-word {
-  font-size: 17px;
-  line-height: 31px;
-  letter-spacing: -0.5px;
-}
-.stat-card > small {
-  display: block;
-  font-size: 11px;
-  color: #605c65;
-  margin-top: 7px;
 }
 .dashboard-grid {
   display: grid;
@@ -1116,34 +1000,6 @@ input[type="checkbox"] {
 .dinner-photo:hover > img {
   transform: scale(1.04);
 }
-.photo-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 9px;
-  letter-spacing: 0.6px;
-  background: #ffffffdf;
-  color: #6a5e49;
-  padding: 5px 8px;
-  border-radius: 5px;
-  backdrop-filter: blur(4px);
-}
-.photo-view {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  font-size: 11px;
-  color: white;
-  padding: 5px 8px;
-  background: #40392d44;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
 .dinner-detail {
   padding: 18px 23px 21px;
 }
@@ -1275,10 +1131,6 @@ input[type="checkbox"] {
   height: 24px;
   font-size: 10px;
 }
-.shopping-preview .section-subtitle {
-  font-size: 12px;
-  margin-top: 21px;
-}
 .shopping-mini-list {
   margin-top: 12px;
 }
@@ -1362,16 +1214,6 @@ input[type="checkbox"] {
   font-size: 11px;
   min-height: 32px;
   padding: 8px 12px;
-}
-.page-footer {
-  text-align: center;
-  font-size: 11px;
-  color: #615d66;
-  margin-top: 29px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
 }
 .save-status {
   display: flex;
@@ -1679,38 +1521,6 @@ input[type="checkbox"] {
   padding: 15px 0;
   font-size: 12px;
   color: #645c69;
-}
-.meal-intro {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 22px 25px;
-  border-radius: 13px;
-  background: #faf1e8;
-  border: 1px solid #f0e6db;
-  margin-bottom: 24px;
-}
-.intro-icon {
-  height: 51px;
-  width: 51px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.meal-intro > div {
-  flex: 1;
-}
-.meal-intro h2 {
-  font-size: 17px;
-  color: #6e5c4e;
-  letter-spacing: -0.4px;
-}
-.meal-intro p {
-  font-size: 12px;
-  color: #685c54;
-  margin-top: 5px;
 }
 .meal-week-header {
   display: flex;
@@ -2087,83 +1897,6 @@ input[type="checkbox"] {
 .recipe-picker svg {
   color: #675970;
 }
-.shopping-banner,
-.team-banner {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  background: #edf4ed;
-  border: 1px solid #e1eade;
-  border-radius: 14px;
-  padding: 29px;
-  margin-bottom: 24px;
-}
-.shopping-banner-icon {
-  font-size: 43px;
-  width: 75px;
-  height: 75px;
-  background: #e0ecdd;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-7deg);
-}
-.shopping-banner > div:nth-child(2) {
-  flex: 1;
-}
-.shopping-banner .eyebrow {
-  color: #586251;
-  font-size: 10px;
-}
-.shopping-banner h2,
-.team-banner h2 {
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.5px;
-  color: #55644e;
-  margin-top: 6px;
-}
-.shopping-banner p,
-.team-banner p {
-  font-size: 12px;
-  color: #596056;
-  margin-top: 8px;
-}
-.shopping-progress-circle {
-  width: 82px;
-  height: 82px;
-  border-radius: 50%;
-  background: conic-gradient(#9db28e var(--progress), #dfe9d9 0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.shopping-progress-circle > div {
-  width: 71px;
-  height: 71px;
-  background: #edf4ed;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-}
-.shopping-progress-circle strong {
-  font-size: 22px;
-  color: #56634d;
-  line-height: 1.2;
-}
-.shopping-progress-circle strong small {
-  font-size: 12px;
-  font-weight: 400;
-  color: #586252;
-}
-.shopping-progress-circle span {
-  font-size: 10px;
-  color: #596151;
-}
 .quick-add-form {
   display: flex;
   align-items: center;
@@ -2260,51 +1993,6 @@ input[type="checkbox"] {
 }
 .shopping-item:hover .row-edit {
   opacity: 1;
-}
-.team-banner {
-  background: #eff0fa;
-  border-color: #e4e4f0;
-}
-.team-banner-art {
-  font-size: 45px;
-  transform: rotate(-8deg);
-  display: block;
-}
-.team-banner > div:nth-child(2) {
-  flex: 1;
-}
-.team-banner h2 {
-  color: #5f5c73;
-}
-.team-banner .eyebrow {
-  color: #615b6c;
-}
-.team-banner p {
-  color: #635e6b;
-}
-.team-progress {
-  width: 175px;
-}
-.team-progress > span {
-  font-size: 12px;
-  color: #675c70;
-  display: block;
-  text-align: right;
-}
-.team-progress strong {
-  font-size: 26px;
-  font-weight: 500;
-  color: #685974;
-}
-.team-progress small {
-  font-size: 11px;
-  color: #645c6b;
-  margin-top: 9px;
-  display: block;
-  text-align: right;
-}
-.team-progress .progress-track {
-  background: #e4dded;
 }
 .standalone-select {
   background: white;
@@ -2413,39 +2101,6 @@ input[type="checkbox"] {
 }
 .celebration p {
   font-size: 12px;
-}
-.board-heading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 35px;
-  background: #f5edf8;
-  border: 1px solid #ebdff0;
-  border-radius: 14px;
-  padding: 33px 25px;
-  text-align: center;
-  margin-bottom: 25px;
-}
-.board-heading > span:first-child {
-  font-size: 55px;
-  color: #6a5973;
-  transform: rotate(15deg);
-}
-.board-heading > span:last-child {
-  font-size: 50px;
-  color: #6a5973;
-  transform: rotate(-15deg);
-}
-.board-heading h2 {
-  font-size: 23px;
-  letter-spacing: -0.6px;
-  color: #6b5777;
-  font-weight: 600;
-}
-.board-heading p {
-  font-size: 12px;
-  color: #695a70;
-  margin-top: 9px;
 }
 .notes-grid {
   display: grid;
@@ -3250,7 +2905,7 @@ input[type="checkbox"] {
   .welcome-copy {
     padding: 35px;
   }
-  .welcome-copy h2 {
+  .welcome-copy h1 {
     font-size: 31px;
   }
   .welcome-copy > p {
@@ -3259,23 +2914,11 @@ input[type="checkbox"] {
   .welcome-summary {
     font-size: 12px;
   }
-  .welcome-signoff {
-    font-size: 12px;
-  }
   .dinner-photo {
     height: 220px;
   }
   .event-row {
     min-height: 80px;
-  }
-  .stat-card {
-    padding: 20px 23px;
-  }
-  .stat-top > span:first-child {
-    font-size: 12px;
-  }
-  .stat-card > small {
-    font-size: 12px;
   }
   .section-header h2 {
     font-size: 16px;
@@ -3334,27 +2977,11 @@ input[type="checkbox"] {
   .welcome-copy {
     padding: 26px;
   }
-  .welcome-copy h2 {
+  .welcome-copy h1 {
     font-size: 22px;
   }
   .welcome-copy > p {
     font-size: 12px;
-  }
-  .stats-grid {
-    gap: 12px;
-  }
-  .stat-card {
-    padding: 14px;
-  }
-  .stat-top > span:first-child {
-    font-size: 11px;
-  }
-  .stat-card > strong.stat-word {
-    font-size: 15px;
-  }
-  .stat-icon {
-    width: 28px;
-    height: 28px;
   }
   .dashboard-grid {
     gap: 18px;
@@ -3424,9 +3051,6 @@ input[type="checkbox"] {
   }
   .planned-meal img {
     height: 75px;
-  }
-  .meal-intro h2 {
-    font-size: 15px;
   }
   .recipe-card h3 {
     font-size: 12px;
@@ -3503,9 +3127,6 @@ input[type="checkbox"] {
     top: 19px;
     left: 13px;
   }
-  .brand small {
-    font-size: 10px;
-  }
   .nav-item {
     font-size: 12px;
     padding: 11px;
@@ -3549,7 +3170,7 @@ input[type="checkbox"] {
     padding: 25px 20px;
     width: 65%;
   }
-  .welcome-copy h2 {
+  .welcome-copy h1 {
     font-size: 21px;
     gap: 6px;
   }
@@ -3562,47 +3183,8 @@ input[type="checkbox"] {
     font-size: 10px;
     gap: 9px;
   }
-  .welcome-signoff {
-    font-size: 11px;
-    margin-top: 16px;
-  }
   .welcome-art {
     width: 47%;
-  }
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 13px;
-  }
-  .stat-card {
-    padding: 15px 18px;
-    position: relative;
-  }
-  .stat-top {
-    margin-bottom: 4px;
-  }
-  .stat-card > strong {
-    font-size: 22px;
-  }
-  .stat-card > small {
-    font-size: 11px;
-    margin-top: 5px;
-  }
-  .stat-top > span:first-child {
-    font-size: 12px;
-  }
-  .stat-card > strong.stat-word {
-    font-size: 17px;
-    line-height: 27.5px;
-  }
-  .stat-icon {
-    position: absolute;
-    right: 18px;
-    top: 29px;
-    width: 35px;
-    height: 35px;
-  }
-  .stat-top {
-    padding-right: 35px;
   }
   .dashboard-grid {
     grid-template-columns: 1fr;
@@ -3699,21 +3281,6 @@ input[type="checkbox"] {
     font-size: 11px;
     padding: 6px 10px;
   }
-  .meal-intro {
-    padding: 20px;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .meal-intro > div {
-    min-width: 200px;
-  }
-  .meal-intro .button {
-    margin-left: 62px;
-  }
-  .intro-icon {
-    height: 48px;
-    width: 48px;
-  }
   .meal-days {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
@@ -3744,41 +3311,6 @@ input[type="checkbox"] {
   .meal-week-header {
     padding: 18px;
   }
-  .shopping-banner,
-  .team-banner {
-    padding: 22px;
-    gap: 18px;
-  }
-  .shopping-banner-icon {
-    font-size: 33px;
-    height: 57px;
-    width: 57px;
-    border-radius: 15px;
-  }
-  .shopping-banner h2,
-  .team-banner h2 {
-    font-size: 18px;
-  }
-  .shopping-banner p,
-  .team-banner p {
-    font-size: 12px;
-    max-width: 230px;
-    line-height: 1.9;
-  }
-  .shopping-progress-circle {
-    width: 67px;
-    height: 67px;
-  }
-  .shopping-progress-circle > div {
-    width: 57px;
-    height: 57px;
-  }
-  .shopping-progress-circle strong {
-    font-size: 18px;
-  }
-  .shopping-progress-circle span {
-    font-size: 9px;
-  }
   .quick-add-form {
     flex-wrap: wrap;
     gap: 10px;
@@ -3802,13 +3334,6 @@ input[type="checkbox"] {
   }
   .shopping-categories {
     gap: 16px;
-  }
-  .team-banner-art {
-    font-size: 36px;
-  }
-  .team-progress {
-    width: 116px;
-    flex-shrink: 0;
   }
   .chore-columns {
     gap: 17px;
@@ -3992,7 +3517,7 @@ input[type="checkbox"] {
     padding: 25px;
     width: 62%;
   }
-  .welcome-copy h2 {
+  .welcome-copy h1 {
     font-size: 23px;
     display: block;
     line-height: 1.4;
@@ -4013,46 +3538,9 @@ input[type="checkbox"] {
     max-width: 250px;
     margin-top: 15px;
   }
-  .welcome-signoff {
-    font-size: 12px;
-  }
   .welcome-art {
     width: 46%;
     opacity: 0.82;
-  }
-  .welcome-flower {
-    font-size: 25px;
-    right: 13px;
-    top: 10px;
-  }
-  .stats-grid {
-    margin-top: 17px;
-    margin-bottom: 21px;
-  }
-  .stat-card {
-    padding: 17px 20px;
-  }
-  .stat-top {
-    margin-bottom: 7px;
-  }
-  .stat-top > span:first-child {
-    font-size: 12px;
-  }
-  .stat-card > strong {
-    font-size: 25px;
-  }
-  .stat-card > strong.stat-word {
-    font-size: 17px;
-    line-height: 31px;
-  }
-  .stat-card > small {
-    font-size: 11px;
-  }
-  .stat-icon {
-    width: 32px;
-    height: 32px;
-    right: 17px;
-    top: 35px;
   }
   .dashboard-grid {
     gap: 19px;
@@ -4085,9 +3573,6 @@ input[type="checkbox"] {
   }
   .board-preview .mini-label {
     font-size: 10px;
-  }
-  .page-footer {
-    font-size: 11px;
   }
   .toast {
     left: 50%;
@@ -4141,21 +3626,6 @@ input[type="checkbox"] {
   }
   .day-empty {
     margin-left: 0;
-    font-size: 12px;
-  }
-  .meal-intro {
-    padding: 22px;
-    gap: 15px;
-  }
-  .meal-intro h2 {
-    font-size: 17px;
-  }
-  .meal-intro p {
-    font-size: 12px;
-    line-height: 1.8;
-  }
-  .meal-intro .button {
-    margin-left: 63px;
     font-size: 12px;
   }
   .meal-days {
@@ -4213,25 +3683,6 @@ input[type="checkbox"] {
   .recipe-card-image {
     height: 165px;
   }
-  .shopping-banner,
-  .team-banner {
-    padding: 23px;
-    gap: 15px;
-  }
-  .shopping-banner h2,
-  .team-banner h2 {
-    font-size: 20px;
-  }
-  .shopping-banner p,
-  .team-banner p {
-    font-size: 12px;
-  }
-  .shopping-banner-icon {
-    width: 59px;
-    height: 59px;
-    font-size: 34px;
-    flex-shrink: 0;
-  }
   .quick-add-form > input {
     font-size: 12px;
   }
@@ -4246,9 +3697,6 @@ input[type="checkbox"] {
   }
   .category-heading h3 {
     font-size: 12px;
-  }
-  .team-progress {
-    width: 130px;
   }
   .chore-column-heading {
     padding: 18px;
@@ -4277,23 +3725,6 @@ input[type="checkbox"] {
   }
   .note-top > span {
     font-size: 8px;
-  }
-  .board-heading {
-    gap: 20px;
-    padding: 26px 18px;
-  }
-  .board-heading h2 {
-    font-size: 21px;
-  }
-  .board-heading p {
-    font-size: 12px;
-    line-height: 1.8;
-  }
-  .board-heading > span:first-child {
-    font-size: 42px;
-  }
-  .board-heading > span:last-child {
-    font-size: 42px;
   }
 }
 @media (max-width: 480px) {
@@ -4339,7 +3770,7 @@ input[type="checkbox"] {
     font-size: 8px;
     letter-spacing: 1.2px;
   }
-  .welcome-copy h2 {
+  .welcome-copy h1 {
     font-size: 22px;
     max-width: 180px;
     margin-top: 14px;
@@ -4359,57 +3790,12 @@ input[type="checkbox"] {
     width: 12px;
     height: 12px;
   }
-  .welcome-signoff {
-    font-size: 11px;
-    margin-top: 19px;
-  }
   .welcome-art {
     width: 49%;
     opacity: 0.63;
   }
   .welcome-art img {
     object-position: 60% center;
-  }
-  .welcome-flower {
-    font-size: 23px;
-    right: 13px;
-    top: 17px;
-  }
-  .stats-grid {
-    gap: 11px;
-  }
-  .stat-card {
-    padding: 14px 15px;
-  }
-  .stat-top > span:first-child {
-    font-size: 10px;
-  }
-  .stat-top {
-    padding-right: 24px;
-    margin-bottom: 7px;
-  }
-  .stat-icon {
-    width: 26px;
-    height: 26px;
-    right: 12px;
-    top: 17px;
-    border-radius: 7px;
-  }
-  .stat-icon svg {
-    width: 15px;
-    height: 15px;
-  }
-  .stat-card > strong {
-    font-size: 23px;
-  }
-  .stat-card > strong.stat-word {
-    font-size: 14px;
-    line-height: 28.75px;
-    letter-spacing: -0.4px;
-  }
-  .stat-card > small {
-    font-size: 10px;
-    line-height: 1.6;
   }
   .section-header h2 {
     font-size: 13px;
@@ -4564,31 +3950,6 @@ input[type="checkbox"] {
     padding: 6px 9px;
     font-size: 11px;
   }
-  .meal-intro {
-    padding: 20px;
-    gap: 12px;
-  }
-  .meal-intro > div {
-    min-width: 0;
-  }
-  .meal-intro h2 {
-    font-size: 15px;
-  }
-  .meal-intro p {
-    font-size: 11px;
-  }
-  .intro-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 11px;
-  }
-  .intro-icon svg {
-    width: 24px;
-  }
-  .meal-intro .button {
-    margin-left: 54px;
-    font-size: 11px;
-  }
   .meal-week-header {
     padding: 15px;
     flex-direction: column;
@@ -4700,46 +4061,6 @@ input[type="checkbox"] {
   .recipe-heart svg {
     width: 14px;
   }
-  .shopping-banner {
-    padding: 19px;
-    gap: 13px;
-  }
-  .shopping-banner-icon {
-    width: 47px;
-    height: 51px;
-    font-size: 29px;
-    border-radius: 12px;
-  }
-  .shopping-banner .eyebrow {
-    font-size: 8px;
-    letter-spacing: 0.8px;
-  }
-  .shopping-banner h2 {
-    font-size: 16px;
-    line-height: 1.5;
-    margin-top: 6px;
-  }
-  .shopping-banner p {
-    font-size: 11px;
-    line-height: 1.9;
-  }
-  .shopping-progress-circle {
-    width: 57px;
-    height: 57px;
-  }
-  .shopping-progress-circle > div {
-    width: 48px;
-    height: 48px;
-  }
-  .shopping-progress-circle strong {
-    font-size: 16px;
-  }
-  .shopping-progress-circle strong small {
-    font-size: 11px;
-  }
-  .shopping-progress-circle span {
-    font-size: 8px;
-  }
   .quick-add-form {
     padding: 14px;
     gap: 10px;
@@ -4779,49 +4100,6 @@ input[type="checkbox"] {
     font-size: 11px;
     padding: 8px;
   }
-  .team-banner {
-    padding: 22px 20px;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-  .team-banner-art {
-    font-size: 35px;
-  }
-  .team-banner > div:nth-child(2) {
-    min-width: calc(100% - 60px);
-    max-width: calc(100% - 60px);
-  }
-  .team-banner .eyebrow {
-    font-size: 8px;
-    letter-spacing: 1px;
-  }
-  .team-banner h2 {
-    font-size: 16px;
-  }
-  .team-banner p {
-    font-size: 11px;
-  }
-  .team-progress {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 7px;
-  }
-  .team-progress > span {
-    font-size: 12px;
-    white-space: nowrap;
-  }
-  .team-progress strong {
-    font-size: 21px;
-  }
-  .team-progress .progress-track {
-    flex: 1;
-    margin: 0;
-  }
-  .team-progress small {
-    display: none;
-  }
   .chore-columns {
     grid-template-columns: 1fr;
     gap: 18px;
@@ -4850,19 +4128,6 @@ input[type="checkbox"] {
   .standalone-select {
     width: 100%;
     font-size: 12px;
-  }
-  .board-heading {
-    gap: 14px;
-    padding: 25px 16px;
-  }
-  .board-heading h2 {
-    font-size: 19px;
-  }
-  .board-heading p {
-    font-size: 11px;
-  }
-  .board-heading > span {
-    font-size: 32px !important;
   }
   .notes-grid {
     grid-template-columns: 1fr;
@@ -5059,6 +4324,6 @@ input[type="checkbox"] {
 .outside-month .calendar-day-top {
   opacity: 1;
 }
-.photo-view {
-  background: #30273dc9;
+#account {
+  scroll-margin-top: 96px;
 }

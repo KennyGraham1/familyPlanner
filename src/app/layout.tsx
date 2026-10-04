@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kinfolk — A little more together",
+  title: "Kinfolk — Family planner",
   description:
-    "Your family’s happy place for calendars, meal plans, shopping lists and the little things that make a home.",
+    "A shared family planner for calendars, meal plans, shopping lists and chores.",
   applicationName: "Kinfolk",
   manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg", apple: "/icon.svg" },

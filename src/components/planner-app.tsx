@@ -11,6 +11,7 @@ import {
   Cloud,
   Heart,
   House,
+  LogIn,
   Menu,
   Plus,
   Search,
@@ -41,59 +42,38 @@ import { Shopping, Chores, Board } from "./lists";
 import { Settings } from "./settings";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
-  { id: "overview", label: "Our overview", Icon: House },
-  { id: "calendar", label: "Family calendar", Icon: CalendarDays },
-  { id: "meals", label: "Meal planner", Icon: Utensils },
-  { id: "shopping", label: "Shopping list", Icon: ShoppingBasket },
-  { id: "chores", label: "Chores & to-dos", Icon: CheckSquare },
+  { id: "overview", label: "Overview", Icon: House },
+  { id: "calendar", label: "Calendar", Icon: CalendarDays },
+  { id: "meals", label: "Meals", Icon: Utensils },
+  { id: "shopping", label: "Shopping", Icon: ShoppingBasket },
+  { id: "chores", label: "Chores", Icon: CheckSquare },
   { id: "board", label: "Family board", Icon: StickyNote },
 ];
 const titles: Record<
   View,
-  { title: string; subtitle: string; button: string; editor?: Editor["kind"] }
+  { title: string; button: string; editor?: Editor["kind"] }
 > = {
-  overview: {
-    title: "Our family, in sync.",
-    subtitle: "A little more organised. A lot more together.",
-    button: "Add something",
-    editor: "quick",
-  },
+  overview: { title: "Overview", button: "Add something", editor: "quick" },
   calendar: {
-    title: "A little plan for everyone.",
-    subtitle: "School runs, big days, and everything in between.",
+    title: "Family calendar",
     button: "Add an event",
     editor: "event",
   },
-  meals: {
-    title: "Around the family table.",
-    subtitle: "Less deciding. More enjoying. Let’s plan something delicious.",
-    button: "Browse recipes",
-  },
+  meals: { title: "Meal planner", button: "Browse recipes" },
   shopping: {
-    title: "The family shopping list.",
-    subtitle: "One handy list. No more “did we get the milk?”",
+    title: "Shopping list",
     button: "Add an item",
     editor: "shopping",
   },
-  chores: {
-    title: "Home is a team sport.",
-    subtitle: "Share the little jobs. Celebrate the little wins.",
-    button: "Add a chore",
-    editor: "task",
-  },
-  board: {
-    title: "On our family board.",
-    subtitle: "A place for the things that bring us together.",
-    button: "Leave a note",
-    editor: "note",
-  },
+  chores: { title: "Chores", button: "Add a chore", editor: "task" },
+  board: { title: "Family board", button: "Leave a note", editor: "note" },
   settings: {
-    title: "Your family, your way.",
-    subtitle: "All the little details that make this space yours.",
+    title: "Family settings",
     button: "Add a member",
     editor: "member",
   },
 };
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export function PlannerApp() {
   return (
     <PlannerProvider>
@@ -102,8 +82,16 @@ export function PlannerApp() {
   );
 }
 function AppContent() {
-  const { data, ready, toast, dismissToast, household, syncError, busy } =
-    usePlanner();
+  const {
+    data,
+    ready,
+    toast,
+    dismissToast,
+    household,
+    syncError,
+    busy,
+    email,
+  } = usePlanner();
   const [view, setView] = useState<View>("overview");
   const [editor, setEditor] = useState<Editor | null>(null);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -136,6 +124,16 @@ function AppContent() {
     setMobileOpen(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
+  function openAccount() {
+    navigate("settings");
+    requestAnimationFrame(() => {
+      const account = document.getElementById("account");
+      account?.scrollIntoView({ behavior: "smooth", block: "start" });
+      account?.querySelector<HTMLInputElement>("input[type=email]")?.focus({
+        preventScroll: true,
+      });
+    });
+  }
   function open(value: Editor) {
     setRecipe(null);
     setEditor(value);
@@ -147,6 +145,16 @@ function AppContent() {
   const remaining = data.shopping.filter((i) => !i.done).length;
   const today = dateKey(new Date());
   const heading = titles[view];
+  const tasksDone = data.tasks.filter((t) => t.done).length;
+  const subtitle = {
+    shopping: data.shopping.length
+      ? `${remaining} to buy · ${data.shopping.length - remaining} in the bag`
+      : "",
+    chores: data.tasks.length
+      ? `${tasksDone} of ${data.tasks.length} done`
+      : "",
+    board: plural(data.notes.length, "note"),
+  }[view as string];
   if (!ready)
     return (
       <div className="loading-screen">
@@ -155,7 +163,7 @@ function AppContent() {
           <Heart size={12} />
         </span>
         <strong>kinfolk.</strong>
-        <p>Making a little room for your family…</p>
+        <p>Loading your family planner…</p>
         <span className="loading-dots">
           <i />
           <i />
@@ -190,7 +198,6 @@ function AppContent() {
           </span>
           <span>
             kinfolk<span className="brand-period">.</span>
-            <small>a little more together</small>
           </span>
         </button>
         <button
@@ -202,11 +209,10 @@ function AppContent() {
           </span>
           <span>
             <strong>{data.settings.familyName}</strong>
-            <small>Our happy little space</small>
+            <small>{plural(data.members.length, "member")}</small>
           </span>
           <ChevronDown size={15} />
         </button>
-        <span className="nav-section-label">OUR EVERYDAY</span>
         <nav>
           {navigation.map(({ id, label, Icon }) => (
             <a
@@ -232,7 +238,7 @@ function AppContent() {
         </nav>
         <div className="sidebar-family">
           <div className="sidebar-section-heading">
-            <span className="nav-section-label">OUR FAVOURITE PEOPLE</span>
+            <span className="nav-section-label">FAMILY</span>
             <button
               className="icon-button small"
               aria-label="Add family member"
@@ -257,16 +263,6 @@ function AppContent() {
           ))}
         </div>
         <div className="sidebar-bottom">
-          <div className="sidebar-reminder">
-            <span className="reminder-flower">✻</span>
-            <strong>Better, together.</strong>
-            <p>
-              Big love. Little moments.
-              <br />
-              One lovely family.
-            </p>
-            <Heart size={14} />
-          </div>
           <button
             className={`nav-item settings-nav ${view === "settings" ? "active" : ""}`}
             onClick={() => navigate("settings")}
@@ -274,16 +270,11 @@ function AppContent() {
             <SettingsIcon size={19} />
             <span>Family settings</span>
           </button>
-          <button
-            className="sidebar-profile"
-            onClick={() => navigate("settings")}
-          >
+          <button className="sidebar-profile" onClick={openAccount}>
             <Avatar member={current} />
             <span>
               <strong>{current.name}</strong>
-              <small>
-                {household ? "Our connected family" : "My family space"}
-              </small>
+              <small>{email ?? "Not signed in"}</small>
             </span>
             <ChevronRight size={16} />
           </button>
@@ -316,7 +307,7 @@ function AppContent() {
               onClick={() => setSearchOpen(true)}
             >
               <Search size={16} />
-              <span>Find a little something…</span>
+              <span>Search…</span>
               <kbd>⌘ K</kbd>
             </button>
             <span className="topbar-divider" />
@@ -328,52 +319,48 @@ function AppContent() {
               <Bell size={19} />
               {eventsOn(data, today).length > 0 && <span />}
             </button>
-            <button
-              className="profile-button"
-              aria-label="Your family settings"
-              onClick={() => navigate("settings")}
-            >
-              <Avatar member={current} small />
-            </button>
+            {email ? (
+              <button
+                className="profile-button"
+                aria-label={`Account: ${email}`}
+                title={email}
+                onClick={openAccount}
+              >
+                <Avatar member={current} small />
+              </button>
+            ) : (
+              <button
+                className="button secondary signin-button"
+                onClick={openAccount}
+              >
+                <LogIn size={16} />
+                Sign in
+              </button>
+            )}
           </div>
         </header>
         <main className="main-content" id="main-content">
-          <div className="page-heading">
-            <div>
-              <div className="date-eyebrow">
-                {view === "overview" ? (
-                  <>
-                    <span className="status-dot" />
-                    {formatDate(new Date(), {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </>
-                ) : (
-                  <>
-                    <span className="tiny-flower">✳</span> OUR HAPPY LITTLE
-                    SPACE
-                  </>
-                )}
+          {view !== "overview" && (
+            <div className="page-heading">
+              <div>
+                <h1>{heading.title}</h1>
+                {subtitle && <p>{subtitle}</p>}
               </div>
-              <h1>{heading.title}</h1>
-              <p>{heading.subtitle}</p>
+              <button
+                className="button primary heading-action"
+                onClick={() =>
+                  heading.editor
+                    ? open({ kind: heading.editor } as Editor)
+                    : document
+                        .querySelector(".recipe-library-heading")
+                        ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                <Plus size={17} />
+                {heading.button}
+              </button>
             </div>
-            <button
-              className="button primary heading-action"
-              onClick={() =>
-                heading.editor
-                  ? open({ kind: heading.editor } as Editor)
-                  : document
-                      .querySelector(".recipe-library-heading")
-                      ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <Plus size={17} />
-              {heading.button}
-            </button>
-          </div>
+          )}
           {syncError && household && (
             <div className="sync-warning" role="alert">
               <Cloud size={16} />
@@ -393,10 +380,10 @@ function AppContent() {
           <div className="save-status">
             <span className={`status-dot ${syncError ? "warning" : ""}`} />
             {busy
-              ? "Saving a little change…"
+              ? "Saving…"
               : household
                 ? syncError
-                  ? "Connection needs a little attention"
+                  ? "Connection problem"
                   : "Connected to your family space"
                 : "Your plans are saved on this device"}
           </div>
@@ -432,8 +419,8 @@ function AppContent() {
       )}
       {notificationsOpen && (
         <Modal
-          title="A little heads-up"
-          subtitle="What’s happening in your family today."
+          title="Today"
+          subtitle="Events and chores due today."
           onClose={() => setNotificationsOpen(false)}
         >
           <div className="notification-list">
@@ -486,7 +473,7 @@ function AppContent() {
                 <EmptyState
                   icon={Sparkles}
                   title="All caught up"
-                  text="A little quiet is a good thing. Enjoy your day."
+                  text="Nothing due today."
                 />
               )}
           </div>
@@ -570,7 +557,7 @@ function SearchModal({
     .slice(0, 12);
   return (
     <Modal
-      title="Find a little something"
+      title="Search"
       subtitle="Search your plans, recipes, lists and notes."
       onClose={onClose}
     >
@@ -601,14 +588,14 @@ function SearchModal({
           ) : (
             <EmptyState
               icon={Search}
-              title="No little matches yet"
+              title="No matches"
               text="Try a different word or check the spelling."
             />
           )}
         </div>
       ) : (
         <>
-          <span className="search-quick-label">A LITTLE SHORTCUT</span>
+          <span className="search-quick-label">JUMP TO</span>
           <div className="search-results">
             {navigation.map((n) => (
               <button

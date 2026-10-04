@@ -20,7 +20,10 @@ test("dashboard loads its artwork and stays within the viewport", async ({
   page.on("pageerror", (e) => errors.push(e.message));
   await go(page, "overview");
   await expect(
-    page.getByRole("heading", { name: "Our family, in sync." }),
+    page.getByRole("heading", {
+      level: 1,
+      name: /^Good (morning|afternoon|evening), /,
+    }),
   ).toBeVisible();
   await expect(page.locator(".welcome-art img")).toBeVisible();
   await expect
@@ -167,9 +170,9 @@ test("chores use the selected family member and keep completion after reload", a
   page,
 }) => {
   await go(page, "chores");
-  const column = page
-    .locator(".chore-column")
-    .filter({ hasText: "Sophie’s little list" });
+  const column = page.locator(".chore-column").filter({
+    has: page.getByRole("heading", { name: "Sophie", exact: true }),
+  });
   await column.getByRole("button", { name: "Add a chore" }).click();
   await expect(page.getByLabel("Who’s on it?")).toHaveValue("sophie");
   await page.getByLabel("What needs doing?").fill("Tidy the reading corner");
@@ -287,9 +290,9 @@ test("all views fit mobile, navigation works, and keyboard focus stays in dialog
   }
   if (isMobile) {
     await page.getByRole("button", { name: "Open navigation" }).click();
-    await page.getByRole("link", { name: "Family calendar" }).click();
+    await page.getByRole("link", { name: "Calendar", exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "A little plan for everyone." }),
+      page.getByRole("heading", { level: 1, name: "Family calendar" }),
     ).toBeVisible();
     expect(
       await page
@@ -338,13 +341,11 @@ test("corrupt local data is preserved until a valid backup is restored", async (
   expect(await page.evaluate((key) => localStorage.getItem(key), storage)).toBe(
     "{broken-data",
   );
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "backup.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(original)),
-    });
+  await page.locator("input[type=file]").setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(original)),
+  });
   await page.getByRole("button", { name: "Restore this backup" }).click();
   await page
     .getByLabel("Your family space", { exact: true })
