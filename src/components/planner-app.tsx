@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   Cloud,
+  CloudOff,
   Heart,
   House,
   LogIn,
@@ -33,6 +34,7 @@ import {
   recipes,
   type Recipe,
 } from "@/lib/data";
+import { offlineMessage } from "@/lib/network";
 import { PlannerProvider, usePlanner } from "./planner-provider";
 import { Avatar, EmptyState, Modal, useDismiss } from "./ui";
 import { EditorModal, type Editor } from "./forms";
@@ -97,6 +99,7 @@ function AppContent() {
     syncError,
     busy,
     live,
+    connection,
     email,
     currentMemberId,
     signOut,
@@ -179,6 +182,11 @@ function AppContent() {
         </span>
         <strong>kinfolk.</strong>
         <p>Loading your family planner…</p>
+        {connection !== "connected" ? (
+          <p role="status">{offlineMessage()}</p>
+        ) : (
+          syncError && <p role="status">{syncError}</p>
+        )}
         <span className="loading-dots">
           <i />
           <i />
@@ -415,14 +423,23 @@ function AppContent() {
               </button>
             </div>
           )}
-          {syncError && household && (
-            <div className="sync-warning" role="alert">
-              <Cloud size={16} />
-              {syncError}
-              <button onClick={() => navigate("settings")}>
-                Connection settings
-              </button>
+          {household && connection === "offline" ? (
+            // Calm and polite: the app keeps working with the last saved plans.
+            <div className="connection-notice" role="status">
+              <CloudOff size={16} />
+              {offlineMessage()}
             </div>
+          ) : (
+            syncError &&
+            household && (
+              <div className="sync-warning" role="alert">
+                <Cloud size={16} />
+                {syncError}
+                <button onClick={() => navigate("settings")}>
+                  Connection settings
+                </button>
+              </div>
+            )
           )}
           {view === "overview" && <Overview {...props} />}{" "}
           {view === "calendar" && <Calendar {...props} />}{" "}
@@ -432,15 +449,19 @@ function AppContent() {
           {view === "board" && <Board {...props} />}{" "}
           {view === "settings" && <Settings {...props} />}
           <div className="save-status">
-            <span className={`status-dot ${syncError ? "warning" : ""}`} />
+            <span
+              className={`status-dot ${syncError || connection === "offline" ? "warning" : ""}`}
+            />
             {busy
               ? "Saving…"
               : household
-                ? syncError
-                  ? "Connection problem"
-                  : live
-                    ? "Live: family changes appear instantly"
-                    : "Connected to your family space"
+                ? connection === "offline"
+                  ? "Offline: showing your last saved plans"
+                  : syncError
+                    ? "Connection problem"
+                    : live
+                      ? "Live: family changes appear instantly"
+                      : "Connected to your family space"
                 : "Your plans are saved on this device"}
           </div>
         </main>

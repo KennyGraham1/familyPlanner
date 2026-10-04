@@ -16,6 +16,11 @@ import {
 } from "@/lib/data";
 import { getCloud, cloudConfigured } from "@/lib/cloud";
 import { errorMessage } from "@/lib/errors";
+import {
+  connectionState,
+  isNetworkError,
+  type Connection,
+} from "@/lib/network";
 import { familyContextSchema, type FamilyAccess } from "@/lib/family";
 import { disableDevicePush } from "@/lib/push-client";
 
@@ -49,6 +54,8 @@ type Context = {
   busy: boolean;
   /** Whether family changes arrive instantly (Supabase Realtime is connected). */
   live: boolean;
+  /** Whether the family space can be reached; brief drops show as "reconnecting". */
+  connection: Connection;
   refreshCloud: () => Promise<void>;
   signOut: () => Promise<void>;
   startFamily: (name: string, familyName: string) => Promise<void>;
@@ -77,6 +84,19 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   const householdRef = useRef<string | null>(null);
   const scopeRef = useRef("");
   const pending = useRef(0);
+  const [connection, setConnection] = useState<Connection>("connected");
+  // Each failure schedules another attempt (see the effect below refreshCloud).
+  const [failures, setFailures] = useState(0);
+  const failingSince = useRef<number | null>(null);
+  // Records whether the family space was just reached.
+  const noteReachable = useCallback((reachable: boolean) => {
+    if (reachable) failingSince.current = null;
+    else failingSince.current ??= Date.now();
+    setFailures((n) => (reachable ? 0 : n + 1));
+    setConnection(
+      connectionState(failingSince.current, Date.now(), navigator.onLine),
+    );
+  }, []);
   const generation = useRef(0);
   const localDataInvalid = useRef(false);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
@@ -158,6 +178,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         setAccess(family.access);
         setRevision(family.updated_at);
         update(family.data);
+        noteReachable(true);
         setPhase(
           family.member_id &&
             family.data.members.some((m) => m.id === family.member_id)
@@ -167,6 +188,11 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         setSyncError(null);
       } catch (error) {
         if (request !== generation.current) return;
+        if (isNetworkError(error)) {
+          // Usually brief (a phone waking up): keep what's on screen and try again soon.
+          noteReachable(false);
+          return;
+        }
         setSyncError(
           errorMessage(
             error,
@@ -178,8 +204,14 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         if (request === generation.current && !pending.current) setBusy(false);
       }
     },
-    [clearFamily, update],
+    [clearFamily, noteReachable, update],
   );
+  useEffect(() => {
+    // Retry soon after a failure instead of waiting for the next regular check.
+    if (!failures) return;
+    const timer = setTimeout(() => void refreshCloud(true), 5000);
+    return () => clearTimeout(timer);
+  }, [failures, refreshCloud]);
   useEffect(() => {
     const cloud = getCloud();
     if (!cloud) {
@@ -209,13 +241,22 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     };
     const timer = setInterval(sync, live ? POLL_LIVE : POLL_FALLBACK);
     window.addEventListener("focus", sync);
-    window.addEventListener("online", sync);
+    // The device knows when it loses its network: say so straight away.
+    const deviceChanged = () => {
+      setConnection(
+        connectionState(failingSince.current, Date.now(), navigator.onLine),
+      );
+      if (navigator.onLine) sync();
+    };
+    window.addEventListener("online", deviceChanged);
+    window.addEventListener("offline", deviceChanged);
     document.addEventListener("visibilitychange", visible);
     window.addEventListener("storage", storage);
     return () => {
       clearInterval(timer);
       window.removeEventListener("focus", sync);
-      window.removeEventListener("online", sync);
+      window.removeEventListener("online", deviceChanged);
+      window.removeEventListener("offline", deviceChanged);
       document.removeEventListener("visibilitychange", visible);
       window.removeEventListener("storage", storage);
     };
@@ -310,13 +351,13 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           if (scopeRef.current !== scope) return false;
           update(dataSchema.parse(result));
           setSyncError(null);
+          noteReachable(true);
           return true;
         } catch (e) {
           if (scopeRef.current === scope) {
-            const reason = errorMessage(
-              e,
-              "Your change was not saved. Please try again.",
-            );
+            const reason = isNetworkError(e)
+              ? "Couldn’t reach your family space, so this wasn’t saved. Check your connection and try again."
+              : errorMessage(e, "Your change was not saved. Please try again.");
             notify(
               // The server rejects data its (older) database rules don't recognise.
               reason === "The updated family data is not valid."
@@ -324,7 +365,9 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
                 : reason,
               true,
             );
-            setSyncError("A change could not be saved. Please try again.");
+            // A network failure is already explained by the message above.
+            if (isNetworkError(e)) noteReachable(false);
+            else setSyncError("A change could not be saved. Please try again.");
           }
           return false;
         } finally {
@@ -338,7 +381,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       queue.current = job;
       return job;
     },
-    [notify, refreshCloud, update],
+    [noteReachable, notify, refreshCloud, update],
   );
   const replaceData = useCallback(
     (next: PlannerData) => {
@@ -503,6 +546,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         syncError,
         busy,
         live,
+        connection,
         refreshCloud,
         signOut,
         startFamily,

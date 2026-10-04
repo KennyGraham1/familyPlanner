@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
+  // Lets the signed-in browser tests run a second dev server beside the usual one.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   poweredByHeader: false,
   devIndicators: false,
   async headers() {

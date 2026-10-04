@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createResilientFetch } from "./network";
 
 let client: SupabaseClient | null = null;
 const publicKey =
@@ -10,6 +11,8 @@ export const cloudConfigured = Boolean(
 export function getCloud() {
   if (!cloudConfigured) return null;
   if (!client)
-    client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publicKey!);
+    client = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, publicKey!, {
+      global: { fetch: createResilientFetch() },
+    });
   return client;
 }

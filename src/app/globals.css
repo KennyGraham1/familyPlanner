@@ -4759,3 +4759,21 @@ input[type="checkbox"] {
   margin-top: 8px;
   font-size: 12px;
 }
+/* Shown only for a lasting outage; brief drops retry silently. */
+.connection-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px 15px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.connection-notice > svg {
+  flex-shrink: 0;
+  color: var(--subtle);
+}
