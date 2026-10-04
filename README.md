@@ -53,14 +53,14 @@ This integration is implemented but **requires your own Supabase project and has
 
 4. In **Authentication → URL Configuration**, set the Site URL to your deployed address. Add `http://localhost:3000` and your deployed address to allowed redirect URLs as appropriate. Enable email/password authentication; keep email confirmation enabled. Configure Supabase email delivery for production use.
 5. Add the same two values under **Vercel → Project → Settings → Environment Variables**, then redeploy. Next.js embeds public variables at build time. Restart the development server after changing them locally.
-6. Open **Family settings**, create an account, confirm the email and sign in. Select **Share this family space** to upload the plans you see.
+6. Open the app. It now starts on a sign-in screen: choose **Create account**, confirm the email and sign in. Then enter your name and family name to create your family space. You start as its only member; add everyone else from the sidebar or **Family settings**.
 7. The person who created the space can choose **Create invite code**. A family member creates their own account and enters this code under **Join family space**. Share it privately.
 
 Plans refresh every 15 seconds and when a window regains focus. Changes are applied as atomic operations to the latest household document, so changes to different records do not overwrite each other. Changes to the same record use the last saved version. Failed saves are reported and must be retried; cloud mode does not claim to queue changes offline.
 
 Access is restricted to household members. Direct client writes are disabled; authenticated database functions check membership and validate the resulting document. Invite codes contain 192 bits of randomness, are stored hashed, and expire after seven days. A new code invalidates the previous one. Every signed-in household member can edit shared plans; only the household creator can create invitations. Accounts currently belong to one household. Household membership administration is done in Supabase; local family profiles are organisational labels, not access-control roles.
 
-When you sign out, the app returns to the browser’s separate local family space. Shared data is not copied into the local planner storage. Backups can be exported in either mode; sign out before restoring locally.
+When Supabase is configured, the planner is only available to signed-in members; signing out returns to the sign-in screen. Without Supabase, the app starts with the same family setup and saves plans in this browser only. Backups can be exported in either mode; restoring a backup is only available in a browser-only family space.
 
 Before relying on a live shared deployment, check with two separate accounts that an invited member can read and edit the same plan and an unrelated account cannot read the household or execute its mutations. Verify invite expiry, invalid codes, and reconnect behaviour in your Supabase project.
 

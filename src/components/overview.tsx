@@ -124,7 +124,9 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
           </span>
           <h1>
             {greeting}, {current.name}
-            <span className="greeting-sun">☀</span>
+            <span className="greeting-sun" aria-hidden="true">
+              ☀
+            </span>
           </h1>
           <div className="welcome-summary">
             <span>

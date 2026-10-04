@@ -419,6 +419,19 @@ export const recipes: Recipe[] = [
   },
 ];
 
+export function createFamily(name: string, familyName: string): PlannerData {
+  const id = uid();
+  return {
+    version: 1,
+    settings: { familyName, currentMemberId: id, weekStartsMonday: true },
+    members: [{ id, name, role: "Parent", color: "lavender", emoji: "🌻" }],
+    events: [],
+    tasks: [],
+    shopping: [],
+    meals: [],
+    notes: [],
+  };
+}
 export function createSeed(today = new Date()): PlannerData {
   const day = (n: number) => dateKey(addDays(today, n));
   return {

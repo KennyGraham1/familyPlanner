@@ -10,7 +10,7 @@ import {
 } from "react";
 import {
   applyMutation,
-  createSeed,
+  createFamily,
   dataSchema,
   type Mutation,
   type PlannerData,
@@ -19,9 +19,11 @@ import { getCloud, cloudConfigured } from "@/lib/cloud";
 
 const STORAGE_KEY = "kinfolk-planner-v1";
 type Toast = { id: number; message: string; error: boolean };
+/** Which screen to show: the app itself, or the sign-in / family setup steps before it. */
+export type Phase = "loading" | "signin" | "setup" | "ready";
 type Context = {
   data: PlannerData;
-  ready: boolean;
+  phase: Phase;
   apply: (mutations: Mutation | Mutation[]) => Promise<boolean>;
   replaceData: (data: PlannerData) => boolean;
   notify: (message: string, error?: boolean) => void;
@@ -34,14 +36,18 @@ type Context = {
   busy: boolean;
   refreshCloud: () => Promise<void>;
   signOut: () => Promise<void>;
+  startFamily: (name: string, familyName: string) => Promise<void>;
+  joinFamily: (inviteCode: string) => Promise<void>;
+  startOver: () => void;
 };
 const PlannerContext = createContext<Context | null>(null);
 
 export function PlannerProvider({ children }: { children: React.ReactNode }) {
+  // Placeholder until hydration; the loading screen is shown meanwhile.
   const [data, setData] = useState<PlannerData>(() =>
-    createSeed(new Date("2026-01-01T12:00:00")),
+    createFamily("You", "Your family"),
   );
-  const [ready, setReady] = useState(false);
+  const [phase, setPhase] = useState<Phase>("loading");
   const [toast, setToast] = useState<Toast | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [household, setHousehold] = useState<string | null>(null);
@@ -65,20 +71,27 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   const readLocal = useCallback(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = dataSchema.parse(JSON.parse(raw));
-        localDataInvalid.current = false;
-        return parsed;
-      }
+      if (!raw) return null;
+      const parsed = dataSchema.parse(JSON.parse(raw));
+      localDataInvalid.current = false;
+      return parsed;
     } catch {
       localDataInvalid.current = true;
       notify(
         "Saved data could not be opened. It has been preserved. Restore a valid backup in Family settings to continue.",
         true,
       );
+      // Show an empty planner so the person can reach Settings and restore a backup.
+      return createFamily("You", "Your family");
     }
-    return createSeed();
   }, [notify]);
+  const loadLocal = useCallback(() => {
+    const local = readLocal();
+    if (local) {
+      update(local);
+      setPhase("ready");
+    } else setPhase("setup");
+  }, [readLocal, update]);
 
   const refreshCloud = useCallback(async () => {
     const cloud = getCloud();
@@ -94,7 +107,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         householdRef.current = null;
         setHousehold(null);
         setSyncError(null);
-        update(readLocal());
+        setPhase("signin");
         return;
       }
       const { data: rows, error } = await cloud
@@ -117,9 +130,11 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         householdRef.current = familyId;
         setHousehold(familyId);
         update(parsed);
+        setPhase("ready");
       } else {
         householdRef.current = null;
         setHousehold(null);
+        setPhase("setup");
       }
       setSyncError(null);
     } catch (error) {
@@ -128,18 +143,21 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           ? error.message
           : "Unable to connect to your family space.",
       );
+      // Without a working connection there is nothing to show yet; the sign-in screen shows the error.
+      setPhase((current) => (current === "loading" ? "signin" : current));
     } finally {
       if (request === generation.current) setBusy(false);
     }
-  }, [readLocal, update]);
+  }, [update]);
 
   useEffect(() => {
-    // localStorage is a browser-only external store; hydrate it after server rendering.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    update(readLocal());
-    setReady(true);
     const cloud = getCloud();
-    if (!cloud) return;
+    if (!cloud) {
+      // localStorage is a browser-only external store; hydrate it after server rendering.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadLocal();
+      return;
+    }
     void refreshCloud();
     const { data: listener } = cloud.auth.onAuthStateChange(() => {
       setTimeout(() => void refreshCloud(), 0);
@@ -147,7 +165,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       listener.subscription.unsubscribe();
     };
-  }, [readLocal, update, refreshCloud]);
+  }, [loadLocal, refreshCloud]);
 
   useEffect(() => {
     const sync = async () => {
@@ -176,8 +194,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     const timer = setInterval(() => void sync(), 15000);
     const focus = () => void sync();
     const storage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY && !householdRef.current)
-        update(readLocal());
+      if (event.key === STORAGE_KEY && !cloudConfigured) loadLocal();
     };
     window.addEventListener("focus", focus);
     window.addEventListener("storage", storage);
@@ -186,7 +203,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("focus", focus);
       window.removeEventListener("storage", storage);
     };
-  }, [readLocal, update]);
+  }, [loadLocal, update]);
 
   useEffect(() => {
     if (!toast) return;
@@ -262,7 +279,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     (next: PlannerData) => {
       if (householdRef.current) {
         notify(
-          "Backup imports are available in a local family space. Sign out first.",
+          "Restoring a backup isn’t available in a shared family space.",
           true,
         );
         return false;
@@ -295,15 +312,56 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     setHousehold(null);
     setEmail(null);
     setSyncError(null);
-    update(readLocal());
-    notify("Signed out. Your local family space is ready.");
-  }, [notify, readLocal, update]);
+    setPhase("signin");
+    notify("Signed out.");
+  }, [notify]);
+  const startFamily = useCallback(
+    async (name: string, familyName: string) => {
+      const fresh = createFamily(name, familyName);
+      const cloud = getCloud();
+      if (!cloud) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(fresh));
+        } catch {
+          throw new Error("Could not save to this browser’s storage.");
+        }
+        localDataInvalid.current = false;
+        update(fresh);
+        setPhase("ready");
+        return;
+      }
+      const { error } = await cloud.rpc("planner_create_family", {
+        initial_data: fresh,
+      });
+      if (error) throw error;
+      await refreshCloud();
+    },
+    [refreshCloud, update],
+  );
+  const joinFamily = useCallback(
+    async (inviteCode: string) => {
+      const cloud = getCloud();
+      if (!cloud) return;
+      const { error } = await cloud.rpc("planner_join_family", {
+        invite_token: inviteCode.trim(),
+      });
+      if (error) throw error;
+      await refreshCloud();
+    },
+    [refreshCloud],
+  );
+  const startOver = useCallback(() => {
+    if (householdRef.current) return;
+    localStorage.removeItem(STORAGE_KEY);
+    localDataInvalid.current = false;
+    setPhase("setup");
+  }, []);
 
   return (
     <PlannerContext.Provider
       value={{
         data,
-        ready,
+        phase,
         apply,
         replaceData,
         notify,
@@ -316,6 +374,9 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         busy,
         refreshCloud,
         signOut,
+        startFamily,
+        joinFamily,
+        startOver,
       }}
     >
       {children}

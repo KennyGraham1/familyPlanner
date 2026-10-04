@@ -1,7 +1,22 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { createSeed } from "../../src/lib/data";
 
 const storage = "kinfolk-planner-v1";
+// New visitors start with an empty family; these tests use the sample family as a fixture.
+// Only seed when nothing is stored, so reloads keep the changes a test made.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(
+    ([key, value]) => {
+      try {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value);
+      } catch {
+        // Frames without storage access (such as about:blank) have nothing to seed.
+      }
+    },
+    [storage, JSON.stringify(createSeed())],
+  );
+});
 async function go(page: Page, view: string) {
   await page.goto(`/#${view}`);
   await expect(page.locator("main h1")).toBeVisible();

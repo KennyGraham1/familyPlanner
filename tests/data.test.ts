@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   addDays,
   applyMutation,
+  createFamily,
   createSeed,
   dataSchema,
   dateKey,
@@ -14,6 +15,27 @@ import {
   occursOn,
   startOfWeek,
 } from "../src/lib/data";
+
+describe("new families", () => {
+  it("start empty with the creator as the only, current member", () => {
+    const family = createFamily("Sam", "The Lee family");
+    assert.equal(dataSchema.safeParse(family).success, true);
+    assert.deepEqual(
+      family.members.map((m) => m.name),
+      ["Sam"],
+    );
+    assert.equal(family.settings.currentMemberId, family.members[0].id);
+    assert.equal(family.settings.familyName, "The Lee family");
+    for (const list of [
+      family.events,
+      family.tasks,
+      family.shopping,
+      family.meals,
+      family.notes,
+    ])
+      assert.equal(list.length, 0);
+  });
+});
 
 describe("family schedules", () => {
   const seed = createSeed(fromKey("2026-09-28"));

@@ -40,6 +40,7 @@ import { Calendar } from "./calendar";
 import { Meals, RecipeModal } from "./meals";
 import { Shopping, Chores, Board } from "./lists";
 import { Settings } from "./settings";
+import { AuthScreen, SetupScreen } from "./onboarding";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Overview", Icon: House },
@@ -84,7 +85,7 @@ export function PlannerApp() {
 function AppContent() {
   const {
     data,
-    ready,
+    phase,
     toast,
     dismissToast,
     household,
@@ -155,7 +156,9 @@ function AppContent() {
       : "",
     board: plural(data.notes.length, "note"),
   }[view as string];
-  if (!ready)
+  if (phase === "signin") return <AuthScreen />;
+  if (phase === "setup") return <SetupScreen />;
+  if (phase === "loading")
     return (
       <div className="loading-screen">
         <span className="brand-icon">

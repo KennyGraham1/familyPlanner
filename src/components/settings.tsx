@@ -5,7 +5,6 @@ import {
   Cloud,
   Download,
   Heart,
-  KeyRound,
   LogOut,
   Plus,
   RefreshCw,
@@ -13,14 +12,15 @@ import {
   Upload,
   Users,
 } from "lucide-react";
-import { createSeed, dataSchema, type PlannerData } from "@/lib/data";
+import { dataSchema, type PlannerData } from "@/lib/data";
 import { getCloud } from "@/lib/cloud";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, Modal, SectionHeader } from "./ui";
 import type { ViewProps } from "./overview";
 
 export function Settings({ open }: ViewProps) {
-  const { data, apply, notify, replaceData, household } = usePlanner();
+  const { data, apply, notify, replaceData, household, startOver } =
+    usePlanner();
   const [familyName, setFamilyName] = useState(data.settings.familyName);
   const [currentMemberId, setCurrentMemberId] = useState(
     data.settings.currentMemberId,
@@ -30,6 +30,7 @@ export function Settings({ open }: ViewProps) {
   );
   const [imported, setImported] = useState<PlannerData | null>(null);
   const [clearConfirm, setClearConfirm] = useState(false);
+  const [startOverConfirm, setStartOverConfirm] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -76,11 +77,8 @@ export function Settings({ open }: ViewProps) {
     }
   }
   function clearPlans() {
-    const fresh = createSeed();
     const cleared = {
-      ...fresh,
-      settings: data.settings,
-      members: data.members,
+      ...data,
       events: [],
       tasks: [],
       meals: [],
@@ -200,8 +198,9 @@ export function Settings({ open }: ViewProps) {
             onChange={readBackup}
           />
           <p className="form-hint">
-            Restoring replaces the plans in this browser. Download a backup
-            first. Shared spaces can be exported; sign out to restore locally.
+            {household
+              ? "Restoring a backup isn’t available in a shared family space."
+              : "Restoring replaces the plans in this browser. Download a backup first."}
           </p>
           {!household && (
             <div className="fresh-start">
@@ -214,6 +213,20 @@ export function Settings({ open }: ViewProps) {
                 onClick={() => setClearConfirm(true)}
               >
                 Clear plans
+              </button>
+            </div>
+          )}
+          {!household && (
+            <div className="fresh-start">
+              <div>
+                <strong>Start over</strong>
+                <p>Delete all plans and family members in this browser.</p>
+              </div>
+              <button
+                className="button danger-quiet"
+                onClick={() => setStartOverConfirm(true)}
+              >
+                Start over
               </button>
             </div>
           )}
@@ -251,7 +264,11 @@ export function Settings({ open }: ViewProps) {
               className="button primary"
               onClick={() => {
                 if (replaceData(imported)) {
-                  notify("Welcome back. Your plans have been restored.");
+                  // The form still holds the previous family's settings.
+                  setFamilyName(imported.settings.familyName);
+                  setCurrentMemberId(imported.settings.currentMemberId);
+                  setWeekStartsMonday(imported.settings.weekStartsMonday);
+                  notify("Your plans have been restored.");
                   setImported(null);
                 }
               }}
@@ -284,13 +301,36 @@ export function Settings({ open }: ViewProps) {
           </div>
         </Modal>
       )}
+      {startOverConfirm && (
+        <Modal
+          title="Start over?"
+          subtitle="This can’t be undone."
+          onClose={() => setStartOverConfirm(false)}
+        >
+          <p className="settings-description">
+            This deletes every plan and family member saved in this browser and
+            takes you back to family setup. Download a backup first if you’d
+            like to keep them.
+          </p>
+          <div className="form-actions">
+            <button
+              className="button secondary"
+              onClick={() => setStartOverConfirm(false)}
+            >
+              Cancel
+            </button>
+            <button className="button danger" onClick={startOver}>
+              Delete everything
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
 
 function CloudSettings() {
   const {
-    data,
     notify,
     cloudConfigured,
     email,
@@ -300,85 +340,9 @@ function CloudSettings() {
     signOut,
     busy,
   } = usePlanner();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [invite, setInvite] = useState("");
-  const [joinCode, setJoinCode] = useState("");
-  async function auth(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setLoading(true);
-    const form = new FormData(e.currentTarget);
-    const credentials = {
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    };
-    try {
-      const cloud = getCloud()!;
-      if (mode === "signin") {
-        const { error } = await cloud.auth.signInWithPassword(credentials);
-        if (error) throw error;
-        await refreshCloud();
-        notify("Welcome back!");
-      } else {
-        const { data: result, error } = await cloud.auth.signUp({
-          ...credentials,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        setMessage(
-          result.session
-            ? "Your account is ready. Create or join your family space below."
-            : "Check your email to confirm your account, then come back and sign in.",
-        );
-        await refreshCloud();
-      }
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Could not connect. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function createFamily() {
-    setLoading(true);
-    setError("");
-    try {
-      const { error } = await getCloud()!.rpc("planner_create_family", {
-        initial_data: data,
-      });
-      if (error) throw error;
-      await refreshCloud();
-      notify("Your shared family space is ready!");
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Could not create family space.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-  async function joinFamily(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const { error } = await getCloud()!.rpc("planner_join_family", {
-        invite_token: joinCode.trim(),
-      });
-      if (error) throw error;
-      await refreshCloud();
-      notify("You’re part of the family space. Welcome home!");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not join family space.");
-    } finally {
-      setLoading(false);
-    }
-  }
   async function getInvite() {
     setLoading(true);
     setError("");
@@ -398,9 +362,6 @@ function CloudSettings() {
   return (
     <section className="card settings-card cloud-card" id="account">
       <SectionHeader icon={Cloud} title="Account" />
-      <p className="settings-description">
-        Sign in to share plans across everyone’s devices.
-      </p>
       {!cloudConfigured ? (
         <>
           <div className="local-mode">
@@ -437,98 +398,58 @@ function CloudSettings() {
             <p>The README includes the complete setup guide.</p>
           </details>
         </>
-      ) : email ? (
+      ) : (
         <>
           <div className="account-state">
             <span className="cloud-avatar">
               <Cloud size={22} />
             </span>
             <div>
-              <strong>
-                {household ? "Your family is connected" : "You’re signed in"}
-              </strong>
+              <strong>Signed in</strong>
               <small>{email}</small>
             </div>
           </div>
-          {household ? (
-            <>
-              <p className="form-hint">
-                Family plans refresh every 15 seconds and when you return to the
-                app.
-              </p>
-              <div className="backup-buttons">
-                <button
-                  className="button secondary"
-                  disabled={loading || busy}
-                  onClick={getInvite}
-                >
-                  <Plus size={16} />
-                  Create invite code
-                </button>
-                <button
-                  className="icon-button bordered"
-                  disabled={busy}
-                  aria-label="Refresh family data"
-                  onClick={() => void refreshCloud()}
-                >
-                  <RefreshCw size={16} />
-                </button>
-              </div>
-              {invite && (
-                <div className="invite-code">
-                  <label>Share this code privately with your family</label>
-                  <code>{invite}</code>
-                  <p>
-                    Valid for 7 days. Creating another code replaces this one.
-                  </p>
-                  <button
-                    className="text-button"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(invite);
-                        notify("Invite code copied.");
-                      } catch {
-                        notify("Select the code above to copy it.", true);
-                      }
-                    }}
-                  >
-                    Copy code
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
+          <p className="form-hint">
+            Family plans refresh every 15 seconds and when you return to the
+            app.
+          </p>
+          <div className="backup-buttons">
+            <button
+              className="button secondary"
+              disabled={loading || busy}
+              onClick={getInvite}
+            >
+              <Plus size={16} />
+              Create invite code
+            </button>
+            <button
+              className="icon-button bordered"
+              disabled={busy}
+              aria-label="Refresh family data"
+              onClick={() => void refreshCloud()}
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
+          {invite && (
+            <div className="invite-code">
+              <label>Share this code privately with your family</label>
+              <code>{invite}</code>
+              <p>Valid for 7 days. Creating another code replaces this one.</p>
               <button
-                className="button primary full-width"
-                onClick={createFamily}
-                disabled={loading}
+                className="text-button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(invite);
+                    notify("Invite code copied.");
+                  } catch {
+                    notify("Select the code above to copy it.", true);
+                  }
+                }}
               >
-                Share this family space
+                Copy code
               </button>
-              <p className="form-hint">
-                Uploads the plans you currently see to your private shared
-                space.
-              </p>
-              <div className="or-divider">or join your family</div>
-              <form onSubmit={joinFamily}>
-                <Field label="Family invite code">
-                  <input
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value)}
-                    required
-                    placeholder="Paste the code from your family"
-                    maxLength={100}
-                  />
-                </Field>
-                <button
-                  className="button secondary full-width"
-                  disabled={loading}
-                >
-                  Join family space
-                </button>
-              </form>
-            </>
+            </div>
           )}
           <button
             className="text-button signout-button"
@@ -539,59 +460,6 @@ function CloudSettings() {
             Sign out
           </button>
         </>
-      ) : (
-        <>
-          <div className="segmented-control account-tabs">
-            <button
-              className={mode === "signin" ? "active" : ""}
-              onClick={() => setMode("signin")}
-            >
-              Sign in
-            </button>
-            <button
-              className={mode === "signup" ? "active" : ""}
-              onClick={() => setMode("signup")}
-            >
-              Create account
-            </button>
-          </div>
-          <form onSubmit={auth}>
-            <Field label="Email address">
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                required
-                placeholder="you@example.com"
-              />
-            </Field>
-            <Field label="Password">
-              <input
-                type="password"
-                name="password"
-                autoComplete={
-                  mode === "signup" ? "new-password" : "current-password"
-                }
-                minLength={8}
-                required
-                placeholder="At least 8 characters"
-              />
-            </Field>
-            <button className="button primary full-width" disabled={loading}>
-              <KeyRound size={16} />
-              {loading
-                ? "One moment…"
-                : mode === "signin"
-                  ? "Sign in"
-                  : "Create account"}
-            </button>
-          </form>
-        </>
-      )}
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
       )}
       {(error || syncError) && (
         <p className="form-error" role="alert">
