@@ -1,1 +1,31 @@
-{"name":"Kinfolk Family Planner","short_name":"Kinfolk","description":"A little more organised. A lot more together.","start_url":"/","display":"standalone","background_color":"#f8f9fb","theme_color":"#8b70bc","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Kinfolk Family Planner",
+  "short_name": "Kinfolk",
+  "description": "A little more organised. A lot more together.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fb",
+  "theme_color": "#8b70bc",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "/",
+  "scope": "/"
+}

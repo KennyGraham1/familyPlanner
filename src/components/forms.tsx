@@ -18,6 +18,10 @@ import {
   shoppingSchema,
   noteSchema,
   memberSchema,
+  ownedBy,
+  repeatLabels,
+  repeats,
+  removeMemberChanges,
   type FamilyEvent,
   type Task,
   type ShoppingItem,
@@ -43,13 +47,27 @@ export function EditorModal({
   onClose: () => void;
   open: (editor: Editor) => void;
 }) {
-  const { data, apply, notify } = usePlanner();
+  const { data, apply, notify, currentMemberId, access } = usePlanner();
+  // Profiles linked to someone's account can't be removed (the database refuses).
+  const linkedAccount =
+    editor.kind === "member" && editor.item
+      ? access.find((a) => a.member_id === editor.item!.id)
+      : undefined;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [removing, setRemoving] = useState(false);
+  const event = editor.kind === "event" ? editor.item : undefined;
+  const [allDay, setAllDay] = useState(Boolean(event?.allDay));
+  const [multiDay, setMultiDay] = useState(
+    Boolean(event?.endDate && event.endDate !== event.date),
+  );
+  const [repeat, setRepeat] = useState<(typeof repeats)[number]>(
+    event?.repeat ?? "none",
+  );
   const [selected, setSelected] = useState<string[]>(
     editor.kind === "event" && editor.item
       ? editor.item.memberIds
-      : [data.settings.currentMemberId],
+      : [currentMemberId],
   );
   const [color, setColor] = useState(
     editor.kind === "member"
@@ -77,17 +95,24 @@ export function EditorModal({
     let success = false;
     try {
       if (editor.kind === "event") {
+        const date = get("date"),
+          endDate = multiDay ? get("endDate") : "",
+          until = repeat !== "none" ? get("until") : "";
         const value = eventSchema.parse({
           id,
           title: get("title"),
-          date: get("date"),
-          start: get("start"),
-          end: get("end"),
+          date,
+          // All-day events keep placeholder times so older data stays compatible.
+          start: allDay ? "00:00" : get("start"),
+          end: allDay ? "23:59" : get("end"),
           memberIds: selected,
           location: get("location"),
           notes: get("notes"),
-          repeat: get("repeat"),
+          repeat,
           category: get("category"),
+          ...(endDate && endDate !== date ? { endDate } : {}),
+          ...(until ? { until } : {}),
+          ...(allDay ? { allDay: true } : {}),
         });
         success = await apply({
           collection: "events",
@@ -208,8 +233,8 @@ export function EditorModal({
           : `${item ? "Edit" : "Add"} ${titles[editor.kind]}`
       }
       subtitle={
-        editor.kind === "event" && editor.item?.repeat === "weekly"
-          ? "Changes apply to this entire weekly series."
+        event && event.repeat !== "none"
+          ? "Changes apply to every repeat of this event."
           : undefined
       }
       onClose={onClose}
@@ -254,6 +279,12 @@ export function EditorModal({
             </button>
           ))}
         </div>
+      ) : removing && editor.kind === "member" && editor.item ? (
+        <RemoveMember
+          member={editor.item}
+          onCancel={() => setRemoving(false)}
+          onDone={onClose}
+        />
       ) : (
         <form onSubmit={submit}>
           {editor.kind === "event" && (
@@ -268,34 +299,79 @@ export function EditorModal({
                   autoFocus
                 />
               </Field>
-              <Field label="Date">
-                <input
-                  name="date"
-                  type="date"
-                  defaultValue={
-                    editor.item?.date ?? editor.date ?? dateKey(new Date())
-                  }
-                  required
-                />
-              </Field>
-              <div className="form-grid">
-                <Field label="Starts at">
+              <div className="inline-checks">
+                <label className="inline-check">
                   <input
-                    name="start"
-                    type="time"
-                    defaultValue={editor.item?.start ?? "09:00"}
-                    required
-                  />
-                </Field>
-                <Field label="Ends at">
+                    type="checkbox"
+                    checked={allDay}
+                    onChange={(e) => setAllDay(e.target.checked)}
+                  />{" "}
+                  All day
+                </label>
+                <label className="inline-check">
                   <input
-                    name="end"
-                    type="time"
-                    defaultValue={editor.item?.end ?? "10:00"}
-                    required
-                  />
-                </Field>
+                    type="checkbox"
+                    checked={multiDay}
+                    onChange={(e) => setMultiDay(e.target.checked)}
+                  />{" "}
+                  Several days
+                </label>
               </div>
+              <div className={multiDay ? "form-grid" : undefined}>
+                <Field label="Date">
+                  <input
+                    name="date"
+                    type="date"
+                    defaultValue={
+                      editor.item?.date ?? editor.date ?? dateKey(new Date())
+                    }
+                    required
+                  />
+                </Field>
+                {multiDay && (
+                  <Field label="End date">
+                    <input
+                      name="endDate"
+                      type="date"
+                      defaultValue={
+                        editor.item?.endDate ??
+                        editor.item?.date ??
+                        editor.date ??
+                        dateKey(new Date())
+                      }
+                      required
+                    />
+                  </Field>
+                )}
+              </div>
+              {!allDay && (
+                <div className="form-grid">
+                  <Field label="Starts at">
+                    <input
+                      name="start"
+                      type="time"
+                      defaultValue={
+                        editor.item && !editor.item.allDay
+                          ? editor.item.start
+                          : "09:00"
+                      }
+                      required
+                    />
+                  </Field>
+                  <Field label="Ends at">
+                    <input
+                      name="end"
+                      type="time"
+                      defaultValue={
+                        editor.item && !editor.item.allDay
+                          ? editor.item.end
+                          : "10:00"
+                      }
+                      required
+                    />
+                  </Field>
+                </div>
+              )}
               <div className="field">
                 <span>Who’s coming?</span>
                 <div className="member-picker">
@@ -347,13 +423,31 @@ export function EditorModal({
                 <Field label="Repeat">
                   <select
                     name="repeat"
-                    defaultValue={editor.item?.repeat ?? "none"}
+                    value={repeat}
+                    onChange={(e) =>
+                      setRepeat(e.target.value as (typeof repeats)[number])
+                    }
                   >
-                    <option value="none">Just this once</option>
-                    <option value="weekly">Every week</option>
+                    {repeats.map((r) => (
+                      <option key={r} value={r}>
+                        {repeatLabels[r]}
+                      </option>
+                    ))}
                   </select>
                 </Field>
               </div>
+              {repeat !== "none" && (
+                <Field
+                  label="Repeat until"
+                  hint="Optional. Leave empty to keep repeating."
+                >
+                  <input
+                    name="until"
+                    type="date"
+                    defaultValue={editor.item?.until}
+                  />
+                </Field>
+              )}
               <Field label="Notes">
                 <textarea
                   name="notes"
@@ -381,9 +475,7 @@ export function EditorModal({
                 <select
                   name="memberId"
                   defaultValue={
-                    editor.item?.memberId ??
-                    editor.memberId ??
-                    data.settings.currentMemberId
+                    editor.item?.memberId ?? editor.memberId ?? currentMemberId
                   }
                 >
                   {memberOptions}
@@ -469,9 +561,7 @@ export function EditorModal({
               <Field label="From">
                 <select
                   name="memberId"
-                  defaultValue={
-                    editor.item?.memberId ?? data.settings.currentMemberId
-                  }
+                  defaultValue={editor.item?.memberId ?? currentMemberId}
                 >
                   {memberOptions}
                 </select>
@@ -524,6 +614,13 @@ export function EditorModal({
               <p className="form-hint">
                 Their colour will help everyone spot their events and chores.
               </p>
+              {linkedAccount && (
+                <p className="form-hint">
+                  This profile belongs to {linkedAccount.name}’s account. To
+                  remove it, first remove their access under People with access
+                  in Family settings.
+                </p>
+              )}
             </>
           )}
           {error && (
@@ -535,10 +632,90 @@ export function EditorModal({
             onClose={onClose}
             saving={saving}
             label={item ? "Save changes" : `Add ${titles[editor.kind]}`}
-            onDelete={item && editor.kind !== "member" ? remove : undefined}
+            onDelete={
+              !item
+                ? undefined
+                : editor.kind !== "member"
+                  ? remove
+                  : data.members.length > 1 && !linkedAccount
+                    ? () => setRemoving(true)
+                    : undefined
+            }
+            deleteLabel={editor.kind === "member" ? "Remove" : "Delete"}
           />
         </form>
       )}
     </Modal>
+  );
+}
+
+function RemoveMember({
+  member,
+  onCancel,
+  onDone,
+}: {
+  member: Member;
+  onCancel: () => void;
+  onDone: () => void;
+}) {
+  const { data, apply, notify, currentMemberId } = usePlanner();
+  const others = data.members.filter((m) => m.id !== member.id);
+  const [heir, setHeir] = useState(
+    others.find((m) => m.id === currentMemberId)?.id ?? others[0].id,
+  );
+  const [saving, setSaving] = useState(false);
+  const owned = ownedBy(data, member.id);
+  const parts = [
+    [owned.tasks.length, "chore"],
+    [owned.events.length, "event"],
+    [owned.notes.length, "note"],
+  ] as const;
+  const summary = parts
+    .filter(([n]) => n > 0)
+    .map(([n, word]) => `${n} ${word}${n === 1 ? "" : "s"}`)
+    .join(", ");
+  async function confirm() {
+    setSaving(true);
+    const ok = await apply(removeMemberChanges(data, member.id, heir));
+    setSaving(false);
+    if (ok) {
+      notify(`${member.name} removed.`);
+      onDone();
+    }
+  }
+  return (
+    <div>
+      <p className="settings-description">
+        Remove {member.name} from {data.settings.familyName}?{" "}
+        {summary
+          ? `They have ${summary} to hand over, and they’ll be taken off any shared events.`
+          : "They have no chores, notes or events of their own."}
+      </p>
+      {summary && (
+        <Field label={`Who takes over from ${member.name}?`}>
+          <select value={heir} onChange={(e) => setHeir(e.target.value)}>
+            {others.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
+      <div className="form-actions">
+        <span />
+        <button type="button" className="button secondary" onClick={onCancel}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="button danger"
+          onClick={confirm}
+          disabled={saving}
+        >
+          {saving ? "Removing…" : `Remove ${member.name}`}
+        </button>
+      </div>
+    </div>
   );
 }

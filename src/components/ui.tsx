@@ -6,9 +6,35 @@ import {
   useId,
   useRef,
   type ReactElement,
+  type RefObject,
 } from "react";
 import { ArrowRight, Check, X, type LucideIcon } from "lucide-react";
 import { type Member } from "@/lib/data";
+
+/** Closes a popover on Escape or a click outside `ref`. */
+export function useDismiss(
+  ref: RefObject<HTMLElement | null>,
+  open: boolean,
+  onClose: () => void,
+) {
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (
+        e instanceof KeyboardEvent
+          ? e.key === "Escape"
+          : !ref.current?.contains(e.target as Node)
+      )
+        onClose();
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [ref, open, onClose]);
+}
 
 export function Avatar({
   member,
@@ -203,11 +229,13 @@ export function FormActions({
   saving,
   label = "Save",
   onDelete,
+  deleteLabel = "Delete",
 }: {
   onClose: () => void;
   saving?: boolean;
   label?: string;
   onDelete?: () => void;
+  deleteLabel?: string;
 }) {
   return (
     <div className="form-actions">
@@ -218,7 +246,7 @@ export function FormActions({
           onClick={onDelete}
           disabled={saving}
         >
-          Delete
+          {deleteLabel}
         </button>
       )}
       <span />

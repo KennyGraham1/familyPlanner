@@ -1,151 +1,88 @@
 "use client";
 import { useState } from "react";
-import { Heart, House, KeyRound, LogOut } from "lucide-react";
-import { getCloud } from "@/lib/cloud";
+import { LogOut } from "lucide-react";
+import { errorMessage } from "@/lib/errors";
 import { usePlanner } from "./planner-provider";
 import { Field } from "./ui";
+import { AuthCard as Gate } from "./account-auth";
+export { AuthScreen } from "./account-auth";
 
-function Gate({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <main className="auth-screen">
-      <div className="card auth-card">
-        <div className="auth-brand">
-          <span className="brand-icon">
-            <House size={24} />
-            <Heart size={10} />
-          </span>
-          <span>
-            kinfolk<span className="brand-period">.</span>
-          </span>
-        </div>
-        <h1>{title}</h1>
-        <p className="auth-subtitle">{subtitle}</p>
-        {children}
-      </div>
-    </main>
+export function ProfilePicker({ onDone }: { onDone?: () => void }) {
+  const { data, access, userId, chooseProfile, currentMemberId } = usePlanner();
+  const available = data.members.filter(
+    (m) => !access.some((a) => a.member_id === m.id && a.user_id !== userId),
   );
-}
-
-const errorMessage = (e: unknown, fallback: string) =>
-  e instanceof Error ? e.message : fallback;
-
-export function AuthScreen() {
-  const { refreshCloud, syncError } = usePlanner();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [selected, setSelected] = useState(
+    available.some((m) => m.id === currentMemberId) ? currentMemberId : "new",
+  );
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError("");
-    setMessage("");
     setLoading(true);
-    const form = new FormData(e.currentTarget);
-    const credentials = {
-      email: String(form.get("email")),
-      password: String(form.get("password")),
-    };
+    setError("");
+    const name = String(new FormData(e.currentTarget).get("name") ?? "");
     try {
-      const cloud = getCloud()!;
-      if (mode === "signin") {
-        const { error } = await cloud.auth.signInWithPassword(credentials);
-        if (error) throw error;
-      } else {
-        const { data: result, error } = await cloud.auth.signUp({
-          ...credentials,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        if (!result.session) {
-          setMessage(
-            "Check your email to confirm your account, then come back and sign in.",
-          );
-          setMode("signin");
-          return;
-        }
-      }
-      await refreshCloud();
+      await chooseProfile(selected === "new" ? null : selected, name);
+      onDone?.();
     } catch (e) {
-      setError(errorMessage(e, "Could not connect. Please try again."));
+      setError(errorMessage(e, "Could not link this profile."));
     } finally {
       setLoading(false);
     }
   }
   return (
-    <Gate
-      title={mode === "signin" ? "Sign in" : "Create your account"}
-      subtitle={
-        mode === "signin"
-          ? "Sign in to see your family’s plans."
-          : "Then set up your family or join one with an invite code."
-      }
-    >
-      <div className="segmented-control account-tabs">
-        <button
-          type="button"
-          className={mode === "signin" ? "active" : ""}
-          onClick={() => setMode("signin")}
-        >
-          Sign in
-        </button>
-        <button
-          type="button"
-          className={mode === "signup" ? "active" : ""}
-          onClick={() => setMode("signup")}
-        >
-          Create account
-        </button>
-      </div>
-      <form onSubmit={submit}>
-        <Field label="Email address">
+    <form onSubmit={submit}>
+      <Field label="Your family profile">
+        <select value={selected} onChange={(e) => setSelected(e.target.value)}>
+          {available.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+          <option value="new">Create a profile for me</option>
+        </select>
+      </Field>
+      {selected === "new" && (
+        <Field label="Your name">
           <input
-            type="email"
-            name="email"
-            autoComplete="email"
+            name="name"
             required
-            autoFocus
-            placeholder="you@example.com"
+            maxLength={150}
+            autoComplete="given-name"
           />
         </Field>
-        <Field label="Password">
-          <input
-            type="password"
-            name="password"
-            autoComplete={
-              mode === "signup" ? "new-password" : "current-password"
-            }
-            minLength={8}
-            required
-            placeholder="At least 8 characters"
-          />
-        </Field>
-        <button className="button primary full-width" disabled={loading}>
-          <KeyRound size={16} />
-          {loading
-            ? "One moment…"
-            : mode === "signin"
-              ? "Sign in"
-              : "Create account"}
-        </button>
-      </form>
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
       )}
-      {(error || syncError) && (
+      <p className="form-hint">
+        This links your account to your name, assignments and reminders. Other
+        people keep their own profiles.
+      </p>
+      <button className="button primary" disabled={loading}>
+        {loading ? "Saving…" : "Use this profile"}
+      </button>
+      {error && (
         <p className="form-error" role="alert">
-          {error || syncError}
+          {error}
         </p>
       )}
+    </form>
+  );
+}
+
+export function ProfileScreen() {
+  const { data, signOut } = usePlanner();
+  return (
+    <Gate
+      title="Which family member are you?"
+      subtitle={`You’ve joined ${data.settings.familyName}. Choose your profile or create one.`}
+    >
+      <ProfilePicker />
+      <button
+        className="text-button auth-return"
+        onClick={() => void signOut()}
+      >
+        Sign out
+      </button>
     </Gate>
   );
 }

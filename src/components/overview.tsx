@@ -21,6 +21,8 @@ import {
   eventsOn,
   formatDate,
   formatTime,
+  isMultiDay,
+  occurrenceLabel,
   recipes,
   startOfWeek,
   type FamilyEvent,
@@ -51,9 +53,12 @@ export type ViewProps = {
 };
 export function EventRow({
   event,
+  day,
   onClick,
 }: {
   event: FamilyEvent;
+  /** The day being shown, for multi-day and all-day labels. */
+  day: string;
   onClick: () => void;
 }) {
   const { data } = usePlanner();
@@ -65,8 +70,10 @@ export function EventRow({
   return (
     <button className={`event-row ${color}-event`} onClick={onClick}>
       <span className="event-time">
-        <strong>{formatTime(event.start)}</strong>
-        <small>{formatTime(event.end)}</small>
+        <strong>{occurrenceLabel(event, day)}</strong>
+        {!event.allDay && !isMultiDay(event) && (
+          <small>{formatTime(event.end)}</small>
+        )}
       </span>
       <span className="event-stripe" />
       <span className="event-detail">
@@ -82,15 +89,14 @@ export function EventRow({
   );
 }
 export function Overview({ navigate, open, openRecipe }: ViewProps) {
-  const { data, apply, notify } = usePlanner();
+  const { data, apply, notify, currentMemberId } = usePlanner();
   const [selectedDay, setSelectedDay] = useState(dateKey(new Date()));
   const [week, setWeek] = useState(
     startOfWeek(new Date(), data.settings.weekStartsMonday),
   );
   const today = dateKey(new Date());
   const current =
-    data.members.find((m) => m.id === data.settings.currentMemberId) ??
-    data.members[0];
+    data.members.find((m) => m.id === currentMemberId) ?? data.members[0];
   const todayEvents = eventsOn(data, today);
   const selectedEvents = eventsOn(data, selectedDay);
   const todayTasks = data.tasks.filter((t) => t.due <= today);
@@ -220,6 +226,7 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                 <EventRow
                   key={event.id}
                   event={event}
+                  day={selectedDay}
                   onClick={() => open({ kind: "event", item: event })}
                 />
               ))

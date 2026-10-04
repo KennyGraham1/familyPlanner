@@ -56,7 +56,7 @@ This integration is implemented but **requires your own Supabase project and has
 6. Open the app. It now starts on a sign-in screen: choose **Create account**, confirm the email and sign in. Then enter your name and family name to create your family space. You start as its only member; add everyone else from the sidebar or **Family settings**.
 7. The person who created the space can choose **Create invite code**. A family member creates their own account and enters this code under **Join family space**. Share it privately.
 
-Plans refresh every 15 seconds and when a window regains focus. Changes are applied as atomic operations to the latest household document, so changes to different records do not overwrite each other. Changes to the same record use the last saved version. Failed saves are reported and must be retried; cloud mode does not claim to queue changes offline.
+Open apps update live: Supabase Realtime notifies every family member's app when plans change, and each fetches the latest version within about a second. If the live connection drops, the app checks every 15 seconds and whenever it returns to the screen. The status line at the bottom of each page says "Live" while connected. Changes are applied as atomic operations to the latest household document, so changes to different records do not overwrite each other. Changes to the same record use the last saved version. Failed saves are reported and must be retried; cloud mode does not claim to queue changes offline.
 
 Access is restricted to household members. Direct client writes are disabled; authenticated database functions check membership and validate the resulting document. Invite codes contain 192 bits of randomness, are stored hashed, and expire after seven days. A new code invalidates the previous one. Every signed-in household member can edit shared plans; only the household creator can create invitations. Accounts currently belong to one household. Household membership administration is done in Supabase; local family profiles are organisational labels, not access-control roles.
 
@@ -64,14 +64,35 @@ When Supabase is configured, the planner is only available to signed-in members;
 
 Before relying on a live shared deployment, check with two separate accounts that an invited member can read and edit the same plan and an unrelated account cannot read the household or execute its mutations. Verify invite expiry, invalid codes, and reconnect behaviour in your Supabase project.
 
+## Enable phone reminders
+
+Reminders are sent as push notifications, even when the planner is closed. Supabase Cron calls `/api/reminders/send` every minute; the app works out what is due for each device and sends it. This works on Vercel Hobby.
+
+1. Generate keys (once): `npm run setup:push -- https://kinfolk-graham.vercel.app`. This writes `.env.push.local` (ignored by Git) with `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` and `CRON_SECRET`. Keep it private.
+2. In **Vercel → Project → Settings → Environment Variables** (Production), add those four values and `SUPABASE_SECRET_KEY` (Supabase → **Project Settings → API Keys** → secret key). These are server-only: never prefix them with `NEXT_PUBLIC_`. Redeploy.
+3. Check `https://kinfolk-graham.vercel.app/api/push/config` shows `"configured":true`.
+4. In the Supabase **SQL Editor**, store the address and secret in Vault, using the same `CRON_SECRET` as Vercel:
+
+   ```sql
+   select vault.create_secret('https://kinfolk-graham.vercel.app', 'kinfolk_site_url');
+   select vault.create_secret('<your CRON_SECRET>', 'kinfolk_cron_secret');
+   ```
+
+5. Run [`supabase/schedule-reminders.sql`](supabase/schedule-reminders.sql) (after `schema.sql`). It turns on `pg_cron` and `pg_net` and schedules the job. Running it again updates the same job.
+6. On each phone or computer: **Family settings → Phone reminders → Enable on this device**. On iPhone or iPad (iOS 16.4+), first open the site in Safari, choose **Share → Add to Home Screen**, and enable reminders from the installed app.
+
+Each device chooses its own reminders: its owner's or the whole family's, events (at the start or 5–60 minutes before) and a daily reminder for due chores. All-day events are reminded at 08:00 and multi-day events once, before their first day. A reminder is never sent twice to the same device.
+
+To check it is running, look at **Integrations → Cron** in Supabase, or run `select status_code, content from net._http_response order by created desc limit 5;` — a working run returns status 200 with counts such as `{"sent":1,...}`. To change the secret, update `CRON_SECRET` in Vercel and `kinfolk_cron_secret` in Vault together.
+
 ## Storage and scope
 
 - Local plans use `localStorage` under `kinfolk-planner-v1`. They persist through reloads and update other tabs on the same browser origin. Clearing browser data removes them; download regular backups.
-- Dates and times represent local household wall-clock time, without travel-time-zone conversion. Calendar exports use floating local times. Overnight events are not supported.
-- Reminders appear inside the app. Push notifications, email reminders and two-way Google/Outlook calendar sync are not implemented.
+- Dates and times represent local household wall-clock time, without travel-time-zone conversion. Calendar exports use floating local times. Events can be all day, span several days (including overnight) and repeat weekly, every two weeks, monthly or yearly.
+- Reminders appear inside the app and, once set up, as phone notifications (see above). Email reminders and two-way Google/Outlook calendar sync are not implemented.
 - The recipe library is curated. Custom recipes, dietary/allergy verification and nutrition calculations are not implemented. Food photographs are illustrative.
-- The home-screen manifest supports adding a shortcut. A service worker and offline app-shell caching are not included.
-- The default data is fictional, dated relative to the first time you open the app. No real family information is included in the repository.
+- The home-screen manifest supports installing the app. Its service worker only shows reminders; it does not cache pages, so the planner needs a connection.
+- New families start empty. The fictional sample family in `src/lib/data.ts` is only used by the tests. No real family information is included in the repository.
 
 ## Checks
 

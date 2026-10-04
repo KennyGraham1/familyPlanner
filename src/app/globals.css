@@ -4327,6 +4327,99 @@ input[type="checkbox"] {
 #account {
   scroll-margin-top: 96px;
 }
+.password-input {
+  position: relative;
+}
+.password-input input {
+  width: 100%;
+  padding-right: 48px;
+}
+.password-input .icon-button {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 36px;
+  min-height: 36px;
+}
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 18px;
+}
+.auth-return {
+  display: inline-block;
+  margin-top: 20px;
+}
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.access-list {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+}
+.access-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.access-list strong,
+.access-list small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.access-list small {
+  margin-top: 5px;
+  color: var(--text-muted);
+}
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+.danger-text {
+  color: #a52a3e;
+}
+.profile-choice summary {
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.recovery-copies {
+  display: grid;
+  gap: 12px;
+  margin-top: 22px;
+}
+.recovery-copies h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.recovery-copies button {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 500px) {
+  .access-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 .auth-screen {
   min-height: 100dvh;
   display: flex;
@@ -4377,4 +4470,224 @@ input[type="checkbox"] {
   .auth-card {
     padding: 24px 20px;
   }
+}
+/* Calendar: jump-to-month picker, all-day events, month overflow and year view */
+.calendar-title {
+  position: relative;
+}
+.calendar-title-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: inherit;
+}
+.calendar-title-button:hover {
+  background: var(--purple-light);
+}
+.month-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 264px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px #3c285a1f;
+}
+.month-picker-year {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.month-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.month-picker-grid button {
+  padding: 9px 0;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.month-picker-grid button:hover {
+  background: var(--purple-light);
+}
+.month-picker-grid button.active {
+  background: var(--purple);
+  color: #fff;
+}
+.calendar-event.all-day {
+  box-shadow: inset 3px 0 0 currentColor;
+}
+.calendar-event > span svg {
+  flex-shrink: 0;
+}
+.day-number {
+  width: 25px;
+  height: 25px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  color: inherit;
+}
+.day-number:not(.today-number):hover {
+  background: var(--purple-light);
+}
+.more-events {
+  font-size: 11px;
+  color: var(--purple-dark);
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+.more-events:hover {
+  background: var(--purple-light);
+}
+.calendar-container.week .calendar-day {
+  min-height: 300px;
+}
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.year-month {
+  padding: 16px;
+}
+.year-month-title {
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 10px;
+  padding: 2px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+  color: var(--ink);
+}
+.year-month-title:hover {
+  background: var(--purple-light);
+}
+.year-month-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+.year-weekday {
+  font-size: 10px;
+  color: var(--subtle);
+  padding-bottom: 4px;
+}
+.year-day {
+  position: relative;
+  font-size: 11px;
+  padding: 5px 0 8px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+.year-day:hover {
+  background: var(--purple-light);
+}
+.year-day.busy {
+  color: var(--ink);
+  font-weight: 650;
+}
+.year-day.today {
+  background: var(--purple);
+  color: #fff;
+}
+.year-day > .member-dot {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translateX(-50%);
+}
+.inline-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin-bottom: 16px;
+}
+@media (max-width: 1200px) {
+  .year-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .year-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .year-month {
+    padding: 12px 8px;
+  }
+  .calendar-container.week .calendar-day {
+    min-height: 240px;
+  }
+}
+/* Account menu: who is signed in, and a visible way to sign out */
+.account-menu-wrap {
+  position: relative;
+}
+.account-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 40;
+  width: 240px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 14px 34px #3c285a1f;
+}
+.account-menu-who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 10px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.account-menu-who strong {
+  font-size: 13px;
+}
+.account-menu-who small {
+  font-size: 11px;
+  color: var(--subtle);
+  overflow-wrap: anywhere;
+}
+.account-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  text-align: left;
+}
+.account-menu > button:hover,
+.account-menu > button:focus-visible {
+  background: var(--purple-light);
+}
+.account-menu .account-menu-signout {
+  color: #8a3f4c;
+}
+.account-menu .account-menu-signout:hover,
+.account-menu .account-menu-signout:focus-visible {
+  background: #fcf0f1;
+}
+.signout-nav {
+  color: #8a3f4c;
 }

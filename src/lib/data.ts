@@ -34,6 +34,30 @@ export const memberSchema = z.object({
   color: z.enum(colors),
   emoji: z.string().max(10),
 });
+export const repeats = [
+  "none",
+  "weekly",
+  "fortnightly",
+  "monthly",
+  "yearly",
+] as const;
+export const repeatLabels: Record<(typeof repeats)[number], string> = {
+  none: "Does not repeat",
+  weekly: "Every week",
+  fortnightly: "Every 2 weeks",
+  monthly: "Every month",
+  yearly: "Every year",
+};
+// Shortest gap between occurrences; a multi-day repeating event must be shorter.
+const repeatInterval = { weekly: 7, fortnightly: 14, monthly: 28, yearly: 365 };
+/** Days since 1970-01-01 for a YYYY-MM-DD key, independent of time zone and DST. */
+export function dayNumber(key: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  return Date.UTC(y, m - 1, d) / 86400000;
+}
+function keyFromDayNumber(n: number) {
+  return new Date(n * 86400000).toISOString().slice(0, 10);
+}
 export const eventSchema = z
   .object({
     id,
@@ -44,7 +68,7 @@ export const eventSchema = z
     memberIds: z.array(id).min(1),
     location: z.string().max(200),
     notes: z.string().max(2000),
-    repeat: z.enum(["none", "weekly"]),
+    repeat: z.enum(repeats),
     category: z.enum([
       "Activity",
       "School",
@@ -52,8 +76,26 @@ export const eventSchema = z
       "Family time",
       "Work",
     ]),
+    // Optional so families saved before these existed stay valid.
+    /** Last day of a multi-day event; absent for single-day events. */
+    endDate: dateSchema.optional(),
+    /** Last day a repeating event may start on; absent repeats forever. */
+    until: dateSchema.optional(),
+    allDay: z.boolean().optional(),
   })
-  .refine((e) => e.end > e.start, "End time must be after start time");
+  .superRefine((e, ctx) => {
+    const issue = (path: string, message: string) =>
+      ctx.addIssue({ code: "custom", path: [path], message });
+    const span = e.endDate ? dayNumber(e.endDate) - dayNumber(e.date) : 0;
+    if (span < 0) issue("endDate", "End date can’t be before the start date");
+    // Overnight and all-day events may end at an earlier clock time.
+    if (span === 0 && !e.allDay && e.end <= e.start)
+      issue("end", "End time must be after start time");
+    if (e.until && e.until < e.date)
+      issue("until", "The repeat can’t end before the event starts");
+    if (e.repeat !== "none" && span >= repeatInterval[e.repeat])
+      issue("endDate", "A repeating event must end before it repeats");
+  });
 export const taskSchema = z.object({
   id,
   title: short,
@@ -203,21 +245,73 @@ export function formatTime(time: string) {
   const [h, m] = time.split(":").map(Number);
   return `${h % 12 || 12}${m ? ":" + String(m).padStart(2, "0") : ""}${h >= 12 ? " pm" : " am"}`;
 }
-export function occursOn(event: FamilyEvent, day: string) {
-  return (
-    event.date === day ||
-    (event.repeat === "weekly" &&
-      day >= event.date &&
-      fromKey(event.date).getDay() === fromKey(day).getDay())
-  );
+/** Whether an occurrence of the event begins on `day`. */
+export function startsOn(event: FamilyEvent, day: string) {
+  if (day < event.date || (event.until && day > event.until)) return false;
+  const diff = dayNumber(day) - dayNumber(event.date);
+  switch (event.repeat) {
+    case "none":
+      return diff === 0;
+    case "weekly":
+      return diff % 7 === 0;
+    case "fortnightly":
+      return diff % 14 === 0;
+    // Months without that day (e.g. the 31st) and non-leap years for 29 Feb are skipped.
+    case "monthly":
+      return day.slice(8) === event.date.slice(8);
+    case "yearly":
+      return day.slice(5) === event.date.slice(5);
+  }
 }
+export type Occurrence = { start: string; end: string };
+/** The occurrence of the event that covers `day`, with its first and last date. */
+export function occurrenceOn(
+  event: FamilyEvent,
+  day: string,
+): Occurrence | null {
+  if (day < event.date) return null;
+  const last = event.endDate ?? event.date;
+  if (event.repeat === "none")
+    return day <= last ? { start: event.date, end: last } : null;
+  // A repeating event is shorter than its interval, so at most one occurrence covers the day.
+  const span = dayNumber(last) - dayNumber(event.date);
+  const n = dayNumber(day);
+  for (let offset = 0; offset <= span; offset++) {
+    const start = keyFromDayNumber(n - offset);
+    if (startsOn(event, start))
+      return { start, end: keyFromDayNumber(n - offset + span) };
+  }
+  return null;
+}
+export function occursOn(event: FamilyEvent, day: string) {
+  return occurrenceOn(event, day) !== null;
+}
+/** A short time label for the event on a given day, e.g. "9 am", "From 6 pm" or "Day 2 of 3". */
+export function occurrenceLabel(event: FamilyEvent, day: string) {
+  const occurrence = occurrenceOn(event, day);
+  if (!occurrence || occurrence.start === occurrence.end)
+    return event.allDay ? "All day" : formatTime(event.start);
+  if (!event.allDay && day === occurrence.start)
+    return `From ${formatTime(event.start)}`;
+  if (!event.allDay && day === occurrence.end)
+    return `Until ${formatTime(event.end)}`;
+  const index = dayNumber(day) - dayNumber(occurrence.start) + 1;
+  const length = dayNumber(occurrence.end) - dayNumber(occurrence.start) + 1;
+  return `Day ${index} of ${length}`;
+}
+export const isMultiDay = (event: FamilyEvent) =>
+  Boolean(event.endDate && event.endDate !== event.date);
 export function eventsOn(data: PlannerData, day: string, member = "all") {
   return data.events
     .filter(
       (e) =>
         occursOn(e, day) && (member === "all" || e.memberIds.includes(member)),
     )
-    .sort((a, b) => a.start.localeCompare(b.start));
+    .sort(
+      (a, b) =>
+        Number(!a.allDay && !isMultiDay(a)) -
+          Number(!b.allDay && !isMultiDay(b)) || a.start.localeCompare(b.start),
+    );
 }
 export function uid() {
   return crypto.randomUUID();
@@ -250,6 +344,58 @@ export function applyMutation(
       ? filtered.map((x) => (x.id === mutation.value.id ? mutation.value : x))
       : [...filtered, mutation.value],
   };
+}
+/** Items that would be left without anyone if this member were removed. */
+export function ownedBy(data: PlannerData, memberId: string) {
+  return {
+    events: data.events.filter(
+      (e) => e.memberIds.length === 1 && e.memberIds[0] === memberId,
+    ),
+    tasks: data.tasks.filter((t) => t.memberId === memberId),
+    notes: data.notes.filter((n) => n.memberId === memberId),
+  };
+}
+/**
+ * Removes a member as one batch. Their chores, notes and events only they were in
+ * move to `heirId`; shared events simply drop them.
+ */
+export function removeMemberChanges(
+  data: PlannerData,
+  memberId: string,
+  heirId: string,
+): Mutation[] {
+  const changes: Mutation[] = [];
+  for (const event of data.events) {
+    if (!event.memberIds.includes(memberId)) continue;
+    const others = event.memberIds.filter((id) => id !== memberId);
+    changes.push({
+      collection: "events",
+      action: "upsert",
+      value: { ...event, memberIds: others.length ? others : [heirId] },
+    });
+  }
+  for (const task of data.tasks)
+    if (task.memberId === memberId)
+      changes.push({
+        collection: "tasks",
+        action: "upsert",
+        value: { ...task, memberId: heirId },
+      });
+  for (const note of data.notes)
+    if (note.memberId === memberId)
+      changes.push({
+        collection: "notes",
+        action: "upsert",
+        value: { ...note, memberId: heirId },
+      });
+  if (data.settings.currentMemberId === memberId)
+    changes.push({
+      collection: "settings",
+      action: "settings",
+      value: { ...data.settings, currentMemberId: heirId },
+    });
+  changes.push({ collection: "members", action: "remove", id: memberId });
+  return changes;
 }
 export function ingredientsToShopping(
   data: PlannerData,

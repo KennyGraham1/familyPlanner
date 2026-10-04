@@ -176,7 +176,8 @@ test("meal planning connects recipes to dinner and deduplicates shopping ingredi
   await expect(dialog).not.toBeVisible();
   expect(
     (await saved(page)).meals.find(
-      (m: { date: string }) => m.date === "2026-10-09",
+      (m: { date: string; slot: string }) =>
+        m.date === "2026-10-09" && m.slot === "Dinner",
     )?.recipeId,
   ).toBe("pasta");
 });
@@ -367,4 +368,139 @@ test("corrupt local data is preserved until a valid backup is restored", async (
     .fill("Recovered family");
   await page.getByRole("button", { name: "Save preferences" }).click();
   expect((await saved(page)).settings.familyName).toBe("Recovered family");
+});
+
+test("removing a family member hands their chores to someone else", async ({
+  page,
+}) => {
+  await go(page, "settings");
+  const before = await saved(page);
+  const olivers = before.tasks
+    .filter((t: { memberId: string }) => t.memberId === "oliver")
+    .map((t: { id: string }) => t.id);
+  expect(olivers.length).toBeGreaterThan(0);
+  await page
+    .locator(".settings-members")
+    .getByRole("button", { name: /Oliver/ })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Remove", exact: true }).click();
+  await dialog.getByLabel("Who takes over from Oliver?").selectOption("sophie");
+  await dialog.getByRole("button", { name: "Remove Oliver" }).click();
+  await expect(dialog).not.toBeVisible();
+  const after = await saved(page);
+  expect(after.members.map((m: { id: string }) => m.id)).not.toContain(
+    "oliver",
+  );
+  for (const id of olivers)
+    expect(after.tasks.find((t: { id: string }) => t.id === id)?.memberId).toBe(
+      "sophie",
+    );
+  await expect(
+    page.locator(".settings-members").getByRole("button", { name: /Oliver/ }),
+  ).toHaveCount(0);
+});
+
+test("yearly and multi-day events show across years", async ({ page }) => {
+  await go(page, "calendar");
+  const dialog = page.getByRole("dialog");
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  await dialog.getByLabel("What's happening?").fill("Gran’s birthday");
+  await dialog.getByLabel("All day").check();
+  await dialog.getByLabel("Date", { exact: true }).fill("2026-10-20");
+  await dialog.getByLabel("Repeat", { exact: true }).selectOption("yearly");
+  await dialog.getByRole("button", { name: "Add event", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  await dialog.getByLabel("What's happening?").fill("Beach trip");
+  await dialog.getByLabel("Several days").check();
+  await dialog.getByLabel("Date", { exact: true }).fill("2026-12-30");
+  await dialog.getByLabel("End date").fill("2027-01-02");
+  await dialog.getByLabel("Starts at").fill("18:00");
+  await dialog.getByLabel("Ends at").fill("14:00");
+  await dialog.getByRole("button", { name: "Add event", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+
+  const events = (await saved(page)).events;
+  expect(
+    events.find((e: { title: string }) => e.title === "Gran’s birthday"),
+  ).toMatchObject({ allDay: true, repeat: "yearly", date: "2026-10-20" });
+  expect(
+    events.find((e: { title: string }) => e.title === "Beach trip"),
+  ).toMatchObject({ date: "2026-12-30", endDate: "2027-01-02" });
+
+  await page.getByRole("button", { name: "Year", exact: true }).click();
+  await page.getByRole("button", { name: "Next year" }).click();
+  await expect(page.locator(".year-grid")).toHaveAttribute(
+    "aria-label",
+    "2027 at a glance",
+  );
+  await expect(page.locator('.year-day[title*="Gran’s birthday"]')).toHaveCount(
+    1,
+  );
+  await expect(page.locator('.year-day[title*="Beach trip"]')).toHaveCount(2);
+
+  const jump = page.getByRole("button", { name: /Jump to a month/ });
+  await jump.click();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("dialog", { name: "Jump to a month" }),
+  ).toHaveCount(0);
+  await jump.click();
+  await page.getByRole("button", { name: "Jan", exact: true }).click();
+  await page.getByRole("button", { name: "Month", exact: true }).click();
+  const trip = page.locator(".calendar-event", { hasText: "Beach trip" });
+  await expect(trip).toHaveCount(4);
+  await expect(trip.nth(0)).toContainText("From 6 pm");
+  await expect(trip.nth(2)).toContainText("Day 3 of 4");
+  await expect(trip.nth(3)).toContainText("Until 2 pm");
+});
+
+test("changes made elsewhere appear without reloading", async ({
+  context,
+  page,
+}) => {
+  await go(page, "settings");
+  const other = await context.newPage();
+  await go(other, "settings");
+  const name = (p: Page) => p.getByLabel("Your family space", { exact: true });
+
+  await name(page).fill("The Live family");
+  await page.getByRole("button", { name: "Save preferences" }).click();
+  // The open form follows the change instead of keeping the old name.
+  await expect(name(other)).toHaveValue("The Live family");
+  await expect(other.locator(".family-switcher")).toContainText(
+    "The Live family",
+  );
+
+  await other.evaluate(() => (window.location.hash = "shopping"));
+  await go(page, "shopping");
+  await page.getByLabel("New shopping item").fill("Live sync milk");
+  await page
+    .locator(".quick-add-form")
+    .getByRole("button", { name: "Add item" })
+    .click();
+  await expect(
+    other.getByRole("checkbox", { name: "Bought Live sync milk" }),
+  ).toBeVisible();
+});
+
+test("unsaved preference edits are kept while other fields stay live", async ({
+  context,
+  page,
+}) => {
+  await go(page, "settings");
+  const other = await context.newPage();
+  await go(other, "settings");
+  // Unsaved change in the second tab.
+  await other
+    .getByLabel("Your family space", { exact: true })
+    .fill("Our draft name");
+  await page.getByLabel("Start the week on").selectOption("sunday");
+  await page.getByRole("button", { name: "Save preferences" }).click();
+  await expect(other.getByLabel("Start the week on")).toHaveValue("sunday");
+  await expect(
+    other.getByLabel("Your family space", { exact: true }),
+  ).toHaveValue("Our draft name");
 });

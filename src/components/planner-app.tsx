@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Bell,
@@ -12,6 +12,7 @@ import {
   Heart,
   House,
   LogIn,
+  LogOut,
   Menu,
   Plus,
   Search,
@@ -28,19 +29,19 @@ import {
   dateKey,
   eventsOn,
   formatDate,
-  formatTime,
+  occurrenceLabel,
   recipes,
   type Recipe,
 } from "@/lib/data";
 import { PlannerProvider, usePlanner } from "./planner-provider";
-import { Avatar, EmptyState, Modal } from "./ui";
+import { Avatar, EmptyState, Modal, useDismiss } from "./ui";
 import { EditorModal, type Editor } from "./forms";
 import { Overview, type View } from "./overview";
 import { Calendar } from "./calendar";
 import { Meals, RecipeModal } from "./meals";
 import { Shopping, Chores, Board } from "./lists";
 import { Settings } from "./settings";
-import { AuthScreen, SetupScreen } from "./onboarding";
+import { AuthScreen, SetupScreen, ProfileScreen } from "./onboarding";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Overview", Icon: House },
@@ -78,9 +79,13 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 export function PlannerApp() {
   return (
     <PlannerProvider>
-      <AppContent />
+      <SessionView />
     </PlannerProvider>
   );
+}
+function SessionView() {
+  const { household, userId } = usePlanner();
+  return <AppContent key={household ?? userId ?? "local"} />;
 }
 function AppContent() {
   const {
@@ -91,13 +96,20 @@ function AppContent() {
     household,
     syncError,
     busy,
+    live,
     email,
+    currentMemberId,
+    signOut,
   } = usePlanner();
   const [view, setView] = useState<View>("overview");
   const [editor, setEditor] = useState<Editor | null>(null);
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountMenu = useRef<HTMLDivElement>(null);
+  const closeAccount = useCallback(() => setAccountOpen(false), []);
+  useDismiss(accountMenu, accountOpen, closeAccount);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   useEffect(() => {
     const sync = () => {
@@ -141,8 +153,7 @@ function AppContent() {
   }
   const props = { navigate, open, openRecipe: (r: Recipe) => setRecipe(r) };
   const current =
-    data.members.find((m) => m.id === data.settings.currentMemberId) ??
-    data.members[0];
+    data.members.find((m) => m.id === currentMemberId) ?? data.members[0];
   const remaining = data.shopping.filter((i) => !i.done).length;
   const today = dateKey(new Date());
   const heading = titles[view];
@@ -158,6 +169,7 @@ function AppContent() {
   }[view as string];
   if (phase === "signin") return <AuthScreen />;
   if (phase === "setup") return <SetupScreen />;
+  if (phase === "profile") return <ProfileScreen />;
   if (phase === "loading")
     return (
       <div className="loading-screen">
@@ -273,6 +285,15 @@ function AppContent() {
             <SettingsIcon size={19} />
             <span>Family settings</span>
           </button>
+          {email && (
+            <button
+              className="nav-item signout-nav"
+              onClick={() => void signOut()}
+            >
+              <LogOut size={19} />
+              <span>Sign out</span>
+            </button>
+          )}
           <button className="sidebar-profile" onClick={openAccount}>
             <Avatar member={current} />
             <span>
@@ -323,14 +344,44 @@ function AppContent() {
               {eventsOn(data, today).length > 0 && <span />}
             </button>
             {email ? (
-              <button
-                className="profile-button"
-                aria-label={`Account: ${email}`}
-                title={email}
-                onClick={openAccount}
-              >
-                <Avatar member={current} small />
-              </button>
+              <div className="account-menu-wrap" ref={accountMenu}>
+                <button
+                  className="profile-button"
+                  aria-label={`Account: ${email}`}
+                  aria-haspopup="menu"
+                  aria-expanded={accountOpen}
+                  onClick={() => setAccountOpen(!accountOpen)}
+                >
+                  <Avatar member={current} small />
+                </button>
+                {accountOpen && (
+                  <div className="account-menu" role="menu">
+                    <div className="account-menu-who">
+                      <strong>{current.name}</strong>
+                      <small>{email}</small>
+                    </div>
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        openAccount();
+                      }}
+                    >
+                      <SettingsIcon size={16} /> Account settings
+                    </button>
+                    <button
+                      role="menuitem"
+                      className="account-menu-signout"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        void signOut();
+                      }}
+                    >
+                      <LogOut size={16} /> Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <button
                 className="button secondary signin-button"
@@ -387,7 +438,9 @@ function AppContent() {
               : household
                 ? syncError
                   ? "Connection problem"
-                  : "Connected to your family space"
+                  : live
+                    ? "Live: family changes appear instantly"
+                    : "Connected to your family space"
                 : "Your plans are saved on this device"}
           </div>
         </main>
@@ -441,7 +494,7 @@ function AppContent() {
                 <span>
                   <strong>{e.title}</strong>
                   <small>
-                    Today at {formatTime(e.start)}
+                    Today · {occurrenceLabel(e, today)}
                     {e.location ? " · " + e.location : ""}
                   </small>
                 </span>

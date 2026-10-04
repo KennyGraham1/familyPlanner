@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Cloud,
@@ -14,13 +14,26 @@ import {
 } from "lucide-react";
 import { dataSchema, type PlannerData } from "@/lib/data";
 import { getCloud } from "@/lib/cloud";
+import { errorMessage } from "@/lib/errors";
+import { FamilyAccessSettings } from "./family-access";
+import { ReminderSettings } from "./reminder-settings";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, Modal, SectionHeader } from "./ui";
 import type { ViewProps } from "./overview";
 
 export function Settings({ open }: ViewProps) {
-  const { data, apply, notify, replaceData, household, startOver } =
-    usePlanner();
+  const {
+    data,
+    apply,
+    notify,
+    replaceData,
+    restoreData,
+    household,
+    startOver,
+    isOwner,
+    revision,
+    busy,
+  } = usePlanner();
   const [familyName, setFamilyName] = useState(data.settings.familyName);
   const [currentMemberId, setCurrentMemberId] = useState(
     data.settings.currentMemberId,
@@ -28,9 +41,75 @@ export function Settings({ open }: ViewProps) {
   const [weekStartsMonday, setWeekStartsMonday] = useState(
     data.settings.weekStartsMonday,
   );
+  // Follow changes other family members make, except in fields you've changed
+  // and not saved yet (even if a save failed).
+  const [syncedSettings, setSyncedSettings] = useState(data.settings);
+  const [edited, setEdited] = useState<
+    Partial<Record<"familyName" | "currentMemberId" | "weekStartsMonday", true>>
+  >({});
+  if (syncedSettings !== data.settings) {
+    setSyncedSettings(data.settings);
+    if (!edited.familyName) setFamilyName(data.settings.familyName);
+    if (!edited.currentMemberId)
+      setCurrentMemberId(data.settings.currentMemberId);
+    if (!edited.weekStartsMonday)
+      setWeekStartsMonday(data.settings.weekStartsMonday);
+  }
   const [imported, setImported] = useState<PlannerData | null>(null);
   const [clearConfirm, setClearConfirm] = useState(false);
   const [startOverConfirm, setStartOverConfirm] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [previewRevision, setPreviewRevision] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+  const [copies, setCopies] = useState<{ id: string; created_at: string }[]>(
+    [],
+  );
+  const [backupError, setBackupError] = useState("");
+  useEffect(() => {
+    if (!household || !isOwner) return;
+    let active = true;
+    void getCloud()!
+      .from("planner_backups")
+      .select("id,created_at")
+      .eq("household_id", household)
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error)
+          setBackupError(
+            "Recovery copies could not be loaded. Check your connection.",
+          );
+        else {
+          setCopies(data ?? []);
+          setBackupError("");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [household, isOwner, revision]);
+  async function reviewCopy(id: string) {
+    setBackupError("");
+    const { data: copy, error } = await getCloud()!
+      .from("planner_backups")
+      .select("data")
+      .eq("id", id)
+      .eq("household_id", household!)
+      .single();
+    if (error) {
+      setBackupError(errorMessage(error, "Could not load this recovery copy."));
+      return;
+    }
+    const parsed = dataSchema.safeParse(copy.data);
+    if (!parsed.success) {
+      setBackupError("This recovery copy could not be read.");
+      return;
+    }
+    setImported(parsed.data);
+    setPreviewRevision(revision);
+    setConfirmed(false);
+  }
   const fileRef = useRef<HTMLInputElement>(null);
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -40,12 +119,16 @@ export function Settings({ open }: ViewProps) {
         action: "settings",
         value: {
           familyName: familyName.trim(),
-          currentMemberId,
+          currentMemberId: household
+            ? data.settings.currentMemberId
+            : currentMemberId,
           weekStartsMonday,
         },
       })
-    )
+    ) {
+      setEdited({});
       notify("Preferences saved.");
+    }
   }
   function download() {
     const url = URL.createObjectURL(
@@ -69,6 +152,8 @@ export function Settings({ open }: ViewProps) {
     try {
       const parsed = dataSchema.parse(JSON.parse(await file.text()));
       setImported(parsed);
+      setPreviewRevision(revision);
+      setConfirmed(false);
     } catch {
       notify(
         "That file is not a valid Kinfolk backup. Your current plans are unchanged.",
@@ -94,6 +179,7 @@ export function Settings({ open }: ViewProps) {
     <div className="settings-grid">
       <div>
         <CloudSettings />
+        <FamilyAccessSettings />
         <section className="card settings-card">
           <SectionHeader icon={Heart} title="Preferences" />
           <form onSubmit={save}>
@@ -102,30 +188,39 @@ export function Settings({ open }: ViewProps) {
                 required
                 value={familyName}
                 maxLength={150}
-                onChange={(e) => setFamilyName(e.target.value)}
+                onChange={(e) => {
+                  setEdited((x) => ({ ...x, familyName: true }));
+                  setFamilyName(e.target.value);
+                }}
               />
             </Field>
-            <Field
-              label="Who should we greet?"
-              hint="This is the default name for greetings and new plans in this family space."
-            >
-              <select
-                value={currentMemberId}
-                onChange={(e) => setCurrentMemberId(e.target.value)}
+            {!household && (
+              <Field
+                label="Who should we greet?"
+                hint="This is the default name for greetings and new plans in this family space."
               >
-                {data.members.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+                <select
+                  value={currentMemberId}
+                  onChange={(e) => {
+                    setEdited((x) => ({ ...x, currentMemberId: true }));
+                    setCurrentMemberId(e.target.value);
+                  }}
+                >
+                  {data.members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
             <Field label="Start the week on">
               <select
                 value={weekStartsMonday ? "monday" : "sunday"}
-                onChange={(e) =>
-                  setWeekStartsMonday(e.target.value === "monday")
-                }
+                onChange={(e) => {
+                  setEdited((x) => ({ ...x, weekStartsMonday: true }));
+                  setWeekStartsMonday(e.target.value === "monday");
+                }}
               >
                 <option value="monday">Monday</option>
                 <option value="sunday">Sunday</option>
@@ -169,6 +264,7 @@ export function Settings({ open }: ViewProps) {
         </section>
       </div>
       <div>
+        <ReminderSettings />
         <section className="card settings-card">
           <SectionHeader icon={ShieldCheck} title="Backup" />
           <p className="settings-description">
@@ -182,7 +278,7 @@ export function Settings({ open }: ViewProps) {
             </button>
             <button
               className="button secondary"
-              disabled={Boolean(household)}
+              disabled={busy || (Boolean(household) && !isOwner)}
               onClick={() => fileRef.current?.click()}
             >
               <Upload size={16} />
@@ -199,9 +295,34 @@ export function Settings({ open }: ViewProps) {
           />
           <p className="form-hint">
             {household
-              ? "Restoring a backup isn’t available in a shared family space."
+              ? isOwner
+                ? "Restoring replaces shared plans for everyone. A recovery copy is kept automatically."
+                : "Only the family owner can restore shared plans."
               : "Restoring replaces the plans in this browser. Download a backup first."}
           </p>
+          {household && isOwner && copies.length > 0 && (
+            <div className="recovery-copies">
+              <h3>Before your recent restores</h3>
+              <p className="form-hint">
+                The five most recent recovery copies are kept.
+              </p>
+              {copies.map((copy) => (
+                <button
+                  key={copy.id}
+                  className="text-button"
+                  disabled={busy || restoreBusy}
+                  onClick={() => void reviewCopy(copy.id)}
+                >
+                  Review copy from {new Date(copy.created_at).toLocaleString()}
+                </button>
+              ))}
+            </div>
+          )}
+          {backupError && (
+            <p className="form-error" role="alert">
+              {backupError}
+            </p>
+          )}
           {!household && (
             <div className="fresh-start">
               <div>
@@ -236,7 +357,9 @@ export function Settings({ open }: ViewProps) {
         <Modal
           title="Restore your family backup?"
           subtitle="Let’s make sure this is the right one."
-          onClose={() => setImported(null)}
+          onClose={() => {
+            if (!restoreBusy) setImported(null);
+          }}
         >
           <div className="backup-preview">
             <h3>{imported.settings.familyName}</h3>
@@ -250,21 +373,40 @@ export function Settings({ open }: ViewProps) {
             </p>
           </div>
           <p className="settings-description">
-            This will replace the plans currently saved in this browser.
-            Download your current backup if you’d like to keep it.
+            {household
+              ? "This replaces shared plans for everyone. Profiles linked to accounts are preserved, and a recovery copy is saved first. Account access stays the same."
+              : "This will replace the plans currently saved in this browser. Download your current backup if you’d like to keep it."}
           </p>
+          {household && (
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+              />
+              Replace shared plans for everyone
+            </label>
+          )}
           <div className="form-actions">
             <button
               className="button secondary"
+              disabled={restoreBusy}
               onClick={() => setImported(null)}
             >
               Cancel
             </button>
             <button
               className="button primary"
-              onClick={() => {
-                if (replaceData(imported)) {
+              disabled={
+                restoreBusy || busy || (Boolean(household) && !confirmed)
+              }
+              onClick={async () => {
+                setRestoreBusy(true);
+                const restored = await restoreData(imported, previewRevision);
+                setRestoreBusy(false);
+                if (restored) {
                   // The form still holds the previous family's settings.
+                  setEdited({});
                   setFamilyName(imported.settings.familyName);
                   setCurrentMemberId(imported.settings.currentMemberId);
                   setWeekStartsMonday(imported.settings.weekStartsMonday);
@@ -273,7 +415,7 @@ export function Settings({ open }: ViewProps) {
                 }
               }}
             >
-              Restore this backup
+              {restoreBusy ? "Restoring…" : "Restore this backup"}
             </button>
           </div>
         </Modal>
@@ -335,6 +477,7 @@ function CloudSettings() {
     cloudConfigured,
     email,
     household,
+    isOwner,
     syncError,
     refreshCloud,
     signOut,
@@ -354,7 +497,7 @@ function CloudSettings() {
       if (error) throw error;
       setInvite(token);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create invitation.");
+      setError(errorMessage(e, "Could not create invitation."));
     } finally {
       setLoading(false);
     }
@@ -414,14 +557,41 @@ function CloudSettings() {
             app.
           </p>
           <div className="backup-buttons">
-            <button
-              className="button secondary"
-              disabled={loading || busy}
-              onClick={getInvite}
-            >
-              <Plus size={16} />
-              Create invite code
-            </button>
+            {isOwner && (
+              <button
+                className="button secondary"
+                disabled={loading || busy}
+                onClick={getInvite}
+              >
+                <Plus size={16} />
+                Create invite code
+              </button>
+            )}
+            {isOwner && (
+              <button
+                className="button secondary"
+                disabled={loading || busy}
+                onClick={async () => {
+                  setLoading(true);
+                  setError("");
+                  const { error } = await getCloud()!.rpc(
+                    "planner_revoke_invite",
+                    { family_id: household },
+                  );
+                  if (error)
+                    setError(
+                      errorMessage(error, "Could not revoke the invite."),
+                    );
+                  else {
+                    setInvite("");
+                    notify("Existing invite codes have been cancelled.");
+                  }
+                  setLoading(false);
+                }}
+              >
+                Cancel invite codes
+              </button>
+            )}
             <button
               className="icon-button bordered"
               disabled={busy}

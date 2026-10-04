@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "A shared family planner for calendars, meal plans, shopping lists and chores.",
   applicationName: "Kinfolk",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
 };
 export const viewport: Viewport = {
   width: "device-width",

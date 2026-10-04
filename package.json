@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
-    "format": "prettier --write src tests *.ts *.mjs *.json"
+    "format": "prettier --write src tests *.ts *.mjs *.json",
+    "setup:push": "node scripts/setup-push.mjs",
+    "db:schema": "tsx scripts/db-schema.ts"
   },
   "keywords": [],
   "author": "",
@@ -26,14 +28,17 @@
     "next": "^16.3.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "web-push": "^3.6.7",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.6",
     "prettier": "^3.9.9",

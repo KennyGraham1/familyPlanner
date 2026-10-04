@@ -12,7 +12,11 @@ import {
   eventsOn,
   fromKey,
   ingredientsToShopping,
+  occurrenceLabel,
+  occurrenceOn,
   occursOn,
+  removeMemberChanges,
+  startsOn,
   startOfWeek,
 } from "../src/lib/data";
 
@@ -34,6 +38,46 @@ describe("new families", () => {
       family.notes,
     ])
       assert.equal(list.length, 0);
+  });
+});
+
+describe("removing a family member", () => {
+  const seed = createSeed(fromKey("2026-09-28"));
+  const after = removeMemberChanges(seed, "alex", "jamie").reduce(
+    applyMutation,
+    seed,
+  );
+  it("produces a valid family without them", () => {
+    assert.equal(dataSchema.safeParse(after).success, true);
+    assert.equal(
+      after.members.some((m) => m.id === "alex"),
+      false,
+    );
+  });
+  it("hands their chores and notes to the chosen person", () => {
+    for (const task of seed.tasks.filter((t) => t.memberId === "alex"))
+      assert.equal(
+        after.tasks.find((t) => t.id === task.id)?.memberId,
+        "jamie",
+      );
+    for (const note of seed.notes.filter((n) => n.memberId === "alex"))
+      assert.equal(
+        after.notes.find((n) => n.id === note.id)?.memberId,
+        "jamie",
+      );
+  });
+  it("drops them from shared events without adding anyone", () => {
+    for (const event of seed.events.filter(
+      (e) => e.memberIds.includes("alex") && e.memberIds.length > 1,
+    ))
+      assert.deepEqual(
+        after.events.find((e) => e.id === event.id)?.memberIds,
+        event.memberIds.filter((id) => id !== "alex"),
+      );
+  });
+  it("moves the greeting to the person taking over", () => {
+    assert.equal(seed.settings.currentMemberId, "alex");
+    assert.equal(after.settings.currentMemberId, "jamie");
   });
 });
 
@@ -150,6 +194,108 @@ describe("safe planner updates", () => {
         meals: [seed.meals[0], { ...seed.meals[0], id: "duplicate-slot" }],
       }).success,
       false,
+    );
+  });
+});
+
+describe("repeating and multi-day events", () => {
+  const base = createSeed(fromKey("2026-09-28")).events[0];
+  const event = (changes: Partial<typeof base>) => ({ ...base, ...changes });
+  it("repeats every week, every 2 weeks, monthly and yearly", () => {
+    const start = { date: "2026-01-31" };
+    assert.equal(
+      occursOn(event({ ...start, repeat: "weekly" }), "2026-02-07"),
+      true,
+    );
+    assert.equal(
+      occursOn(event({ ...start, repeat: "fortnightly" }), "2026-02-07"),
+      false,
+    );
+    assert.equal(
+      occursOn(event({ ...start, repeat: "fortnightly" }), "2026-02-14"),
+      true,
+    );
+    assert.equal(
+      occursOn(event({ ...start, repeat: "monthly" }), "2026-03-31"),
+      true,
+    );
+    // February has no 31st, so that month is skipped.
+    assert.equal(
+      occursOn(event({ ...start, repeat: "monthly" }), "2026-02-28"),
+      false,
+    );
+    assert.equal(
+      occursOn(event({ ...start, repeat: "yearly" }), "2031-01-31"),
+      true,
+    );
+    assert.equal(
+      occursOn(event({ ...start, repeat: "yearly" }), "2025-01-31"),
+      false,
+    );
+  });
+  it("stops repeating after the until date", () => {
+    const birthday = event({
+      date: "2026-05-04",
+      repeat: "yearly",
+      until: "2028-12-31",
+    });
+    assert.equal(occursOn(birthday, "2028-05-04"), true);
+    assert.equal(occursOn(birthday, "2029-05-04"), false);
+  });
+  it("covers every day of a multi-day event, including across years", () => {
+    const trip = event({
+      date: "2026-12-30",
+      endDate: "2027-01-02",
+      start: "18:00",
+      end: "14:00",
+    });
+    assert.equal(eventSchema.safeParse(trip).success, true);
+    for (const day of ["2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02"])
+      assert.deepEqual(occurrenceOn(trip, day), {
+        start: "2026-12-30",
+        end: "2027-01-02",
+      });
+    assert.equal(occursOn(trip, "2027-01-03"), false);
+    assert.equal(occurrenceLabel(trip, "2026-12-30"), "From 6 pm");
+    assert.equal(occurrenceLabel(trip, "2026-12-31"), "Day 2 of 4");
+    assert.equal(occurrenceLabel(trip, "2027-01-02"), "Until 2 pm");
+  });
+  it("repeats multi-day events from each start", () => {
+    const camp = event({
+      date: "2026-07-10",
+      endDate: "2026-07-12",
+      repeat: "yearly",
+      allDay: true,
+    });
+    assert.deepEqual(occurrenceOn(camp, "2027-07-11"), {
+      start: "2027-07-10",
+      end: "2027-07-12",
+    });
+    assert.equal(startsOn(camp, "2027-07-11"), false);
+    assert.equal(occurrenceLabel(camp, "2027-07-11"), "Day 2 of 3");
+  });
+  it("explains invalid date combinations", () => {
+    const message = (changes: Partial<typeof base>) =>
+      eventSchema.safeParse(event(changes)).error?.issues[0].message;
+    assert.equal(
+      message({ endDate: "2026-09-01" }),
+      "End date can’t be before the start date",
+    );
+    assert.equal(
+      message({ start: "15:00", end: "14:00" }),
+      "End time must be after start time",
+    );
+    assert.equal(
+      message({ repeat: "weekly", until: "2026-01-01" }),
+      "The repeat can’t end before the event starts",
+    );
+    assert.equal(
+      message({ repeat: "weekly", endDate: "2026-10-05" }),
+      "A repeating event must end before it repeats",
+    );
+    assert.equal(
+      message({ allDay: true, start: "00:00", end: "23:59" }),
+      undefined,
     );
   });
 });
