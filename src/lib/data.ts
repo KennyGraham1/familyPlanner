@@ -335,6 +335,59 @@ export function occurrenceLabel(event: FamilyEvent, day: string) {
 }
 export const isMultiDay = (event: FamilyEvent) =>
   Boolean(event.endDate && event.endDate !== event.date);
+export type NextUp = {
+  event: FamilyEvent;
+  /** The day the event happens on (YYYY-MM-DD). */
+  day: string;
+  /** Underway right now. */
+  ongoing: boolean;
+  /** Minutes until it starts, for events later today. */
+  minutesUntil: number | null;
+};
+const minutesOf = (time: string) => {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+};
+/**
+ * The next thing on the calendar after `now`: a timed event underway or later today,
+ * otherwise the first event on a coming day. All-day events don't count as "next"
+ * today, since they last all day.
+ */
+export function nextUp(
+  data: PlannerData,
+  now: Date,
+  member = "all",
+  lookAheadDays = 14,
+): NextUp | null {
+  const today = dateKey(now);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  // Earliest start first (the calendar lists all-day and multi-day events first).
+  const timedToday = eventsOn(data, today, member)
+    .filter((event) => {
+      const occurrence = occurrenceOn(event, today);
+      if (event.allDay || !occurrence || occurrence.start !== today)
+        return false;
+      // Finished one-day events are behind us; multi-day ones run on past today.
+      return occurrence.end !== today || minutesOf(event.end) > nowMinutes;
+    })
+    .sort((a, b) => a.start.localeCompare(b.start));
+  const [first] = timedToday;
+  if (first) {
+    const start = minutesOf(first.start);
+    return {
+      event: first,
+      day: today,
+      ongoing: start <= nowMinutes,
+      minutesUntil: start > nowMinutes ? start - nowMinutes : null,
+    };
+  }
+  for (let offset = 1; offset <= lookAheadDays; offset++) {
+    const day = dateKey(addDays(now, offset));
+    const [event] = eventsOn(data, day, member);
+    if (event) return { event, day, ongoing: false, minutesUntil: null };
+  }
+  return null;
+}
 export function eventsOn(data: PlannerData, day: string, member = "all") {
   return data.events
     .filter(

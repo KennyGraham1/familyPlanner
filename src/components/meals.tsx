@@ -96,7 +96,10 @@ export function RecipeModal({
       <img
         className="recipe-modal-photo"
         src={recipe.image}
-        alt={recipe.image.endsWith(".svg") ? "Food illustration" : recipe.name}
+        alt={recipe.name}
+        decoding="async"
+        width={960}
+        height={640}
       />
       <div className="recipe-modal-meta">
         <span>
@@ -363,7 +366,12 @@ export function Meals({ openRecipe }: ViewProps) {
                       className="planned-meal"
                       onClick={() => openRecipe(recipe)}
                     >
-                      <img src={recipe.image} alt={recipe.name} />
+                      <img
+                        src={recipe.image}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
                       <strong>{recipe.name}</strong>
                       <small>
                         <Clock3 size={12} />
@@ -457,7 +465,14 @@ export function Meals({ openRecipe }: ViewProps) {
             onClick={() => openRecipe(r)}
           >
             <div className="recipe-card-image">
-              <img src={r.image} alt="" loading="lazy" />
+              <img
+                src={r.image}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                width={960}
+                height={640}
+              />
               <span className="recipe-heart">
                 <Heart size={17} />
               </span>
@@ -515,7 +530,7 @@ export function Meals({ openRecipe }: ViewProps) {
               .filter((r) => matchesRecipe(r, pickerSearch))
               .map((r) => (
                 <button key={r.id} onClick={() => setChosen(r)}>
-                  <img src={r.image} alt="" />
+                  <img src={r.image} alt="" loading="lazy" decoding="async" />
                   <span>
                     <strong>{r.name}</strong>
                     <small>

@@ -46,18 +46,25 @@ import { Settings } from "./settings";
 import { AuthScreen, SetupScreen, ProfileScreen } from "./onboarding";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
-  { id: "overview", label: "Overview", Icon: House },
+  { id: "overview", label: "Today", Icon: House },
   { id: "calendar", label: "Calendar", Icon: CalendarDays },
   { id: "meals", label: "Meals", Icon: Utensils },
   { id: "shopping", label: "Shopping", Icon: ShoppingBasket },
   { id: "chores", label: "Chores", Icon: CheckSquare },
   { id: "board", label: "Family board", Icon: StickyNote },
 ];
+// Phone tab bar: the four places families visit daily; the rest live under "More".
+const tabs: { id: View; label: string; Icon: LucideIcon }[] = [
+  { id: "overview", label: "Today", Icon: House },
+  { id: "calendar", label: "Calendar", Icon: CalendarDays },
+  { id: "shopping", label: "Shopping", Icon: ShoppingBasket },
+  { id: "chores", label: "Chores", Icon: CheckSquare },
+];
 const titles: Record<
   View,
   { title: string; button: string; editor?: Editor["kind"] }
 > = {
-  overview: { title: "Overview", button: "Add something", editor: "quick" },
+  overview: { title: "Today", button: "Add something", editor: "quick" },
   calendar: {
     title: "Family calendar",
     button: "Add an event",
@@ -466,6 +473,42 @@ function AppContent() {
           </div>
         </main>
       </div>
+      <button
+        className="fab"
+        aria-label="Add something"
+        onClick={() => open({ kind: "quick" })}
+      >
+        <Plus size={26} />
+      </button>
+      <nav className="tab-bar" aria-label="Sections">
+        {tabs.map(({ id, label, Icon }) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className={view === id ? "active" : ""}
+            aria-current={view === id ? "page" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate(id);
+            }}
+          >
+            <Icon size={22} strokeWidth={view === id ? 2.2 : 1.8} />
+            <span>{label}</span>
+            {id === "shopping" && remaining > 0 && (
+              <i className="tab-count">{remaining}</i>
+            )}
+          </a>
+        ))}
+        <button
+          className={tabs.some((t) => t.id === view) ? "" : "active"}
+          aria-label="More: meals, family board and settings"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu size={22} strokeWidth={1.8} />
+          <span>More</span>
+        </button>
+      </nav>
       {editor && (
         <EditorModal
           key={

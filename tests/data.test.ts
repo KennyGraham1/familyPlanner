@@ -12,6 +12,7 @@ import {
   eventsOn,
   fromKey,
   ingredientsToShopping,
+  nextUp,
   occurrenceLabel,
   occurrenceOn,
   occursOn,
@@ -308,5 +309,68 @@ describe("repeating and multi-day events", () => {
       message({ allDay: true, start: "00:00", end: "23:59" }),
       undefined,
     );
+  });
+});
+
+describe("what's next", () => {
+  const seed = createSeed(fromKey("2026-09-28"));
+  const base = seed.events[0];
+  const at = (time: string) => new Date(`2026-10-06T${time}:00`);
+  const family = (events: Partial<typeof base>[]) => ({
+    ...seed,
+    events: events.map((e, i) => ({
+      ...base,
+      id: `e${i}`,
+      repeat: "none" as const,
+      ...e,
+    })),
+  });
+  const plan = family([
+    { title: "School run", date: "2026-10-06", start: "08:30", end: "09:00" },
+    { title: "Football", date: "2026-10-06", start: "16:00", end: "17:00" },
+    {
+      title: "Trip",
+      date: "2026-10-06",
+      endDate: "2026-10-08",
+      start: "18:00",
+      end: "12:00",
+    },
+    {
+      title: "Birthday",
+      date: "2026-10-06",
+      allDay: true,
+      start: "00:00",
+      end: "23:59",
+    },
+    { title: "Dentist", date: "2026-10-07", start: "10:00", end: "10:30" },
+  ]);
+  it("counts down to the next event today, by start time", () => {
+    assert.deepEqual(
+      (({ event, ongoing, minutesUntil }) => [
+        event.title,
+        ongoing,
+        minutesUntil,
+      ])(nextUp(plan, at("15:15"))!),
+      ["Football", false, 45],
+    );
+  });
+  it("shows an event that's underway", () => {
+    const next = nextUp(plan, at("16:20"))!;
+    assert.equal(next.event.title, "Football");
+    assert.equal(next.ongoing, true);
+  });
+  it("skips finished events and all-day ones", () => {
+    assert.equal(nextUp(plan, at("17:30"))!.event.title, "Trip");
+  });
+  it("looks ahead to the coming days", () => {
+    const empty = family([
+      { title: "Dentist", date: "2026-10-07", start: "10:00", end: "10:30" },
+    ]);
+    const next = nextUp(empty, at("20:00"))!;
+    assert.deepEqual(
+      [next.event.title, next.day, next.minutesUntil],
+      ["Dentist", "2026-10-07", null],
+    );
+    assert.equal(nextUp(family([]), at("20:00")), null);
   });
 });

@@ -90,7 +90,10 @@ test("create, edit, persist and delete a recurring family event", async ({
   ).toBe("weekly");
   await page.getByRole("button", { name: "Search family planner" }).click();
   await page.getByLabel("Search your family planner").fill("Swimming");
-  await page.getByRole("button", { name: /Swimming with the family/ }).click();
+  // Scoped to the search dialog: the event may also be on the visible calendar week.
+  await dialog
+    .getByRole("button", { name: /Swimming with the family/ })
+    .click();
   await dialog.getByLabel("What's happening?").fill("Swimming lesson");
   await dialog.getByRole("button", { name: "Save changes" }).click();
   await expect(dialog).not.toBeVisible();
@@ -101,7 +104,7 @@ test("create, edit, persist and delete a recurring family event", async ({
   ).toBe(true);
   await page.getByRole("button", { name: "Search family planner" }).click();
   await page.getByLabel("Search your family planner").fill("Swimming lesson");
-  await page.getByRole("button", { name: /Swimming lesson/ }).click();
+  await dialog.getByRole("button", { name: /Swimming lesson/ }).click();
   await dialog.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   expect(

@@ -14,7 +14,6 @@ export const westAfricanRecipes = [
     cookTime: 60,
     restTime: 10,
     restLabel: "Rest",
-    illustration: "rice",
     ingredients: [
       ["Long-grain parboiled rice", "350 g", "Pantry"],
       ["Chopped tomatoes", "400 g can", "Pantry"],
@@ -59,7 +58,6 @@ export const westAfricanRecipes = [
     cookTime: 50,
     restTime: 10,
     restLabel: "Rest",
-    illustration: "rice",
     ingredients: [
       ["Jasmine rice", "350 g", "Pantry"],
       ["Tomatoes", "400 g", "Produce"],
@@ -102,7 +100,6 @@ export const westAfricanRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 30,
-    illustration: "stew",
     ingredients: [
       ["Black-eyed beans", "2 × 400 g cans", "Pantry"],
       ["Ripe plantains", "2 large", "Produce"],
@@ -145,7 +142,6 @@ export const westAfricanRecipes = [
     cookTime: 80,
     restTime: 480,
     restLabel: "Soak beans",
-    illustration: "rice",
     ingredients: [
       ["Dried black-eyed beans", "200 g", "Pantry"],
       ["Long-grain rice", "300 g", "Pantry"],
@@ -183,7 +179,6 @@ export const westAfricanRecipes = [
     cookTime: 20,
     restTime: 10,
     restLabel: "Marinate",
-    illustration: "tray",
     ingredients: [
       ["Ripe plantains", "4", "Produce"],
       ["Fresh ginger", "25 g", "Produce"],
@@ -262,7 +257,6 @@ export const westAfricanRecipes = [
     category: "Breakfast",
     prepTime: 15,
     cookTime: 20,
-    illustration: "breakfast",
     ingredients: [
       ["Very ripe plantains", "3 large", "Produce"],
       ["Fine cornmeal", "75 g", "Pantry"],
@@ -301,7 +295,6 @@ export const westAfricanRecipes = [
     diet: "Meat & fish",
     prepTime: 20,
     cookTime: 110,
-    illustration: "greens",
     ingredients: [
       ["Stewing beef", "400 g", "Meat & fish"],
       ["Ground egusi seeds", "180 g", "Pantry"],
@@ -342,7 +335,6 @@ export const westAfricanRecipes = [
     diet: "Meat & fish",
     prepTime: 20,
     cookTime: 35,
-    illustration: "greens",
     ingredients: [
       ["Spinach", "700 g", "Produce"],
       ["Smoked mackerel", "250 g, skin and bones removed", "Meat & fish"],
@@ -385,7 +377,6 @@ export const westAfricanRecipes = [
     cookTime: 20,
     restTime: 30,
     restLabel: "Soak beans",
-    illustration: "breakfast",
     ingredients: [
       ["Dried black-eyed beans", "300 g", "Pantry"],
       ["Onions", "1 small", "Produce"],
@@ -424,7 +415,6 @@ export const westAfricanRecipes = [
     cookTime: 50,
     restTime: 35,
     restLabel: "Soak & rest",
-    illustration: "breakfast",
     ingredients: [
       ["Dried black-eyed beans", "300 g", "Pantry"],
       ["Red peppers", "1", "Produce"],
@@ -501,7 +491,6 @@ export const westAfricanRecipes = [
     cookTime: 20,
     restTime: 30,
     restLabel: "Marinate",
-    illustration: "tray",
     ingredients: [
       ["Boneless chicken thighs", "650 g", "Meat & fish"],
       ["Roasted unsalted peanuts", "60 g", "Pantry"],
@@ -622,7 +611,6 @@ export const westAfricanRecipes = [
     diet: "Meat & fish",
     prepTime: 25,
     cookTime: 70,
-    illustration: "rice",
     ingredients: [
       ["Firm white fish fillets", "600 g, boneless", "Meat & fish"],
       ["Broken rice", "300 g", "Pantry"],
@@ -667,7 +655,6 @@ export const westAfricanRecipes = [
     diet: "Plant-based",
     prepTime: 10,
     cookTime: 25,
-    illustration: "tray",
     ingredients: [
       ["Black-eyed beans", "2 × 400 g cans", "Pantry"],
       ["Baguettes", "2 medium", "Bakery"],
@@ -790,7 +777,6 @@ export const westAfricanRecipes = [
     diet: "Plant-based",
     prepTime: 20,
     cookTime: 55,
-    illustration: "rice",
     ingredients: [
       ["Long-grain rice", "300 g", "Pantry"],
       ["Carrots", "2", "Produce"],
@@ -873,7 +859,6 @@ export const westAfricanRecipes = [
     diet: "Meat & fish",
     prepTime: 15,
     cookTime: 25,
-    illustration: "tray",
     ingredients: [
       ["Dried attiéké", "300 g", "Pantry"],
       ["White fish fillets", "4 × 150 g", "Meat & fish"],
@@ -915,7 +900,6 @@ export const westAfricanRecipes = [
     diet: "Plant-based",
     prepTime: 10,
     cookTime: 20,
-    illustration: "rice",
     ingredients: [
       ["Quick-cooking fonio", "250 g", "Pantry"],
       ["Carrots", "2", "Produce"],
@@ -956,7 +940,6 @@ export const westAfricanRecipes = [
     diet: "Meat & fish",
     prepTime: 20,
     cookTime: 110,
-    illustration: "greens",
     ingredients: [
       ["Stewing beef", "400 g", "Meat & fish"],
       ["Frozen chopped spinach", "500 g", "Produce"],

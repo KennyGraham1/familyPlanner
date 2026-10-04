@@ -1,0 +1,280 @@
+{
+  "generator": "built-in image_gen",
+  "processing": {
+    "format": "webp",
+    "width": 960,
+    "quality": 82
+  },
+  "images": [
+    {
+      "id": "akara",
+      "asset": "/images/recipes/akara.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Akara bean fritters. Crisp bean fritters, soft and airy inside. Accurately depict a cooked serving using these recipe ingredients: Dried black-eyed beans, Onions, Red peppers, Scotch bonnet, Salt, Vegetable oil. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "apple-porridge",
+      "asset": "/images/recipes/apple-porridge.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Apple & cinnamon porridge. Creamy warm oats with softly cooked apple. Accurately depict a cooked serving using these recipe ingredients: Rolled oats, Milk, Apples, Ground cinnamon, Raisins, Maple syrup. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "asaro",
+      "asset": "/images/recipes/asaro.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Asaro yam pottage. Yoruba-style yam simmered until creamy with pepper and spinach. Accurately depict a cooked serving using these recipe ingredients: Puna yam, Red peppers, Tomatoes, Onions, Red palm oil, Vegetable stock, Spinach, Scotch bonnet, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "attieke-fish",
+      "asset": "/images/recipes/attieke-fish.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Attiéké with baked fish. Ivorian cassava couscous with fish and tomato salad. Accurately depict a cooked serving using these recipe ingredients: Dried attiéké, White fish fillets, Tomatoes, Red onion, Cucumber, Limes, Garlic, Vegetable oil, Paprika, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "beef-chilli",
+      "asset": "/images/recipes/beef-chilli.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Beef & bean chilli. A filling family pot with cumin and a gentle smoky finish. Accurately depict a cooked serving using these recipe ingredients: Beef mince, Kidney beans, Chopped tomatoes, Onions, Red peppers, Garlic, Tomato paste, Ground cumin, Smoked paprika, Vegetable oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "beef-maafe",
+      "asset": "/images/recipes/beef-maafe.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Beef maafé. A slow peanut and tomato stew enjoyed in Mali and Senegal. Accurately depict a cooked serving using these recipe ingredients: Stewing beef, Unsweetened peanut butter, Carrots, Sweet potatoes, Onions, Garlic, Tomato paste, Chopped tomatoes, Beef stock, Vegetable oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "breakfast-burritos",
+      "asset": "/images/recipes/breakfast-burritos.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Egg & bean breakfast burritos. Warm wraps filled with eggs, beans and tomatoes. Accurately depict a cooked serving using these recipe ingredients: Large tortillas, Eggs, Black beans, Tomatoes, Cheddar cheese, Spring onions, Ground cumin, Vegetable oil, Salt. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-fajitas",
+      "asset": "/images/recipes/chicken-fajitas.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Chicken fajita wraps. Sizzling peppers and chicken ready for everyone to wrap. Accurately depict a cooked serving using these recipe ingredients: Chicken breast, Tortillas, Red peppers, Onions, Limes, Ground cumin, Smoked paprika, Garlic powder, Vegetable oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-noodle-soup",
+      "asset": "/images/recipes/chicken-noodle-soup.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Chicken noodle soup. A warm broth with shredded chicken, noodles and vegetables. Accurately depict a cooked serving using these recipe ingredients: Chicken breast, Egg noodles, Carrots, Celery, Onions, Chicken stock, Garlic, Olive oil, Parsley, Black pepper. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-stir-fry",
+      "asset": "/images/recipes/chicken-stir-fry.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Ginger chicken stir-fry. Chicken and crisp vegetables in a light savoury sauce. Accurately depict a cooked serving using these recipe ingredients: Chicken breast, Broccoli, Red peppers, Carrots, Fresh ginger, Garlic, Soy sauce, Cornflour, Vegetable oil, Rice. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-suya",
+      "asset": "/images/recipes/chicken-suya.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Chicken suya skewers. A home-oven version of Nigerian peanut-spiced skewers. Accurately depict a cooked serving using these recipe ingredients: Boneless chicken thighs, Roasted unsalted peanuts, Ground ginger, Garlic powder, Onion powder, Paprika, Cayenne pepper, Vegetable oil, Salt, Red onion, Tomatoes. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-traybake",
+      "asset": "/images/recipes/chicken-traybake.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Lemon chicken traybake. Chicken, potatoes and carrots in one roasting tray. Accurately depict a cooked serving using these recipe ingredients: Bone-in chicken thighs, Potatoes, Carrots, Red onion, Lemons, Garlic, Olive oil, Dried oregano, Salt, Black pepper. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chicken-yassa",
+      "asset": "/images/recipes/chicken-yassa.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Chicken yassa. Senegalese-style chicken with soft onions, lemon and mustard. Accurately depict a cooked serving using these recipe ingredients: Bone-in chicken thighs, Onions, Lemons, Dijon mustard, Garlic, Vegetable oil, Chicken stock, Bay leaves, Black pepper, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "chickpea-wraps",
+      "asset": "/images/recipes/chickpea-wraps.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Crunchy chickpea wraps. A quick lunch with smashed chickpeas, lemon and fresh vegetables. Accurately depict a cooked serving using these recipe ingredients: Cooked chickpeas, Large wraps, Tahini, Lemons, Cucumber, Carrots, Lettuce, Ground cumin, Olive oil, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "crispy-tofu-bowls",
+      "asset": "/images/recipes/crispy-tofu-bowls.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Crispy tofu rice bowls. Golden tofu with broccoli and a tangy soy glaze. Accurately depict a cooked serving using these recipe ingredients: Firm tofu, Rice, Broccoli, Carrots, Soy sauce, Rice vinegar, Maple syrup, Cornflour, Vegetable oil, Garlic. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "domoda",
+      "asset": "/images/recipes/domoda.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Vegetable domoda. A Gambian-inspired peanut stew with sweet potato. Accurately depict a cooked serving using these recipe ingredients: Sweet potatoes, Chopped tomatoes, Unsweetened peanut butter, Onions, Garlic, Fresh ginger, Tomato paste, Vegetable stock, Spinach, Limes, Vegetable oil, Chilli flakes, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "efo-riro",
+      "asset": "/images/recipes/efo-riro.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Efo riro with smoked fish. A Yoruba-style pepper and spinach stew. Accurately depict a cooked serving using these recipe ingredients: Spinach, Smoked mackerel, Red peppers, Onions, Red palm oil, Ground dried crayfish, Iru (fermented locust beans), Scotch bonnet, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "egg-fried-rice",
+      "asset": "/images/recipes/egg-fried-rice.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Vegetable egg fried rice. A quick rice supper with peas, carrots and soft egg. Accurately depict a cooked serving using these recipe ingredients: Ready-cooked rice, Eggs, Frozen peas, Carrots, Spring onions, Garlic, Soy sauce, Vegetable oil, Sesame oil. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "egusi-soup",
+      "asset": "/images/recipes/egusi-soup.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Egusi & spinach soup. Nigerian melon-seed soup with tender beef and leafy greens. Accurately depict a cooked serving using these recipe ingredients: Stewing beef, Ground egusi seeds, Spinach, Onions, Red peppers, Red palm oil, Ground dried crayfish, Beef stock, Scotch bonnet, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "ewa-riro",
+      "asset": "/images/recipes/ewa-riro.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Ewa riro bean porridge. Soft Nigerian beans with a pepper and onion base. Accurately depict a cooked serving using these recipe ingredients: Dried black-eyed beans, Onions, Red peppers, Red palm oil, Vegetable stock, Scotch bonnet, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "fonio-pilaf",
+      "asset": "/images/recipes/fonio-pilaf.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Fonio vegetable pilaf. A quick, fluffy grain bowl inspired by West African fonio dishes. Accurately depict a cooked serving using these recipe ingredients: Quick-cooking fonio, Carrots, Onions, Spinach, Cooked chickpeas, Vegetable stock, Olive oil, Parsley, Lemons, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "ghanaian-jollof",
+      "asset": "/images/recipes/ghanaian-jollof.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Ghanaian-style jollof. A fragrant jasmine-rice version with ginger and warm spices. Food must closely match this cooked recipe and only these ingredients: Jasmine rice, Tomatoes, Red peppers, Onions, Garlic, Fresh ginger, Tomato paste, Vegetable oil, Vegetable stock, Curry powder, Ground nutmeg, Bay leaves, Salt. Diet: Plant-based. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "groundnut-soup",
+      "asset": "/images/recipes/groundnut-soup.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Chicken groundnut soup. A Ghanaian-style peanut soup with tomato and ginger. Food must closely match this cooked recipe and only these ingredients: Boneless chicken thighs, Unsweetened peanut butter, Tomatoes, Onions, Garlic, Fresh ginger, Tomato paste, Chicken stock, Scotch bonnet, Salt. Diet: Meat & fish. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "kedjenou",
+      "asset": "/images/recipes/kedjenou.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Kedjenou chicken. Ivorian chicken slowly cooked with aubergine and tomato. Accurately depict a cooked serving using these recipe ingredients: Bone-in chicken thighs, Aubergine, Tomatoes, Onions, Garlic, Fresh ginger, Dried thyme, Bay leaves, Scotch bonnet, Vegetable oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "kelewele",
+      "asset": "/images/recipes/kelewele.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Kelewele spiced plantain. Ginger-seasoned golden plantain for sharing. Food must closely match this cooked recipe and only these ingredients: Ripe plantains, Fresh ginger, Onions, Cayenne pepper, Ground cloves, Salt, Vegetable oil. Diet: Plant-based. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "lemon-pea-orzo",
+      "asset": "/images/recipes/lemon-pea-orzo.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Lemon, pea & spinach orzo. A bright one-pot pasta with a creamy finish. Accurately depict a cooked serving using these recipe ingredients: Orzo, Frozen peas, Spinach, Onions, Garlic, Vegetable stock, Lemons, Vegetarian hard cheese, Olive oil, Black pepper. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "lentil-bolognese",
+      "asset": "/images/recipes/lentil-bolognese.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Lentil bolognese. A rich vegetable sauce for a comforting pasta night. Accurately depict a cooked serving using these recipe ingredients: Spaghetti, Cooked green lentils, Chopped tomatoes, Carrots, Onions, Garlic, Tomato paste, Olive oil, Dried oregano, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "minestrone",
+      "asset": "/images/recipes/minestrone.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Vegetable minestrone. A tomato broth full of beans, vegetables and small pasta. Accurately depict a cooked serving using these recipe ingredients: Small pasta shapes, Cannellini beans, Chopped tomatoes, Carrots, Celery, Courgettes, Onions, Garlic, Vegetable stock, Olive oil, Dried oregano, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "moi-moi",
+      "asset": "/images/recipes/moi-moi.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Moi moi bean puddings. Soft steamed Nigerian bean puddings with egg. Accurately depict a cooked serving using these recipe ingredients: Dried black-eyed beans, Red peppers, Onions, Fresh ginger, Vegetable oil, Vegetable stock, Eggs, Salt. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "mushroom-risotto",
+      "asset": "/images/recipes/mushroom-risotto.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Mushroom risotto. Creamy rice with browned mushrooms and parmesan-style cheese. Accurately depict a cooked serving using these recipe ingredients: Arborio rice, Mushrooms, Onions, Garlic, Vegetable stock, Vegetarian hard cheese, Butter, Olive oil, Black pepper. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "ndambe",
+      "asset": "/images/recipes/ndambe.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Ndambe bean baguettes. A meat-free take on Senegal’s warm bean sandwich. Accurately depict a cooked serving using these recipe ingredients: Black-eyed beans, Baguettes, Onions, Garlic, Tomato paste, Vegetable stock, Vegetable oil, Chilli powder, White wine vinegar, Black pepper, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "nigerian-jollof",
+      "asset": "/images/recipes/nigerian-jollof.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe-card food image for a family meal-planning app. Create one photorealistic editorial food photograph of Nigerian jollof rice: separate long-grain parboiled rice grains uniformly coated in a rich red-orange cooked tomato and red-pepper base, gently mounded in a simple off-white ceramic bowl, one cooked bay leaf. This recipe is plant-based: no meat, fish, egg, cheese or other side dishes. Warm natural window light, appetising realistic food texture, neutral cream tabletop, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition, bowl centred with all food inside the central 75% so it survives card crops. No text, no branding, no watermarks, no collage. Output intended for public/images/recipes/nigerian-jollof.png."
+    },
+    {
+      "id": "overnight-oats",
+      "asset": "/images/recipes/overnight-oats.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Berry overnight oats. Breakfast ready when the family wakes up. Accurately depict a cooked serving using these recipe ingredients: Rolled oats, Milk, Plain yoghurt, Chia seeds, Fresh berries, Maple syrup. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "peanut-noodles",
+      "asset": "/images/recipes/peanut-noodles.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Peanut & lime noodles. A creamy peanut sauce with crunchy vegetables and tofu. Accurately depict a cooked serving using these recipe ingredients: Rice noodles, Firm tofu, Unsweetened peanut butter, Carrots, Cucumber, Soy sauce, Limes, Maple syrup, Vegetable oil. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "plasas",
+      "asset": "/images/recipes/plasas.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Plasas greens & beef. A Gambian-style spinach stew with smoked fish and peanuts. Accurately depict a cooked serving using these recipe ingredients: Stewing beef, Frozen chopped spinach, Smoked mackerel, Onions, Unsweetened peanut butter, Red palm oil, Beef stock, Chilli flakes, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "red-red",
+      "asset": "/images/recipes/red-red.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Red red & plantain. Ghanaian black-eyed beans with a rich tomato sauce. Food must closely match this cooked recipe and only these ingredients: Black-eyed beans, Ripe plantains, Onions, Garlic, Fresh ginger, Chopped tomatoes, Tomato paste, Red palm oil, Vegetable oil, Chilli flakes, Salt. Diet: Plant-based. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "salmon-fishcakes",
+      "asset": "/images/recipes/salmon-fishcakes.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Salmon & potato fishcakes. Golden fishcakes made with pantry salmon and fresh potato. Accurately depict a cooked serving using these recipe ingredients: Potatoes, Canned salmon, Eggs, Breadcrumbs, Spring onions, Lemons, Plain flour, Vegetable oil, Black pepper. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "shakshuka",
+      "asset": "/images/recipes/shakshuka.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Tomato & pepper shakshuka. Eggs gently cooked in a cumin-scented tomato sauce. Accurately depict a cooked serving using these recipe ingredients: Eggs, Chopped tomatoes, Red peppers, Onions, Garlic, Olive oil, Ground cumin, Paprika, Parsley, Salt. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "shepherds-pie",
+      "asset": "/images/recipes/shepherds-pie.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Family shepherd’s pie. Lamb and vegetables under a golden mashed-potato lid. Accurately depict a cooked serving using these recipe ingredients: Lamb mince, Potatoes, Onions, Carrots, Frozen peas, Tomato paste, Beef stock, Plain flour, Milk, Butter, Vegetable oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "spinach-frittata",
+      "asset": "/images/recipes/spinach-frittata.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Spinach & potato frittata. A simple baked egg meal with tender potato and feta. Accurately depict a cooked serving using these recipe ingredients: Eggs, Potatoes, Spinach, Feta, Milk, Onions, Olive oil, Black pepper. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "stuffed-sweet-potatoes",
+      "asset": "/images/recipes/stuffed-sweet-potatoes.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Black bean stuffed sweet potatoes. Soft baked potatoes with a lime-dressed bean filling. Accurately depict a cooked serving using these recipe ingredients: Sweet potatoes, Black beans, Sweetcorn, Tomatoes, Avocados, Limes, Ground cumin, Olive oil, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "tatale",
+      "asset": "/images/recipes/tatale.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Tatale plantain pancakes. Savoury Ghanaian pancakes made with very ripe plantain. Food must closely match this cooked recipe and only these ingredients: Very ripe plantains, Fine cornmeal, Plain flour, Onions, Fresh ginger, Chilli powder, Salt, Vegetable oil. Diet: Plant-based. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "teriyaki-salmon",
+      "asset": "/images/recipes/teriyaki-salmon.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Teriyaki-style salmon bowls. Sticky glazed salmon with rice and broccoli. Accurately depict a cooked serving using these recipe ingredients: Salmon fillets, Rice, Broccoli, Soy sauce, Honey, Rice vinegar, Fresh ginger, Garlic, Cornflour. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "thieboudienne",
+      "asset": "/images/recipes/thieboudienne.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Thiéboudienne-inspired fish rice. A home version of Senegal’s fish, vegetable and rice dish. Accurately depict a cooked serving using these recipe ingredients: Firm white fish fillets, Broken rice, Carrots, Aubergine, Cabbage, Onions, Garlic, Parsley, Tomato paste, Chopped tomatoes, Fish stock, Vegetable oil, Limes, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "three-bean-chilli",
+      "asset": "/images/recipes/three-bean-chilli.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Three-bean chilli. A mild, smoky pot of beans and vegetables. Accurately depict a cooked serving using these recipe ingredients: Black beans, Kidney beans, Cannellini beans, Chopped tomatoes, Red peppers, Onions, Garlic, Ground cumin, Smoked paprika, Vegetable oil, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "tomato-bean-soup",
+      "asset": "/images/recipes/tomato-bean-soup.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Tomato & white bean soup. Creamy without cream, thanks to blended white beans. Accurately depict a cooked serving using these recipe ingredients: Chopped tomatoes, Cannellini beans, Onions, Garlic, Carrots, Vegetable stock, Olive oil, Dried basil, Salt, Black pepper. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "tuna-pasta-bake",
+      "asset": "/images/recipes/tuna-pasta-bake.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Tuna & sweetcorn pasta bake. A bubbling tomato pasta bake with a cheesy top. Accurately depict a cooked serving using these recipe ingredients: Penne pasta, Canned tuna, Sweetcorn, Passata, Onions, Garlic, Cheddar cheese, Olive oil, Dried oregano, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "turkey-meatballs",
+      "asset": "/images/recipes/turkey-meatballs.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Turkey meatballs in tomato sauce. Tender baked meatballs with a simple pasta sauce. Accurately depict a cooked serving using these recipe ingredients: Turkey mince, Eggs, Breadcrumbs, Spaghetti, Passata, Onions, Garlic, Dried oregano, Olive oil, Salt. Diet: Meat & fish. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "vegetable-benachin",
+      "asset": "/images/recipes/vegetable-benachin.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Vegetable benachin. Gambian-style one-pot rice with large pieces of vegetables. Accurately depict a cooked serving using these recipe ingredients: Long-grain rice, Carrots, Cabbage, Aubergine, Onions, Tomatoes, Tomato paste, Garlic, Vegetable stock, Vegetable oil, Bay leaves, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "vegetable-couscous",
+      "asset": "/images/recipes/vegetable-couscous.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Roasted vegetable couscous. Fluffy grains, colourful vegetables and chickpeas. Accurately depict a cooked serving using these recipe ingredients: Couscous, Cooked chickpeas, Courgettes, Red peppers, Red onion, Vegetable stock, Olive oil, Ground cumin, Lemons, Parsley, Salt. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "vegetable-lasagne",
+      "asset": "/images/recipes/vegetable-lasagne.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Roasted vegetable lasagne. Layers of tomato vegetables, pasta and creamy ricotta. Accurately depict a cooked serving using these recipe ingredients: No-pre-cook lasagne sheets, Courgettes, Aubergine, Red peppers, Passata, Ricotta, Mozzarella, Milk, Garlic, Olive oil, Dried oregano, Salt. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "vegetable-noodles",
+      "asset": "/images/recipes/vegetable-noodles.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Rainbow vegetable noodles. Crisp vegetables and noodles in a ginger-soy dressing. Accurately depict a cooked serving using these recipe ingredients: Wheat noodles (egg-free), Cabbage, Carrots, Red peppers, Frozen edamame (shelled), Garlic, Fresh ginger, Soy sauce, Rice vinegar, Vegetable oil, Sesame oil. Diet: Plant-based. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "waakye",
+      "asset": "/images/recipes/waakye.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Waakye rice & beans. A Ghanaian staple coloured with food-grade sorghum leaves. Food must closely match this cooked recipe and only these ingredients: Dried black-eyed beans, Long-grain rice, Food-grade waakye leaves, Salt. Diet: Plant-based. One appetising plated portion, recognisable dish texture and shape, natural home-cooked appearance, no unlisted protein or extravagant garnish. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish, understated linen, slightly overhead three-quarter view. Landscape 3:2 composition with main food centred in the central 75% for responsive cropping. Photorealistic food photography. No words, logos, watermarks, collage or text."
+    },
+    {
+      "id": "yoghurt-granola-bowls",
+      "asset": "/images/recipes/yoghurt-granola-bowls.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: individual recipe-card food image for Kinfolk family planner. Subject: Yoghurt & toasted oat bowls. Fruit and yoghurt with a freshly toasted oat topping. Accurately depict a cooked serving using these recipe ingredients: Plain yoghurt, Rolled oats, Pumpkin seeds, Maple syrup, Vegetable oil, Ground cinnamon, Bananas, Fresh berries. Diet: Vegetarian. Show the dish's characteristic texture and shape, not a generic bowl of food. No unlisted protein, lavish garnish or unrelated side dishes. Warm natural window light, neutral cream tabletop, simple off-white ceramic dish or suitable baking dish, understated linen, slightly overhead three-quarter view. Landscape 3:2, main food centred within central 75% for responsive cropping. Photorealistic editorial food photograph. No words, logos, watermarks, collage or text."
+    }
+  ]
+}

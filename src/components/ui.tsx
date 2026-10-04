@@ -5,11 +5,27 @@ import {
   useEffect,
   useId,
   useRef,
+  useSyncExternalStore,
   type ReactElement,
   type RefObject,
 } from "react";
 import { ArrowRight, Check, X, type LucideIcon } from "lucide-react";
 import { type Member } from "@/lib/data";
+
+/** Whether a CSS media query matches, e.g. PHONE for phone-sized screens. */
+export function useMediaQuery(query: string) {
+  return useSyncExternalStore(
+    (onChange) => {
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
+}
+/** Matches the phone layout breakpoint in globals.css. */
+export const PHONE = "(max-width: 760px)";
 
 /** Closes a popover on Escape or a click outside `ref`. */
 export function useDismiss(

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -9,6 +9,8 @@ import {
   ChevronRight,
   Clock3,
   MapPin,
+  Navigation,
+  PartyPopper,
   Plus,
   ShoppingBasket,
   StickyNote,
@@ -22,12 +24,14 @@ import {
   formatDate,
   formatTime,
   isMultiDay,
+  nextUp,
   occurrenceLabel,
   recipes,
   startOfWeek,
   type FamilyEvent,
   type Recipe,
 } from "@/lib/data";
+import { directionsUrl } from "@/lib/places";
 import { usePlanner } from "./planner-provider";
 import {
   Avatar,
@@ -88,6 +92,80 @@ export function EventRow({
     </button>
   );
 }
+/** The current time, refreshed every half minute for countdowns. */
+function useNow() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}
+function countdown(minutes: number) {
+  if (minutes < 60) return `in ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return `in ${hours} h${rest ? ` ${rest} min` : ""}`;
+}
+function UpNext({ open }: Pick<ViewProps, "open">) {
+  const { data } = usePlanner();
+  const now = useNow();
+  const next = nextUp(data, now);
+  if (!next)
+    return (
+      <div className="up-next empty">
+        <span className="up-next-label">Up next</span>
+        <strong>Nothing planned for the next two weeks</strong>
+        <button className="text-button" onClick={() => open({ kind: "event" })}>
+          <Plus size={14} /> Add an event
+        </button>
+      </div>
+    );
+  const { event, day, ongoing, minutesUntil } = next;
+  const members = data.members.filter((m) => event.memberIds.includes(m.id));
+  const tomorrow = dateKey(addDays(now, 1));
+  const when = ongoing
+    ? event.allDay || isMultiDay(event)
+      ? "Happening now"
+      : `Happening now · until ${formatTime(event.end)}`
+    : minutesUntil !== null
+      ? `${formatTime(event.start)} · ${countdown(minutesUntil)}`
+      : `${day === tomorrow ? "Tomorrow" : formatDate(day, { weekday: "long", day: "numeric", month: "short" })} · ${occurrenceLabel(event, day)}`;
+  return (
+    <div className={`up-next ${ongoing ? "ongoing" : ""}`}>
+      <button
+        className="up-next-main"
+        onClick={() => open({ kind: "event", item: event })}
+      >
+        <span className="up-next-label">
+          {ongoing ? "Happening now" : "Up next"}
+        </span>
+        <strong>{event.title}</strong>
+        <span className="up-next-when">
+          <Clock3 size={14} /> {when}
+        </span>
+        {event.location && (
+          <span className="up-next-where">
+            <MapPin size={14} /> {event.location}
+          </span>
+        )}
+      </button>
+      <div className="up-next-side">
+        <AvatarGroup members={members} />
+        {event.location && (
+          <a
+            className="up-next-directions"
+            href={directionsUrl(event.location, event.place)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Navigation size={14} /> Directions
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
 export function Overview({ navigate, open, openRecipe }: ViewProps) {
   const { data, apply, notify, currentMemberId } = usePlanner();
   const [selectedDay, setSelectedDay] = useState(dateKey(new Date()));
@@ -135,23 +213,22 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             </span>
           </h1>
           <div className="welcome-summary">
-            <span>
+            <button onClick={() => navigate("calendar")}>
               <CalendarDays size={15} />
               <strong>{todayEvents.length}</strong>{" "}
-              {todayEvents.length === 1 ? "event" : "events"}
-            </span>
-            <span className="summary-dot" />
-            <span>
+              {todayEvents.length === 1 ? "event" : "events"} today
+            </button>
+            <button onClick={() => navigate("chores")}>
               <CheckSquare size={15} />
               <strong>{remainingTasks.length}</strong>{" "}
               {remainingTasks.length === 1 ? "chore" : "chores"} due
-            </span>
-            <span className="summary-dot" />
-            <span>
+            </button>
+            <button onClick={() => navigate("shopping")}>
               <ShoppingBasket size={15} />
               <strong>{remainingShopping.length}</strong> to buy
-            </span>
+            </button>
           </div>
+          <UpNext open={open} />
           <button
             className="button primary heading-action"
             onClick={() => open({ kind: "quick" })}
@@ -176,7 +253,9 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             onAction={() => navigate("calendar")}
           />
           <div className="week-label">
-            <span>{formatDate(week, { month: "long", year: "numeric" })}</span>
+            <span>
+              {formatDate(addDays(week, 3), { month: "long", year: "numeric" })}
+            </span>
             <div>
               <button
                 className="icon-button small"
@@ -309,9 +388,16 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
             onAction={() => navigate("chores")}
           />
           <div className="chore-progress">
-            <strong>
-              {done}/{todayTasks.length} done
-            </strong>
+            {todayTasks.length > 0 && done === todayTasks.length ? (
+              <span className="all-done">
+                <PartyPopper size={16} /> All done for today. Nice work,
+                everyone!
+              </span>
+            ) : (
+              <strong>
+                {done}/{todayTasks.length} done
+              </strong>
+            )}
           </div>
           <div className="progress-track">
             <span

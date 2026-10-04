@@ -12,13 +12,12 @@ type RecipeInput = Omit<
   servingSuggestion: string;
   tips: string[];
   ingredients: [string, string, ShoppingItem["category"]][];
-  illustration?: "rice" | "stew" | "greens" | "breakfast" | "tray";
   servings?: number;
   category?: string;
 };
 
 export function defineRecipe(input: RecipeInput): Recipe {
-  const { ingredients, illustration = "stew", ...rest } = input;
+  const { ingredients, ...rest } = input;
   return {
     ...rest,
     time: input.prepTime + input.cookTime + (input.restTime ?? 0),
@@ -27,7 +26,7 @@ export function defineRecipe(input: RecipeInput): Recipe {
       input.category ??
       (input.diet === "Meat & fish" ? "Family favourite" : input.diet),
     color: input.region === "West Africa" ? "peach" : "sage",
-    image: `/images/recipes/${illustration}.svg`,
+    image: `/images/recipes/${input.id}.webp`,
     ingredients: ingredients.map(([name, quantity, category]) => ({
       name,
       quantity,

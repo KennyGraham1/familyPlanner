@@ -4798,3 +4798,308 @@ input[type="checkbox"] {
   .ingredient-list > label { align-items: flex-start; }
   .ingredient-list strong { max-width: 45%; text-align: right; }
 }
+
+/* ==========================================================================
+   Redesign: phone-first navigation, Today home, readable type and touch targets.
+   Later rules here intentionally refine the earlier ones above.
+   ========================================================================== */
+:root {
+  --tab-bar-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+.fab,
+.tab-bar {
+  display: none;
+}
+@media (max-width: 760px) {
+  /* The tab bar replaces the hidden menu button. */
+  .icon-button.mobile-menu {
+    display: none;
+  }
+  .main-content {
+    padding-bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 88px);
+  }
+  .tab-bar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    height: calc(var(--tab-bar-height) + var(--safe-bottom));
+    padding-bottom: var(--safe-bottom);
+    background: #ffffffeb;
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-top: 1px solid var(--border);
+  }
+  .tab-bar > a,
+  .tab-bar > button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 48px;
+    font-size: 11px;
+    font-weight: 550;
+    color: #6b6672;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-bar > .active {
+    color: var(--purple-dark);
+  }
+  .tab-bar > .active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 28px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--purple);
+  }
+  .tab-count {
+    position: absolute;
+    top: 7px;
+    left: calc(50% + 6px);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--purple);
+    color: #fff;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+  }
+  .fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 18px;
+    bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 16px);
+    z-index: 41;
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: var(--purple);
+    color: #fff;
+    box-shadow:
+      0 10px 24px #6b4a9a55,
+      0 2px 6px #6b4a9a33;
+    transition: transform 0.15s;
+  }
+  .fab:active {
+    transform: scale(0.94);
+  }
+  .toast {
+    left: 50%;
+    bottom: calc(var(--tab-bar-height) + var(--safe-bottom) + 14px);
+    width: calc(100% - 32px);
+    min-width: 0;
+  }
+}
+
+/* Today header: tappable summary and "Up next" */
+.welcome-summary {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.welcome-summary > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffffb3;
+  border: 1px solid #e6dcf0;
+  font-size: 13px;
+  color: #5d4f6b;
+}
+.welcome-summary > button:hover {
+  background: #fff;
+  border-color: #cdbbe0;
+}
+.welcome-summary strong {
+  font-weight: 700;
+  color: var(--purple-dark);
+}
+.up-next {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid #e6dcf0;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px #4a2a6a12;
+}
+.up-next.ongoing {
+  border-color: #b9d6bd;
+  background: #f6fbf6;
+}
+.up-next.empty {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.up-next-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  color: inherit;
+}
+.up-next-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--purple-dark);
+}
+.up-next.ongoing .up-next-label {
+  color: #3f7a4a;
+}
+.up-next strong {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+.up-next-when,
+.up-next-where {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.up-next-where {
+  font-size: 12px;
+}
+.up-next-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+.up-next-directions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--purple-light);
+  color: var(--purple-dark);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.all-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3f7a4a;
+}
+
+/* Checkboxes: bigger, clearer, with a tap area of about 42px. */
+.check-button {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  border-width: 2px;
+  border-color: #cfc3dc;
+}
+.check-button::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+.check-button.checked {
+  background: var(--purple);
+  border-color: var(--purple);
+  animation: check-pop 0.28s ease-out;
+}
+@keyframes check-pop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check-button.checked {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Today on a phone: the plan, not the picture. */
+  .welcome-banner {
+    min-height: 0;
+  }
+  .welcome-copy {
+    width: 100%;
+    padding: 20px 18px 18px;
+    background: transparent;
+  }
+  .welcome-art,
+  .welcome-copy > .heading-action {
+    display: none;
+  }
+  .welcome-copy h1 {
+    font-size: 24px;
+  }
+  .welcome-summary {
+    margin-top: 14px;
+  }
+  .up-next {
+    max-width: none;
+  }
+}
+@media (max-width: 760px) {
+  /* One swipeable row of shortcuts instead of a stack. */
+  .welcome-summary {
+    max-width: none;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    margin-right: -18px;
+    padding-right: 18px;
+    scrollbar-width: none;
+  }
+  .welcome-summary::-webkit-scrollbar {
+    display: none;
+  }
+  .welcome-summary > button {
+    flex-shrink: 0;
+    padding: 6px 11px;
+    font-size: 13px;
+  }
+  .welcome-summary svg {
+    width: 14px;
+    height: 14px;
+  }
+}

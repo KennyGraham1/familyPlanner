@@ -56,6 +56,22 @@ test("cook a West African recipe, add its shopping and keep the meal after reloa
   await page.getByLabel("Search recipes").fill("egusi");
   await page.locator(".recipe-card").click();
   const dialog = page.getByRole("dialog");
+  await expect(dialog.locator(".recipe-modal-photo")).toHaveAttribute(
+    "src",
+    "/images/recipes/egusi-soup.webp",
+  );
+  await expect
+    .poll(() =>
+      dialog
+        .locator(".recipe-modal-photo")
+        .evaluate(
+          (image) =>
+            image instanceof HTMLImageElement &&
+            image.complete &&
+            image.naturalWidth > 0,
+        ),
+    )
+    .toBe(true);
   await expect(
     dialog.getByText("Ground egusi seeds", { exact: true }),
   ).toBeVisible();
@@ -72,7 +88,8 @@ test("cook a West African recipe, add its shopping and keep the meal after reloa
   expect(
     (
       await new AxeBuilder({ page })
-        .include('[role="dialog"]')
+        // The app's pop-ups are native <dialog> elements (no role attribute).
+        .include("dialog[open]")
         .withTags(["wcag2a", "wcag2aa"])
         .analyze()
     ).violations,

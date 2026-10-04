@@ -45,7 +45,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 15,
     cookTime: 50,
-    illustration: "tray",
     ingredients: [
       ["Bone-in chicken thighs", "4 large", "Meat & fish"],
       ["Potatoes", "700 g", "Produce"],
@@ -81,7 +80,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 25,
-    illustration: "rice",
     ingredients: [
       ["Couscous", "250 g", "Pantry"],
       ["Cooked chickpeas", "400 g can", "Pantry"],
@@ -122,7 +120,6 @@ export const everydayRecipes = [
     cookTime: 0,
     restTime: 480,
     restLabel: "Chill",
-    illustration: "breakfast",
     ingredients: [
       ["Rolled oats", "200 g", "Pantry"],
       ["Milk", "400 ml", "Dairy & eggs"],
@@ -155,7 +152,6 @@ export const everydayRecipes = [
     diet: "Vegetarian",
     prepTime: 10,
     cookTime: 30,
-    illustration: "breakfast",
     ingredients: [
       ["Eggs", "8", "Dairy & eggs"],
       ["Chopped tomatoes", "800 g", "Pantry"],
@@ -192,7 +188,6 @@ export const everydayRecipes = [
     diet: "Vegetarian",
     prepTime: 10,
     cookTime: 15,
-    illustration: "rice",
     ingredients: [
       ["Ready-cooked rice", "600 g (sealed ready-to-heat packs)", "Pantry"],
       ["Eggs", "4", "Dairy & eggs"],
@@ -227,7 +222,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 20,
     cookTime: 15,
-    illustration: "greens",
     ingredients: [
       ["Chicken breast", "600 g", "Meat & fish"],
       ["Broccoli", "1 small head", "Produce"],
@@ -264,7 +258,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 25,
-    illustration: "greens",
     ingredients: [
       ["Firm tofu", "600 g", "Pantry"],
       ["Rice", "300 g", "Pantry"],
@@ -446,7 +439,6 @@ export const everydayRecipes = [
     cookTime: 30,
     restTime: 15,
     restLabel: "Chill",
-    illustration: "tray",
     ingredients: [
       ["Potatoes", "600 g", "Produce"],
       ["Canned salmon", "2 × 170 g cans", "Meat & fish"],
@@ -481,7 +473,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 15,
     cookTime: 30,
-    illustration: "tray",
     ingredients: [
       ["Penne pasta", "350 g", "Pantry"],
       ["Canned tuna", "2 × 160 g cans", "Meat & fish"],
@@ -552,7 +543,6 @@ export const everydayRecipes = [
     diet: "Vegetarian",
     prepTime: 15,
     cookTime: 35,
-    illustration: "rice",
     ingredients: [
       ["Arborio rice", "300 g", "Pantry"],
       ["Mushrooms", "400 g", "Produce"],
@@ -587,7 +577,6 @@ export const everydayRecipes = [
     diet: "Vegetarian",
     prepTime: 15,
     cookTime: 30,
-    illustration: "breakfast",
     ingredients: [
       ["Eggs", "8", "Dairy & eggs"],
       ["Potatoes", "400 g", "Produce"],
@@ -621,7 +610,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 50,
-    illustration: "tray",
     ingredients: [
       ["Sweet potatoes", "4 medium", "Produce"],
       ["Black beans", "2 × 400 g cans", "Pantry"],
@@ -657,7 +645,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 20,
     cookTime: 0,
-    illustration: "tray",
     ingredients: [
       ["Cooked chickpeas", "2 × 400 g cans", "Pantry"],
       ["Large wraps", "4", "Bakery"],
@@ -729,7 +716,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 25,
     cookTime: 50,
-    illustration: "tray",
     ingredients: [
       ["Lamb mince", "500 g", "Meat & fish"],
       ["Potatoes", "900 g", "Produce"],
@@ -767,7 +753,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 15,
-    illustration: "greens",
     ingredients: [
       ["Wheat noodles (egg-free)", "300 g", "Pantry"],
       ["Cabbage", "¼ small", "Produce"],
@@ -804,7 +789,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 10,
     cookTime: 25,
-    illustration: "tray",
     ingredients: [
       ["Salmon fillets", "4 × 150 g", "Meat & fish"],
       ["Rice", "300 g", "Pantry"],
@@ -839,7 +823,6 @@ export const everydayRecipes = [
     diet: "Plant-based",
     prepTime: 15,
     cookTime: 15,
-    illustration: "greens",
     ingredients: [
       ["Rice noodles", "300 g", "Pantry"],
       ["Firm tofu", "400 g", "Pantry"],
@@ -875,7 +858,6 @@ export const everydayRecipes = [
     category: "Breakfast",
     prepTime: 10,
     cookTime: 15,
-    illustration: "breakfast",
     ingredients: [
       ["Large tortillas", "4", "Bakery"],
       ["Eggs", "6", "Dairy & eggs"],
@@ -911,7 +893,6 @@ export const everydayRecipes = [
     category: "Breakfast",
     prepTime: 10,
     cookTime: 15,
-    illustration: "breakfast",
     ingredients: [
       ["Rolled oats", "200 g", "Pantry"],
       ["Milk", "700 ml", "Dairy & eggs"],
@@ -946,7 +927,6 @@ export const everydayRecipes = [
     cookTime: 15,
     restTime: 10,
     restLabel: "Cool",
-    illustration: "breakfast",
     ingredients: [
       ["Plain yoghurt", "600 g", "Dairy & eggs"],
       ["Rolled oats", "150 g", "Pantry"],
@@ -982,7 +962,6 @@ export const everydayRecipes = [
     cookTime: 60,
     restTime: 10,
     restLabel: "Rest",
-    illustration: "tray",
     servings: 6,
     ingredients: [
       ["No-pre-cook lasagne sheets", "250 g", "Pantry"],
@@ -1022,7 +1001,6 @@ export const everydayRecipes = [
     diet: "Meat & fish",
     prepTime: 15,
     cookTime: 20,
-    illustration: "tray",
     ingredients: [
       ["Chicken breast", "600 g", "Meat & fish"],
       ["Tortillas", "8 small", "Bakery"],
@@ -1058,7 +1036,6 @@ export const everydayRecipes = [
     diet: "Vegetarian",
     prepTime: 10,
     cookTime: 20,
-    illustration: "rice",
     ingredients: [
       ["Orzo", "300 g", "Pantry"],
       ["Frozen peas", "200 g", "Produce"],
