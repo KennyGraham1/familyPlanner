@@ -14,7 +14,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Lets the phone tab bar sit clear of the iPhone home indicator.
   viewportFit: "cover",
-  themeColor: "#8b70bc",
+  themeColor: "#28634f",
 };
 export default function RootLayout({
   children,

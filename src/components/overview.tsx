@@ -32,6 +32,8 @@ import {
   type Recipe,
 } from "@/lib/data";
 import { directionsUrl } from "@/lib/places";
+import { cheer } from "@/lib/chores";
+import { InstallCard } from "./install-card";
 import { usePlanner } from "./planner-provider";
 import {
   Avatar,
@@ -238,12 +240,13 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
         </div>
         <div className="welcome-art">
           <img
-            src="/images/family-breakfast.webp"
-            alt="A family enjoying breakfast together in a warm, sunny kitchen"
+            src="/images/family-breakfast-african.webp"
+            alt="A Black African family enjoying breakfast together in a warm, sunny kitchen"
             fetchPriority="high"
           />
         </div>
       </section>
+      <InstallCard />
       <div className="dashboard-grid">
         <section className="card schedule-card">
           <SectionHeader
@@ -424,7 +427,14 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                       })) &&
                       !task.done
                     )
-                      notify("Chore done. Thanks for helping!");
+                      notify(
+                        cheer(
+                          todayTasks,
+                          task,
+                          data.members.find((m) => m.id === task.memberId)
+                            ?.name ?? "everyone",
+                        ),
+                      );
                   }}
                 />
                 <button

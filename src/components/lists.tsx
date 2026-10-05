@@ -15,6 +15,8 @@ import {
   StickyNote,
 } from "lucide-react";
 import { categories, dateKey, formatDate, uid } from "@/lib/data";
+import { guessAisle } from "@/lib/shopping";
+import { cheer } from "@/lib/chores";
 import { usePlanner } from "./planner-provider";
 import { Avatar, CheckButton, EmptyState } from "./ui";
 import type { ViewProps } from "./overview";
@@ -24,6 +26,15 @@ export function Shopping({ open }: ViewProps) {
   const [name, setName] = useState("");
   const [category, setCategory] =
     useState<(typeof categories)[number]>("Produce");
+  // The aisle follows what's typed until someone picks one themselves.
+  const [aisleChosen, setAisleChosen] = useState(false);
+  function changeName(next: string) {
+    setName(next);
+    if (aisleChosen) return;
+    const guess = guessAisle(next, data.shopping);
+    if (guess) setCategory(guess);
+    else if (next.trim().length >= 3) setCategory("Other");
+  }
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All items");
   const done = data.shopping.filter((i) => i.done).length;
@@ -46,7 +57,8 @@ export function Shopping({ open }: ViewProps) {
     };
     if (await apply({ collection: "shopping", action: "upsert", value })) {
       setName("");
-      notify("Added to the list.");
+      setAisleChosen(false);
+      notify(`${value.name} added to ${category}.`);
     }
   }
   async function clearBought() {
@@ -93,14 +105,19 @@ export function Shopping({ open }: ViewProps) {
           aria-label="New shopping item"
           placeholder="Add an item…"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => changeName(e.target.value)}
           maxLength={150}
+          enterKeyHint="done"
+          autoComplete="off"
           required
         />
         <select
           aria-label="Shopping aisle"
           value={category}
-          onChange={(e) => setCategory(e.target.value as typeof category)}
+          onChange={(e) => {
+            setAisleChosen(true);
+            setCategory(e.target.value as typeof category);
+          }}
         >
           {categories.map((c) => (
             <option key={c}>{c}</option>
@@ -191,9 +208,18 @@ export function Shopping({ open }: ViewProps) {
                       })
                     }
                   />
+                  {/* A bigger target for ticking off; the checkbox is the accessible control. */}
                   <button
                     className="shopping-item-name"
-                    onClick={() => open({ kind: "shopping", item })}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    onClick={() =>
+                      void apply({
+                        collection: "shopping",
+                        action: "upsert",
+                        value: { ...item, done: !item.done },
+                      })
+                    }
                   >
                     {item.name}
                     <small>{item.quantity}</small>
@@ -280,18 +306,39 @@ export function Chores({ open }: ViewProps) {
                   Number(b.priority === "high") -
                     Number(a.priority === "high") || a.due.localeCompare(b.due),
               );
-            const memberDone = data.tasks.filter(
-              (t) => t.memberId === m.id && t.done,
-            ).length;
+            const memberTasks = data.tasks.filter((t) => t.memberId === m.id);
+            const memberDone = memberTasks.filter((t) => t.done).length;
             return (
               <section className="card chore-column" key={m.id}>
                 <div className={`chore-column-heading ${m.color}`}>
                   <Avatar member={m} />
-                  <div>
+                  <div className="chore-person">
                     <h3>{m.name}</h3>
-                    <small>
-                      {memberDone} done · {tasks.length} shown
-                    </small>
+                    {memberTasks.length > 0 ? (
+                      <>
+                        <small>
+                          {memberDone === memberTasks.length
+                            ? "All done!"
+                            : `${memberDone} of ${memberTasks.length} done`}
+                        </small>
+                        <span
+                          className="person-progress"
+                          role="progressbar"
+                          aria-label={`${m.name}’s chores done`}
+                          aria-valuemin={0}
+                          aria-valuemax={memberTasks.length}
+                          aria-valuenow={memberDone}
+                        >
+                          <span
+                            style={{
+                              width: `${(memberDone / memberTasks.length) * 100}%`,
+                            }}
+                          />
+                        </span>
+                      </>
+                    ) : (
+                      <small>No chores yet</small>
+                    )}
                   </div>
                   <span>{m.emoji}</span>
                 </div>
@@ -314,7 +361,7 @@ export function Chores({ open }: ViewProps) {
                               })) &&
                               !task.done
                             )
-                              notify(`Done. Thanks, ${m.name}!`);
+                              notify(cheer(data.tasks, task, m.name));
                           }}
                         />
                         <button

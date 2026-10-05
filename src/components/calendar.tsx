@@ -20,7 +20,7 @@ import {
   type FamilyEvent,
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
-import { Avatar, EmptyState, useDismiss } from "./ui";
+import { Avatar, EmptyState, PHONE, useDismiss, useMediaQuery } from "./ui";
 import { EventRow, type ViewProps } from "./overview";
 
 type Mode = "week" | "month" | "year" | "agenda";
@@ -43,6 +43,9 @@ export function Calendar({ open }: ViewProps) {
   const closePicker = useCallback(() => setPickerYear(null), []);
   useDismiss(picker, pickerYear !== null, closePicker);
   const today = dateKey(new Date());
+  // On phones the month grid shows dots; tapping a day lists its events below.
+  const phone = useMediaQuery(PHONE);
+  const [selectedDay, setSelectedDay] = useState(today);
   const monday = data.settings.weekStartsMonday;
   const year = date.getFullYear();
   const weekStart = startOfWeek(date, monday);
@@ -399,20 +402,33 @@ export function Calendar({ open }: ViewProps) {
               return (
                 <div
                   key={key}
-                  className={`calendar-day ${key === today ? "today" : ""} ${mode === "month" && d.getMonth() !== date.getMonth() ? "outside-month" : ""}`}
+                  className={`calendar-day ${key === today ? "today" : ""} ${mode === "month" && d.getMonth() !== date.getMonth() ? "outside-month" : ""} ${mode === "month" && phone && key === selectedDay ? "selected" : ""}`}
                 >
                   <div className="calendar-day-top">
                     {mode === "month" ? (
                       <button
                         className={`day-number ${key === today ? "today-number" : ""}`}
-                        aria-label={`Show the week of ${formatDate(d, { day: "numeric", month: "long" })}`}
-                        onClick={() => show(d, "week")}
+                        aria-label={
+                          phone
+                            ? `${formatDate(d, { weekday: "long", day: "numeric", month: "long" })}${list.length ? `, ${list.length} ${list.length === 1 ? "event" : "events"}` : ""}`
+                            : `Show the week of ${formatDate(d, { day: "numeric", month: "long" })}`
+                        }
+                        aria-pressed={phone ? key === selectedDay : undefined}
+                        onClick={() =>
+                          phone ? setSelectedDay(key) : show(d, "week")
+                        }
                       >
                         {d.getDate()}
                       </button>
                     ) : (
-                      <span className={key === today ? "today-number" : ""}>
-                        {d.getDate()}
+                      <span className="day-label">
+                        {/* The weekday name shows when days are listed (phones). */}
+                        <span className="day-name">
+                          {formatDate(d, { weekday: "short" })}
+                        </span>
+                        <span className={key === today ? "today-number" : ""}>
+                          {d.getDate()}
+                        </span>
                       </span>
                     )}
                     <button
@@ -423,7 +439,20 @@ export function Calendar({ open }: ViewProps) {
                       <Plus size={15} />
                     </button>
                   </div>
+                  {mode === "month" && list.length > 0 && (
+                    <span className="day-dots" aria-hidden="true">
+                      {list.slice(0, 3).map((event) => (
+                        <i
+                          key={event.id}
+                          className={`member-dot ${personOf(event)?.color ?? "lavender"}`}
+                        />
+                      ))}
+                    </span>
+                  )}
                   <div className="day-events">
+                    {mode === "week" && list.length === 0 && (
+                      <span className="day-free">No plans</span>
+                    )}
                     {shown.map((event) => chip(event, key, mode === "week"))}
                     {hidden > 0 && (
                       <button
@@ -444,6 +473,44 @@ export function Calendar({ open }: ViewProps) {
               );
             })}
           </div>
+          {mode === "month" && phone && (
+            <div className="month-day-detail">
+              <div className="agenda-day-heading">
+                <span className={selectedDay === today ? "today-number" : ""}>
+                  {Number(selectedDay.slice(8))}
+                </span>
+                <div>
+                  <strong>
+                    {formatDate(selectedDay, { weekday: "long" })}
+                  </strong>
+                  <small>
+                    {formatDate(selectedDay, {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </small>
+                </div>
+                <button
+                  className="icon-button"
+                  aria-label={`Add event on ${formatDate(selectedDay)}`}
+                  onClick={() => open({ kind: "event", date: selectedDay })}
+                >
+                  <Plus size={17} />
+                </button>
+              </div>
+              {eventsFor(selectedDay).map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  day={selectedDay}
+                  onClick={() => open({ kind: "event", item: event })}
+                />
+              ))}
+              {eventsFor(selectedDay).length === 0 && (
+                <p className="day-empty">Nothing planned.</p>
+              )}
+            </div>
+          )}
         </section>
       )}
       {data.events.length === 0 && (

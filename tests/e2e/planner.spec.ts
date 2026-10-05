@@ -315,8 +315,13 @@ test("all views fit mobile, navigation works, and keyboard focus stays in dialog
     ).toBe(true);
   }
   if (isMobile) {
-    await page.getByRole("button", { name: "Open navigation" }).click();
-    await page.getByRole("link", { name: "Calendar", exact: true }).click();
+    await page
+      .getByRole("button", { name: "More: meals, family board and settings" })
+      .click();
+    await page
+      .locator(".sidebar")
+      .getByRole("link", { name: "Calendar", exact: true })
+      .click();
     await expect(
       page.getByRole("heading", { level: 1, name: "Family calendar" }),
     ).toBeVisible();

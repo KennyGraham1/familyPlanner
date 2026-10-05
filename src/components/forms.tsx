@@ -245,7 +245,8 @@ export function EditorModal({
           <button
             type="button"
             key={c}
-            aria-label={c}
+            aria-label={c === "lavender" ? "Forest green" : c}
+            title={c === "lavender" ? "Forest green" : c}
             aria-pressed={color === c}
             className={`color-option ${c} ${color === c ? "selected" : ""}`}
             onClick={() => setColor(c)}
