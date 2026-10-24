@@ -7,7 +7,14 @@ export const metadata: Metadata = {
     "A shared family planner for calendars, meal plans, shopping lists and chores.",
   applicationName: "Kinfolk",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg", apple: "/icons/icon-192.png" },
+  icons: {
+    icon: "/icon.svg",
+    // iOS needs a solid square icon (it rounds the corners itself; see-through
+    // corners turn black on the home screen).
+    apple: { url: "/icons/apple-touch-icon.png", sizes: "180x180" },
+  },
+  // How the app appears once added to an iPhone or iPad home screen.
+  appleWebApp: { capable: true, title: "Kinfolk", statusBarStyle: "default" },
 };
 export const viewport: Viewport = {
   width: "device-width",

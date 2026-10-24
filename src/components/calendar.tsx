@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  Link2,
   Plus,
   Repeat2,
 } from "lucide-react";
@@ -20,7 +21,15 @@ import {
   type FamilyEvent,
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
-import { Avatar, EmptyState, PHONE, useDismiss, useMediaQuery } from "./ui";
+import {
+  Avatar,
+  EmptyState,
+  Modal,
+  PHONE,
+  useDismiss,
+  useMediaQuery,
+} from "./ui";
+import { GoogleCalendarSettings } from "./google-calendar";
 import { EventRow, type ViewProps } from "./overview";
 
 type Mode = "week" | "month" | "year" | "agenda";
@@ -38,6 +47,7 @@ export function Calendar({ open }: ViewProps) {
   const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState<Mode>("week");
   const [member, setMember] = useState("all");
+  const [googleOpen, setGoogleOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState<number | null>(null);
   const picker = useRef<HTMLDivElement>(null);
   const closePicker = useCallback(() => setPickerYear(null), []);
@@ -262,6 +272,12 @@ export function Calendar({ open }: ViewProps) {
           </button>
         </div>
         <div className="toolbar-actions">
+          <button
+            className="button secondary small-button"
+            onClick={() => setGoogleOpen(true)}
+          >
+            <Link2 size={16} /> Google Calendar
+          </button>
           <div className="segmented-control">
             {(["week", "month", "year", "agenda"] as const).map((m) => (
               <button
@@ -283,6 +299,15 @@ export function Calendar({ open }: ViewProps) {
           </button>
         </div>
       </div>
+      {googleOpen && (
+        <Modal
+          title="Google Calendar"
+          onClose={() => setGoogleOpen(false)}
+          wide
+        >
+          <GoogleCalendarSettings embedded />
+        </Modal>
+      )}
       <div className="family-filters">
         <button
           className={`filter-chip ${member === "all" ? "active" : ""}`}

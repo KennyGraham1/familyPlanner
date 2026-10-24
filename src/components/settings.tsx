@@ -17,6 +17,7 @@ import { getCloud } from "@/lib/cloud";
 import { errorMessage } from "@/lib/errors";
 import { FamilyAccessSettings } from "./family-access";
 import { ReminderSettings } from "./reminder-settings";
+import { GoogleCalendarSettings } from "./google-calendar";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, Modal, SectionHeader } from "./ui";
 import type { ViewProps } from "./overview";
@@ -179,6 +180,7 @@ export function Settings({ open }: ViewProps) {
     <div className="settings-grid">
       <div>
         <CloudSettings />
+        <GoogleCalendarSettings />
         <FamilyAccessSettings />
         <section className="card settings-card">
           <SectionHeader icon={Heart} title="Preferences" />

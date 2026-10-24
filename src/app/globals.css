@@ -5590,3 +5590,20 @@ input[type="checkbox"] {
 .install-card p svg {
   vertical-align: -2px;
 }
+
+/* Google Calendar connection and conflict review. */
+.google-calendar-settings > p { margin-bottom: 16px; }
+.google-calendar-settings > .button,
+.google-calendar-settings > .text-button { margin-top: 12px; }
+.google-calendar-hint { color: var(--muted); font-size: 13px; line-height: 1.65; }
+.google-calendar-account { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--accent-soft); overflow-wrap: anywhere; }
+.google-calendar-account span { font-size: 13px; color: var(--muted); }
+.google-calendar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
+.google-calendar-review { margin-top: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; }
+.google-calendar-review h3 { font-size: 15px; margin-bottom: 8px; }
+.google-calendar-review p, .google-calendar-review li { font-size: 13px; color: var(--muted); line-height: 1.65; overflow-wrap: anywhere; }
+.google-calendar-review summary { cursor: pointer; font-weight: 600; }
+.google-calendar-conflict { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.google-calendar-conflict:last-child { border-bottom: 0; padding-bottom: 0; }
+.google-calendar-settings form > .google-calendar-hint { margin: 12px 0; }
+.google-calendar-settings .form-success { color: var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px; }

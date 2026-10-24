@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { createSeed } from "../../src/lib/data";
 
@@ -621,4 +621,69 @@ test("multi-day dates stay in order while editing", async ({ page }) => {
       (e: { title: string }) => e.title === "School camp",
     ),
   ).toMatchObject({ date: "2026-11-17", endDate: "2026-11-20" });
+});
+
+test("iPhone users are shown how to add Kinfolk to their home screen", async ({
+  browser,
+  playwright,
+}) => {
+  // Safari's engine when installed (npx playwright install webkit), else Chrome.
+  const safari = await playwright.webkit.launch().catch(() => null);
+  const engine = safari ?? browser;
+  const seed = JSON.stringify(createSeed());
+  const iphone = async ({ installed = false, inApp = false } = {}) => {
+    const context = await engine.newContext({
+      ...devices["iPhone 13"],
+      userAgent:
+        devices["iPhone 13"].userAgent + (inApp ? " Instagram 312.0.0.0" : ""),
+    });
+    await context.addInitScript(
+      ([key, value, standalone]) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value);
+        // The card waits for a second visit.
+        localStorage.setItem("kinfolk-visits", "1");
+        if (standalone)
+          Object.defineProperty(navigator, "standalone", { value: true });
+      },
+      [storage, seed, installed] as const,
+    );
+    const page = await context.newPage();
+    await page.goto("/#overview");
+    await expect(page.locator("main h1")).toBeVisible();
+    return { context, page };
+  };
+  const card = (page: Page) =>
+    page.getByRole("region", { name: "Add Kinfolk to your home screen" });
+
+  const { context, page } = await iphone();
+  await expect(card(page)).toContainText(
+    "Tap Share, then “Add to Home Screen”",
+  );
+  // Safari has no install button, so only Apple's own steps are shown.
+  await expect(card(page).getByRole("button", { name: "Install" })).toHaveCount(
+    0,
+  );
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute(
+    "href",
+    "/icons/apple-touch-icon.png",
+  );
+  await card(page).getByRole("button", { name: "Not now" }).click();
+  await expect(card(page)).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator("main h1")).toBeVisible();
+  await expect(card(page)).toHaveCount(0);
+  await context.close();
+
+  // Inside Instagram (or similar) the page must be opened in Safari first.
+  const inApp = await iphone({ inApp: true });
+  await expect(card(inApp.page)).toContainText(
+    "Open this page in Safari first",
+  );
+  await inApp.context.close();
+
+  // Already added to the home screen: no card.
+  const installed = await iphone({ installed: true });
+  await expect(card(installed.page)).toHaveCount(0);
+  await installed.context.close();
+  await safari?.close();
 });

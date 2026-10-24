@@ -57,6 +57,15 @@ export function isIos() {
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
   );
 }
+/**
+ * Browsers inside other apps (Instagram, Facebook, the Google app…) can't add to
+ * the home screen; the page has to be opened in Safari first.
+ */
+export function isInAppBrowser() {
+  return /FBAN|FBAV|Instagram|Line\/|Snapchat|musical_ly|BytedanceWebview|Twitter|GSA\//i.test(
+    navigator.userAgent,
+  );
+}
 /** Suggest installing from the second visit, unless dismissed in the last 30 days. */
 export function wantsInstallSuggestion(now = Date.now()) {
   try {

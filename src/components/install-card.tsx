@@ -5,6 +5,7 @@ import {
   install,
   installPrompt,
   isInstalled,
+  isInAppBrowser,
   isIos,
   snoozeInstallSuggestion,
   subscribeInstall,
@@ -22,6 +23,7 @@ export function InstallCard() {
     () => isInstalled() || !wantsInstallSuggestion(),
   );
   const ios = isIos();
+  const inApp = ios && isInAppBrowser();
   if (hidden || (!prompt && !ios)) return null;
   const dismiss = () => {
     snoozeInstallSuggestion();
@@ -36,7 +38,13 @@ export function InstallCard() {
       <div>
         <strong>Keep Kinfolk on your home screen</strong>
         <p>
-          {ios ? (
+          {inApp ? (
+            <>
+              Open this page in Safari first, then tap{" "}
+              <Share size={14} aria-label="Share" /> Share and “Add to Home
+              Screen”.
+            </>
+          ) : ios ? (
             <>
               Tap <Share size={14} aria-label="Share" /> Share, then “Add to
               Home Screen”. It opens straight to today’s plans.

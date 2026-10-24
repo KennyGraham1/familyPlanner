@@ -44,6 +44,7 @@ import { Meals, RecipeModal } from "./meals";
 import { Shopping, Chores, Board } from "./lists";
 import { Settings } from "./settings";
 import { AuthScreen, SetupScreen, ProfileScreen } from "./onboarding";
+import { GoogleCalendarAutoSync } from "./google-calendar";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Today", Icon: House },
@@ -203,6 +204,7 @@ function AppContent() {
     );
   return (
     <div className="app-shell">
+      <GoogleCalendarAutoSync />
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
