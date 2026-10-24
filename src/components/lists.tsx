@@ -11,18 +11,31 @@ import {
   Plus,
   Search,
   ShoppingBasket,
+  Repeat2,
   Sparkles,
   StickyNote,
 } from "lucide-react";
-import { categories, dateKey, formatDate, uid } from "@/lib/data";
+import {
+  categories,
+  choreRepeatLabels,
+  dateKey,
+  formatDate,
+  uid,
+} from "@/lib/data";
 import { guessAisle } from "@/lib/shopping";
-import { cheer } from "@/lib/chores";
+import {
+  cheer,
+  completeChore,
+  nextInTurn,
+  reopenChore,
+  starsThisWeek,
+} from "@/lib/chores";
 import { usePlanner } from "./planner-provider";
 import { Avatar, CheckButton, EmptyState } from "./ui";
 import type { ViewProps } from "./overview";
 
 export function Shopping({ open }: ViewProps) {
-  const { data, apply, notify } = usePlanner();
+  const { data, apply, applyWithUndo, notify } = usePlanner();
   const [name, setName] = useState("");
   const [category, setCategory] =
     useState<(typeof categories)[number]>("Produce");
@@ -63,16 +76,14 @@ export function Shopping({ open }: ViewProps) {
   }
   async function clearBought() {
     const items = data.shopping.filter((i) => i.done);
-    if (
-      await apply(
-        items.map((i) => ({
-          collection: "shopping",
-          action: "remove",
-          id: i.id,
-        })),
-      )
-    )
-      notify(`${items.length} bought items cleared.`);
+    await applyWithUndo(
+      items.map((i) => ({
+        collection: "shopping",
+        action: "remove",
+        id: i.id,
+      })),
+      `${items.length} bought ${items.length === 1 ? "item" : "items"} cleared.`,
+    );
   }
   function exportList() {
     const content = categories
@@ -253,7 +264,9 @@ export function Shopping({ open }: ViewProps) {
 }
 
 export function Chores({ open }: ViewProps) {
-  const { data, apply, notify } = usePlanner();
+  const { data, apply, applyWithUndo } = usePlanner();
+  const stars = starsThisWeek(data);
+  const nameOf = (id: string) => data.members.find((m) => m.id === id)?.name;
   const [filter, setFilter] = useState("To do");
   const [member, setMember] = useState("all");
   const today = dateKey(new Date());
@@ -313,7 +326,17 @@ export function Chores({ open }: ViewProps) {
                 <div className={`chore-column-heading ${m.color}`}>
                   <Avatar member={m} />
                   <div className="chore-person">
-                    <h3>{m.name}</h3>
+                    <h3>
+                      {m.name}
+                      {stars[m.id] ? (
+                        <span
+                          className="stars"
+                          aria-label={`${stars[m.id]} ${stars[m.id] === 1 ? "star" : "stars"} this week`}
+                        >
+                          ⭐ {stars[m.id]}
+                        </span>
+                      ) : null}
+                    </h3>
                     {memberTasks.length > 0 ? (
                       <>
                         <small>
@@ -352,17 +375,14 @@ export function Chores({ open }: ViewProps) {
                         <CheckButton
                           done={task.done}
                           label={`Complete ${task.title}`}
-                          onClick={async () => {
-                            if (
-                              (await apply({
-                                collection: "tasks",
-                                action: "upsert",
-                                value: { ...task, done: !task.done },
-                              })) &&
-                              !task.done
-                            )
-                              notify(cheer(data.tasks, task, m.name));
-                          }}
+                          onClick={() =>
+                            void (task.done
+                              ? apply(reopenChore(data, task))
+                              : applyWithUndo(
+                                  completeChore(data, task),
+                                  cheer(data.tasks, task, m.name),
+                                ))
+                          }
                         />
                         <button
                           className="task-title"
@@ -385,6 +405,15 @@ export function Chores({ open }: ViewProps) {
                           <span className="priority-tag">
                             <Flag size={11} />
                             Important
+                          </span>
+                        )}
+                        {task.repeat && (
+                          <span className="repeat-tag">
+                            <Repeat2 size={12} />
+                            {choreRepeatLabels[task.repeat]}
+                            {task.rotation &&
+                              !task.done &&
+                              ` · next: ${nameOf(nextInTurn(task))}`}
                           </span>
                         )}
                       </div>

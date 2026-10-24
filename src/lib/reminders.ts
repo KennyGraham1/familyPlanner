@@ -1,5 +1,16 @@
 import { z } from "zod";
-import { dataSchema, formatTime, startsOn, type PlannerData } from "./data";
+import {
+  dataSchema,
+  dayNumber,
+  eventsOn,
+  formatDate,
+  formatTime,
+  occurrenceLabel,
+  occurrenceOn,
+  shiftDate,
+  startsOn,
+  type PlannerData,
+} from "./data";
 
 /** A device with reminders turned on, as listed by planner_push_candidates. */
 export const pushDeviceSchema = z.object({
@@ -32,6 +43,59 @@ export type Reminder = {
   body: string;
   url: "/#calendar" | "/#chores";
 };
+// Sunday evening: a look at the week ahead, so planning becomes a habit.
+const DIGEST_TIME = "18:00";
+// 1 January 1970 was a Thursday.
+const isSunday = (date: string) => (dayNumber(date) + 4) % 7 === 0;
+const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+/** "Your week ahead" for Monday to Sunday after `sunday`, or null when nothing's planned. */
+export function weekAhead(
+  candidate: Pick<PushCandidate, "data" | "scope" | "member_id">,
+  sunday: string,
+): Reminder | null {
+  const { data } = candidate;
+  const days = Array.from({ length: 7 }, (_, i) => shiftDate(sunday, i + 1));
+  const relevant = (memberIds: string[]) =>
+    candidate.scope === "family" ||
+    memberIds.includes(candidate.member_id ?? "");
+  // Each event once, even when it spans several days.
+  const seen = new Set<string>();
+  const events: { title: string; day: string; label: string }[] = [];
+  for (const day of days)
+    for (const event of eventsOn(data, day)) {
+      const key = `${event.id}:${occurrenceOn(event, day)?.start}`;
+      if (!relevant(event.memberIds) || seen.has(key)) continue;
+      seen.add(key);
+      events.push({
+        title: event.title,
+        day,
+        label: occurrenceLabel(event, day),
+      });
+    }
+  const chores = data.tasks.filter(
+    (t) =>
+      !t.done && t.due >= days[0] && t.due <= days[6] && relevant([t.memberId]),
+  ).length;
+  if (!events.length && !chores) return null;
+  const dinners = data.meals.filter(
+    (m) => m.slot === "Dinner" && days.includes(m.date),
+  ).length;
+  const first = events[0];
+  return {
+    key: `digest:${days[0]}`,
+    title: "Your week ahead",
+    body:
+      [
+        count(events.length, "event"),
+        `${count(dinners, "dinner")} planned`,
+        count(chores, "chore"),
+      ].join(" · ") +
+      (first
+        ? `. First up: ${first.title}, ${formatDate(first.day, { weekday: "short" })} ${first.label}`
+        : ""),
+    url: "/#calendar",
+  };
+}
 export function allowedPushEndpoint(value: string): boolean {
   try {
     const u = new URL(value);
@@ -103,6 +167,13 @@ export function dueReminders(
           body: `${when}${event.location ? ` · ${event.location}` : ""}`,
           url: "/#calendar",
         });
+      }
+    }
+    if (candidate.events_enabled || candidate.chores_enabled) {
+      const target = wallClock(minute, candidate.timezone);
+      if (target.time === DIGEST_TIME && isSunday(target.date)) {
+        const digest = weekAhead(candidate, target.date);
+        if (digest) found.set(digest.key, digest);
       }
     }
     if (candidate.chores_enabled) {

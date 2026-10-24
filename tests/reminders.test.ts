@@ -5,6 +5,7 @@ import {
   deliverReminders,
   dueReminders,
   runReminders,
+  weekAhead,
   type DeliveryStore,
   type PushCandidate,
 } from "../src/lib/reminders";
@@ -283,5 +284,111 @@ describe("scheduled reminder runs", () => {
     );
     assert.equal(totals.sent, 50);
     assert.equal(seen[0], uuid(201));
+  });
+});
+
+describe("week-ahead summary", () => {
+  // Sunday 25 October 2026; the week ahead is Mon 26 – Sun 1 Nov.
+  const week = (
+    events: Partial<FamilyEvent>[],
+    extra: Partial<PushCandidate["data"]> = {},
+  ) => {
+    const c = candidate({});
+    c.data = {
+      ...c.data,
+      events: events.map((e, i) => ({
+        ...base,
+        id: `w${i}`,
+        repeat: "none" as const,
+        location: "",
+        ...e,
+      })),
+      meals: [
+        {
+          id: "m1",
+          date: "2026-10-27",
+          slot: "Dinner",
+          recipeId: c.data.meals[0].recipeId,
+        },
+        {
+          id: "m2",
+          date: "2026-10-24",
+          slot: "Dinner",
+          recipeId: c.data.meals[0].recipeId,
+        },
+      ],
+      tasks: [
+        {
+          ...c.data.tasks[0],
+          due: "2026-10-28",
+          done: false,
+          memberId: "oliver",
+        },
+      ],
+      ...extra,
+    };
+    return c;
+  };
+  const plan = week([
+    {
+      title: "Swimming",
+      date: "2026-10-26",
+      start: "16:00",
+      end: "17:00",
+      memberIds: ["oliver"],
+    },
+    {
+      title: "Camp",
+      date: "2026-10-29",
+      endDate: "2026-10-31",
+      start: "09:00",
+      end: "15:00",
+      memberIds: ["sophie"],
+    },
+    {
+      title: "Last week",
+      date: "2026-10-20",
+      start: "10:00",
+      end: "11:00",
+      memberIds: ["oliver"],
+    },
+  ]);
+  it("arrives at 6 pm on Sunday with the week's numbers", () => {
+    const sent = dueReminders(plan, new Date("2026-10-25T18:00:00Z")).filter(
+      (r) => r.key.startsWith("digest:"),
+    );
+    assert.deepEqual(sent, [
+      {
+        key: "digest:2026-10-26",
+        title: "Your week ahead",
+        body: "2 events · 1 dinner planned · 1 chore. First up: Swimming, Mon 4 pm",
+        url: "/#calendar",
+      },
+    ]);
+  });
+  it("only on Sunday evening", () => {
+    for (const at of ["2026-10-24T18:00:00Z", "2026-10-25T17:00:00Z"])
+      assert.equal(
+        dueReminders(plan, new Date(at)).some((r) =>
+          r.key.startsWith("digest:"),
+        ),
+        false,
+        at,
+      );
+  });
+  it("counts just your own for “my events and chores”", () => {
+    const mine = weekAhead(
+      { ...plan, scope: "mine", member_id: "sophie" },
+      "2026-10-25",
+    );
+    assert.equal(
+      mine?.body.startsWith(
+        "1 event · 1 dinner planned · 0 chores. First up: Camp",
+      ),
+      true,
+    );
+  });
+  it("stays quiet when nothing is planned", () => {
+    assert.equal(weekAhead(week([], { tasks: [] }), "2026-10-25"), null);
   });
 });

@@ -120,7 +120,12 @@ export async function syncCalendar({
     const owned =
       props?.kinfolkFamily === familyId &&
       props.kinfolkEvent &&
-      remote.id === googleEventId(familyId, props.kinfolkEvent + (props.kinfolkGeneration ? `:${props.kinfolkGeneration}` : ""));
+      remote.id ===
+        googleEventId(
+          familyId,
+          props.kinfolkEvent +
+            (props.kinfolkGeneration ? `:${props.kinfolkGeneration}` : ""),
+        );
     const id = owned
       ? props.kinfolkEvent
       : importedEventId(calendarId, remote.id);
@@ -130,9 +135,19 @@ export async function syncCalendar({
         : null;
     if (mappedLocal.has(id)) {
       // Recover a recreation that reached Google before its local checkpoint saved.
-      const prior = jobs.find(j => j.link.event_id === id);
-      if (owned && prior && props.kinfolkGeneration === prior.link.google_id && baseline) {
-        prior.link = { event_id: id, google_id: remote.id, local_hash: baseline, google_hash: baseline };
+      const prior = jobs.find((j) => j.link.event_id === id);
+      if (
+        owned &&
+        prior &&
+        props.kinfolkGeneration === prior.link.google_id &&
+        baseline
+      ) {
+        prior.link = {
+          event_id: id,
+          google_id: remote.id,
+          local_hash: baseline,
+          google_hash: baseline,
+        };
         prior.remote = remote;
         prior.fresh = true;
       }
@@ -165,7 +180,12 @@ export async function syncCalendar({
     });
   }
   // Resolve the selected conflict even when a large import needs multiple passes.
-  if (resolve) jobs.sort((a, b) => Number(b.link.event_id === resolve.eventId) - Number(a.link.event_id === resolve.eventId));
+  if (resolve)
+    jobs.sort(
+      (a, b) =>
+        Number(b.link.event_id === resolve.eventId) -
+        Number(a.link.event_id === resolve.eventId),
+    );
   let writes = 0;
   let eventCount = events.length;
   for (const job of jobs) {
@@ -177,8 +197,14 @@ export async function syncCalendar({
     result.reviewed.push(link.event_id);
     const local = localById.get(link.event_id) ?? null;
     // A complete snapshot already proves an unchanged tombstone is still absent.
-    if (!local && !link.local_hash && !link.google_hash &&
-      (!remoteById.has(link.google_id) || remoteById.get(link.google_id)?.status === "cancelled")) continue;
+    if (
+      !local &&
+      !link.local_hash &&
+      !link.google_hash &&
+      (!remoteById.has(link.google_id) ||
+        remoteById.get(link.google_id)?.status === "cancelled")
+    )
+      continue;
     let google =
       job.remote === undefined
         ? (remoteById.get(link.google_id) ??
@@ -243,7 +269,12 @@ export async function syncCalendar({
         );
       } else if (decision === "pull") {
         if (!local && remote && eventCount >= 5000) {
-          result.issues.push({ eventId: link.event_id, title: remote.title, reason: "Kinfolk has reached its 5,000-event limit. Remove old events to import more." });
+          result.issues.push({
+            eventId: link.event_id,
+            title: remote.title,
+            reason:
+              "Kinfolk has reached its 5,000-event limit. Remove old events to import more.",
+          });
           continue;
         }
         const saved = await store.commit(
@@ -265,11 +296,20 @@ export async function syncCalendar({
           if (!google.etag) throw new Error("Missing event version");
           await api.deleteEvent(calendarId, google.id, google.etag);
         }
-        await store.commit(link.event_id, null, false, null, checkpoint(null, null));
+        await store.commit(
+          link.event_id,
+          null,
+          false,
+          null,
+          checkpoint(null, null),
+        );
         result.removed++;
       } else {
-        const generation = (!google || google.status === "cancelled") && (!job.fresh || google?.status === "cancelled")
-          ? link.google_id : google?.extendedProperties?.private?.kinfolkGeneration;
+        const generation =
+          (!google || google.status === "cancelled") &&
+          (!job.fresh || google?.status === "cancelled")
+            ? link.google_id
+            : google?.extendedProperties?.private?.kinfolkGeneration;
         const payload = {
           ...toGoogle(local, timezone),
           extendedProperties: {
@@ -291,7 +331,9 @@ export async function syncCalendar({
             google.etag,
           );
         } else {
-          const insertId = generation ? googleEventId(familyId, `${local.id}:${generation}`) : link.google_id;
+          const insertId = generation
+            ? googleEventId(familyId, `${local.id}:${generation}`)
+            : link.google_id;
           try {
             google = await api.insertEvent(calendarId, {
               id: insertId,

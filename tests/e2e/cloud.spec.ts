@@ -28,6 +28,8 @@ class FakeSupabase {
   plan = createSeed();
   /** Requests to fail as if the connection dropped; Infinity means it's down. */
   failNext = 0;
+  /** This person's calendar link, when one is on. */
+  feedSince: string | null = null;
   async handle(route: Route) {
     if (this.failNext > 0) {
       this.failNext--;
@@ -61,6 +63,16 @@ class FakeSupabase {
     }
     if (path.startsWith("/auth/v1/user"))
       return route.fulfill({ json: session.user });
+    if (path.endsWith("/rpc/planner_calendar_feed_status"))
+      return route.fulfill({ json: this.feedSince });
+    if (path.endsWith("/rpc/planner_create_calendar_feed")) {
+      this.feedSince = new Date().toISOString();
+      return route.fulfill({ json: "f".repeat(64) });
+    }
+    if (path.endsWith("/rpc/planner_remove_calendar_feed")) {
+      this.feedSince = null;
+      return route.fulfill({ json: null });
+    }
     return route.fulfill({ json: [] });
   }
 }
@@ -149,4 +161,82 @@ test("going offline is shown straight away", async ({ context, page }) => {
   await expect(notice(page)).toContainText("You’re offline", { timeout: 2000 });
   await context.setOffline(false);
   await expect(notice(page)).toHaveCount(0, { timeout: 12000 });
+});
+
+test("a private calendar link for Apple Calendar", async ({ page }) => {
+  await page.goto("/#calendar");
+  await page.getByRole("button", { name: "Calendar apps" }).click();
+  const dialog = page.getByRole("dialog");
+  const apple = dialog.getByRole("region", { name: "Apple Calendar link" });
+  await apple.getByRole("button", { name: "Create my calendar link" }).click();
+  await expect(
+    apple.getByRole("link", { name: "Add to this iPhone’s Calendar" }),
+  ).toHaveAttribute(
+    "href",
+    `webcal://localhost:3100/api/calendar/${"f".repeat(64)}.ics`,
+  );
+  await expect(apple.locator("code")).toHaveText(
+    `http://localhost:3100/api/calendar/${"f".repeat(64)}.ics`,
+  );
+  await page.keyboard.press("Escape");
+  // Reopened later, the link can't be shown again, only replaced or turned off.
+  await page.getByRole("button", { name: "Calendar apps" }).click();
+  await expect(apple).toContainText("Your calendar link is on");
+  await apple.getByRole("button", { name: "Turn off my link" }).click();
+  await expect(
+    apple.getByRole("button", { name: "Create my calendar link" }),
+  ).toBeVisible();
+  expect(supabase.feedSince).toBeNull();
+});
+
+test("shopping offline: changes are kept and sync when back online", async ({
+  context,
+  page,
+}) => {
+  await page.goto("/#shopping");
+  const avocados = page.getByRole("checkbox", { name: "Bought Avocados" });
+  await expect(avocados).toBeVisible();
+  await context.setOffline(true);
+  await avocados.click();
+  await page.getByLabel("New shopping item").fill("Bread rolls");
+  await page
+    .locator(".quick-add-form")
+    .getByRole("button", { name: "Add item" })
+    .click();
+  // Shown straight away, kept on the phone, nothing sent yet.
+  await expect(avocados).toBeChecked();
+  await expect(
+    page.getByRole("checkbox", { name: "Bought Bread rolls" }),
+  ).toBeVisible();
+  await expect(page.locator(".connection-notice")).toContainText(
+    "kept on this phone",
+  );
+  const server = () => supabase.plan.shopping;
+  expect(server().find((i) => i.name === "Avocados")?.done).toBe(false);
+  expect(server().some((i) => i.name === "Bread rolls")).toBe(false);
+
+  await context.setOffline(false);
+  await expect
+    .poll(() => server().find((i) => i.name === "Avocados")?.done)
+    .toBe(true);
+  await expect
+    .poll(() => server().some((i) => i.name === "Bread rolls"))
+    .toBe(true);
+  await expect(page.locator(".connection-notice")).toHaveCount(0, {
+    timeout: 12000,
+  });
+});
+
+test("opens with the plans kept on this phone when the server can't be reached", async ({
+  page,
+}) => {
+  // The first visit keeps a copy; then the family space becomes unreachable.
+  await expect(page.locator(".up-next")).toBeVisible();
+  supabase.failNext = Infinity;
+  await page.reload();
+  await expect(page.locator("main h1")).toBeVisible({ timeout: 15000 });
+  await page.goto("/#shopping");
+  await expect(
+    page.getByRole("checkbox", { name: "Bought Avocados" }),
+  ).toBeVisible();
 });

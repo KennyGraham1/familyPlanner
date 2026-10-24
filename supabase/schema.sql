@@ -63,7 +63,7 @@ declare collection text; item jsonb; reference text; member_ids text[];
 begin
   if document is null or octet_length(document::text) > 5000000 then return false; end if;
   if not extensions.jsonb_matches_schema(
-    $schema${"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"version":{"type":"number","const":1},"settings":{"type":"object","properties":{"familyName":{"type":"string","minLength":1,"maxLength":150},"currentMemberId":{"type":"string","minLength":1,"maxLength":100},"weekStartsMonday":{"type":"boolean"}},"required":["familyName","currentMemberId","weekStartsMonday"],"additionalProperties":false},"members":{"minItems":1,"maxItems":30,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"name":{"type":"string","minLength":1,"maxLength":150},"role":{"type":"string","maxLength":50},"color":{"type":"string","enum":["lavender","sage","peach","blue","rose","yellow"]},"emoji":{"type":"string","maxLength":10}},"required":["id","name","role","color","emoji"],"additionalProperties":false}},"events":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"start":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"},"end":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"},"memberIds":{"minItems":1,"type":"array","items":{"type":"string","minLength":1,"maxLength":100}},"location":{"type":"string","maxLength":200},"notes":{"type":"string","maxLength":2000},"repeat":{"type":"string","enum":["none","weekly","fortnightly","monthly","yearly"]},"category":{"type":"string","enum":["Activity","School","Appointment","Family time","Work"]},"endDate":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"until":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"allDay":{"type":"boolean"},"place":{"type":"object","properties":{"lat":{"type":"number","minimum":-90,"maximum":90},"lon":{"type":"number","minimum":-180,"maximum":180}},"required":["lat","lon"],"additionalProperties":false}},"required":["id","title","date","start","end","memberIds","location","notes","repeat","category"],"additionalProperties":false}},"tasks":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"memberId":{"type":"string","minLength":1,"maxLength":100},"due":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"done":{"type":"boolean"},"priority":{"type":"string","enum":["normal","high"]}},"required":["id","title","memberId","due","done","priority"],"additionalProperties":false}},"shopping":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"name":{"type":"string","minLength":1,"maxLength":150},"quantity":{"type":"string","maxLength":50},"category":{"type":"string","enum":["Produce","Dairy & eggs","Meat & fish","Bakery","Pantry","Household","Other"]},"done":{"type":"boolean"}},"required":["id","name","quantity","category","done"],"additionalProperties":false}},"meals":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"slot":{"type":"string","enum":["Breakfast","Lunch","Dinner"]},"recipeId":{"type":"string","minLength":1,"maxLength":100}},"required":["id","date","slot","recipeId"],"additionalProperties":false}},"notes":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"body":{"type":"string","minLength":1,"maxLength":2000},"memberId":{"type":"string","minLength":1,"maxLength":100},"color":{"type":"string","enum":["lavender","sage","peach","blue","rose","yellow"]},"pinned":{"type":"boolean"},"createdAt":{"type":"string","format":"date-time","pattern":"^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"}},"required":["id","title","body","memberId","color","pinned","createdAt"],"additionalProperties":false}}},"required":["version","settings","members","events","tasks","shopping","meals","notes"],"additionalProperties":false}$schema$::json,
+    $schema${"$schema":"http://json-schema.org/draft-07/schema#","type":"object","properties":{"version":{"type":"number","const":1},"settings":{"type":"object","properties":{"familyName":{"type":"string","minLength":1,"maxLength":150},"currentMemberId":{"type":"string","minLength":1,"maxLength":100},"weekStartsMonday":{"type":"boolean"}},"required":["familyName","currentMemberId","weekStartsMonday"],"additionalProperties":false},"members":{"minItems":1,"maxItems":30,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"name":{"type":"string","minLength":1,"maxLength":150},"role":{"type":"string","maxLength":50},"color":{"type":"string","enum":["lavender","sage","peach","blue","rose","yellow"]},"emoji":{"type":"string","maxLength":10}},"required":["id","name","role","color","emoji"],"additionalProperties":false}},"events":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"start":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"},"end":{"type":"string","pattern":"^([01]\\d|2[0-3]):[0-5]\\d$"},"memberIds":{"minItems":1,"type":"array","items":{"type":"string","minLength":1,"maxLength":100}},"location":{"type":"string","maxLength":200},"notes":{"type":"string","maxLength":2000},"repeat":{"type":"string","enum":["none","weekly","fortnightly","monthly","yearly"]},"category":{"type":"string","enum":["Activity","School","Appointment","Family time","Work"]},"endDate":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"until":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"allDay":{"type":"boolean"},"place":{"type":"object","properties":{"lat":{"type":"number","minimum":-90,"maximum":90},"lon":{"type":"number","minimum":-180,"maximum":180}},"required":["lat","lon"],"additionalProperties":false}},"required":["id","title","date","start","end","memberIds","location","notes","repeat","category"],"additionalProperties":false}},"tasks":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"memberId":{"type":"string","minLength":1,"maxLength":100},"due":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"done":{"type":"boolean"},"priority":{"type":"string","enum":["normal","high"]},"repeat":{"type":"string","enum":["daily","weekly","fortnightly","monthly"]},"rotation":{"minItems":2,"maxItems":30,"type":"array","items":{"type":"string","minLength":1,"maxLength":100}},"series":{"type":"string","minLength":1,"maxLength":100},"doneAt":{"type":"string","format":"date-time","pattern":"^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"}},"required":["id","title","memberId","due","done","priority"],"additionalProperties":false}},"shopping":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"name":{"type":"string","minLength":1,"maxLength":150},"quantity":{"type":"string","maxLength":50},"category":{"type":"string","enum":["Produce","Dairy & eggs","Meat & fish","Bakery","Pantry","Household","Other"]},"done":{"type":"boolean"}},"required":["id","name","quantity","category","done"],"additionalProperties":false}},"meals":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"date":{"type":"string","pattern":"^\\d{4}-\\d{2}-\\d{2}$"},"slot":{"type":"string","enum":["Breakfast","Lunch","Dinner"]},"recipeId":{"type":"string","minLength":1,"maxLength":100}},"required":["id","date","slot","recipeId"],"additionalProperties":false}},"notes":{"maxItems":5000,"type":"array","items":{"type":"object","properties":{"id":{"type":"string","minLength":1,"maxLength":100},"title":{"type":"string","minLength":1,"maxLength":150},"body":{"type":"string","minLength":1,"maxLength":2000},"memberId":{"type":"string","minLength":1,"maxLength":100},"color":{"type":"string","enum":["lavender","sage","peach","blue","rose","yellow"]},"pinned":{"type":"boolean"},"createdAt":{"type":"string","format":"date-time","pattern":"^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"}},"required":["id","title","body","memberId","color","pinned","createdAt"],"additionalProperties":false}}},"required":["version","settings","members","events","tasks","shopping","meals","notes"],"additionalProperties":false}$schema$::json,
     document
   ) then return false; end if;
   select array_agg(m->>'id') into member_ids from jsonb_array_elements(document->'members') m;
@@ -73,6 +73,12 @@ begin
     if (select count(*) <> count(distinct e->>'id') from jsonb_array_elements(document->collection) e) then return false; end if;
     for item in select * from jsonb_array_elements(document->collection) loop
       if collection in ('tasks','notes') and not ((item->>'memberId') = any(member_ids)) then return false; end if;
+      -- Everyone taking turns at a chore must be in the family (mirrors taskSchema).
+      if collection = 'tasks' and item ? 'rotation' then
+        for reference in select jsonb_array_elements_text(item->'rotation') loop
+          if not (reference = any(member_ids)) then return false; end if;
+        end loop;
+      end if;
       if collection = 'events' then
         -- Mirrors eventSchema in src/lib/data.ts. Multi-day and all-day events may end at an earlier clock time.
         if coalesce(item->>'endDate', item->>'date') = item->>'date'
@@ -480,6 +486,62 @@ grant execute on function public.planner_push_candidates(uuid,integer),public.pl
   public.planner_claim_delivery(uuid,text),
   public.planner_finish_delivery(uuid,text,uuid,boolean),public.planner_expire_push(uuid),public.planner_clean_deliveries()
   to service_role;
+-- Private calendar links (Apple Calendar and other apps), one per person.
+-- Only a hash of each link is stored; leaving the family removes it.
+create table if not exists public.planner_calendar_feeds (
+  household_id uuid not null,
+  user_id uuid not null,
+  token_hash text unique not null,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  primary key (household_id, user_id),
+  foreign key (household_id, user_id)
+    references public.planner_memberships(household_id, user_id) on delete cascade
+);
+alter table public.planner_calendar_feeds enable row level security;
+revoke all on public.planner_calendar_feeds from anon, authenticated;
+
+-- Creates (or replaces) the caller's link and returns it once; it can't be shown again.
+create or replace function public.planner_create_calendar_feed(family_id uuid)
+returns text language plpgsql security definer set search_path = '' as $$
+declare token text := encode(extensions.gen_random_bytes(32), 'hex');
+begin
+  if auth.uid() is null or not public.planner_is_member(family_id) then
+    raise exception 'This family space is private.';
+  end if;
+  insert into public.planner_calendar_feeds(household_id, user_id, token_hash)
+    values (family_id, auth.uid(), encode(extensions.digest(token, 'sha256'), 'hex'))
+    on conflict (household_id, user_id) do update
+      set token_hash = excluded.token_hash, created_at = now(), last_used_at = null;
+  return token;
+end;
+$$;
+create or replace function public.planner_calendar_feed_status(family_id uuid)
+returns timestamptz language sql stable security definer set search_path = '' as $$
+  select created_at from public.planner_calendar_feeds
+  where household_id = family_id and user_id = auth.uid();
+$$;
+create or replace function public.planner_remove_calendar_feed(family_id uuid)
+returns void language sql security definer set search_path = '' as $$
+  delete from public.planner_calendar_feeds
+  where household_id = family_id and user_id = auth.uid();
+$$;
+-- Server only: the family plans behind a link, or null when it's been turned off.
+create or replace function public.planner_calendar_feed(feed_hash text)
+returns jsonb language sql security definer set search_path = '' as $$
+  update public.planner_calendar_feeds f set last_used_at = now()
+  from public.planner_households h
+  where f.token_hash = feed_hash and h.id = f.household_id
+  returning h.data;
+$$;
+revoke all on function public.planner_create_calendar_feed(uuid),
+  public.planner_calendar_feed_status(uuid), public.planner_remove_calendar_feed(uuid),
+  public.planner_calendar_feed(text) from public, anon, authenticated;
+grant execute on function public.planner_create_calendar_feed(uuid),
+  public.planner_calendar_feed_status(uuid), public.planner_remove_calendar_feed(uuid)
+  to authenticated;
+grant execute on function public.planner_calendar_feed(text) to service_role;
+
 -- Live updates: Supabase Realtime tells open apps when a family's plans change.
 -- Members only receive changes for families they can read ("Read family plans" policy).
 do $$

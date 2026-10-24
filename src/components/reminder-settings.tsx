@@ -10,6 +10,7 @@ import {
   vapidBytes,
   type ReminderPreferences,
 } from "@/lib/push-client";
+import { registerServiceWorker } from "@/lib/service-worker";
 import { usePlanner } from "./planner-provider";
 import { Field, SectionHeader } from "./ui";
 
@@ -112,9 +113,7 @@ export function ReminderSettings() {
         throw new Error(
           "Notifications were not allowed. You can enable them in your browser or phone settings.",
         );
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-      });
+      const registration = (await registerServiceWorker())!;
       await navigator.serviceWorker.ready;
       let sub = await registration.pushManager.getSubscription();
       if (
@@ -160,8 +159,9 @@ export function ReminderSettings() {
     <section className="card settings-card">
       <SectionHeader icon={Bell} title="Phone reminders" />
       <p className="settings-description">
-        Get event and chore notifications even when the planner is closed.
-        Settings apply to this device.
+        Get event and chore notifications even when the planner is closed, plus
+        a look at the week ahead on Sunday evenings. Settings apply to this
+        device.
       </p>
       {loading && !config ? (
         <p role="status">Loading reminder settings…</p>

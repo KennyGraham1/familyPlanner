@@ -23,6 +23,8 @@ import {
   ownedBy,
   repeatLabels,
   repeats,
+  choreRepeatLabels,
+  choreRepeats,
   removeMemberChanges,
   type FamilyEvent,
   type Task,
@@ -50,7 +52,8 @@ export function EditorModal({
   onClose: () => void;
   open: (editor: Editor) => void;
 }) {
-  const { data, apply, notify, currentMemberId, access } = usePlanner();
+  const { data, apply, applyWithUndo, notify, currentMemberId, access } =
+    usePlanner();
   // Profiles linked to someone's account can't be removed (the database refuses).
   const linkedAccount =
     editor.kind === "member" && editor.item
@@ -89,6 +92,12 @@ export function EditorModal({
   const [place, setPlace] = useState(event?.place);
   // Bias place search toward the family's most recently used place.
   const near = data.events.findLast((e) => e.place)?.place;
+  const chore = editor.kind === "task" ? editor.item : undefined;
+  const [choreRepeat, setChoreRepeat] = useState<(typeof choreRepeats)[number]>(
+    chore?.repeat ?? "none",
+  );
+  // Who takes turns, in the order they were picked.
+  const [turns, setTurns] = useState<string[]>(chore?.rotation ?? []);
   const [repeat, setRepeat] = useState<(typeof repeats)[number]>(
     event?.repeat ?? "none",
   );
@@ -149,6 +158,7 @@ export function EditorModal({
           value,
         });
       } else if (editor.kind === "task") {
+        const repeating = choreRepeat !== "none";
         const value = taskSchema.parse({
           id,
           title: get("title"),
@@ -156,6 +166,14 @@ export function EditorModal({
           due: get("due"),
           done: editor.item?.done ?? false,
           priority: get("priority"),
+          ...(editor.item?.doneAt ? { doneAt: editor.item.doneAt } : {}),
+          ...(repeating
+            ? {
+                repeat: choreRepeat,
+                series: editor.item?.series ?? id,
+                ...(turns.length >= 2 ? { rotation: turns } : {}),
+              }
+            : {}),
         });
         success = await apply({ collection: "tasks", action: "upsert", value });
       } else if (editor.kind === "shopping") {
@@ -221,16 +239,13 @@ export function EditorModal({
       note: "notes",
     } as const;
     setSaving(true);
-    const ok = await apply({
-      collection: collection[editor.kind],
-      action: "remove",
-      id: item.id,
-    });
+    const label = titles[editor.kind];
+    const ok = await applyWithUndo(
+      { collection: collection[editor.kind], action: "remove", id: item.id },
+      `${label.charAt(0).toUpperCase() + label.slice(1)} deleted.`,
+    );
     setSaving(false);
-    if (ok) {
-      notify(`${titles[editor.kind]} removed.`);
-      onClose();
-    }
+    if (ok) onClose();
   }
   const memberOptions = data.members.map((m) => (
     <option key={m.id} value={m.id}>
@@ -530,6 +545,64 @@ export function EditorModal({
                   </select>
                 </Field>
               </div>
+              <Field label="Repeat">
+                <select
+                  name="choreRepeat"
+                  value={choreRepeat}
+                  onChange={(e) =>
+                    setChoreRepeat(
+                      e.target.value as (typeof choreRepeats)[number],
+                    )
+                  }
+                >
+                  {choreRepeats.map((r) => (
+                    <option key={r} value={r}>
+                      {choreRepeatLabels[r]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {choreRepeat !== "none" && (
+                <div className="field">
+                  <span>Take turns (optional)</span>
+                  <div className="member-picker">
+                    {data.members.map((m) => {
+                      const turn = turns.indexOf(m.id);
+                      return (
+                        <button
+                          type="button"
+                          className={`member-chip ${turn >= 0 ? "selected" : ""}`}
+                          key={m.id}
+                          aria-pressed={turn >= 0}
+                          onClick={() =>
+                            setTurns(
+                              turn >= 0
+                                ? turns.filter((id) => id !== m.id)
+                                : [...turns, m.id],
+                            )
+                          }
+                        >
+                          {turn >= 0 ? (
+                            <span className="turn-number">{turn + 1}</span>
+                          ) : (
+                            <Avatar member={m} small />
+                          )}
+                          {m.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <small className="form-hint">
+                    {turns.length >= 2
+                      ? `Each time it’s done, it passes to the next person: ${turns
+                          .map(
+                            (id) => data.members.find((m) => m.id === id)?.name,
+                          )
+                          .join(" → ")}.`
+                      : "Pick two or more people to share it, in turn."}
+                  </small>
+                </div>
+              )}
             </>
           )}
           {editor.kind === "shopping" && (
@@ -688,7 +761,7 @@ function RemoveMember({
   onCancel: () => void;
   onDone: () => void;
 }) {
-  const { data, apply, notify, currentMemberId } = usePlanner();
+  const { data, applyWithUndo, currentMemberId } = usePlanner();
   const others = data.members.filter((m) => m.id !== member.id);
   const [heir, setHeir] = useState(
     others.find((m) => m.id === currentMemberId)?.id ?? others[0].id,
@@ -706,12 +779,12 @@ function RemoveMember({
     .join(", ");
   async function confirm() {
     setSaving(true);
-    const ok = await apply(removeMemberChanges(data, member.id, heir));
+    const ok = await applyWithUndo(
+      removeMemberChanges(data, member.id, heir),
+      `${member.name} removed.`,
+    );
     setSaving(false);
-    if (ok) {
-      notify(`${member.name} removed.`);
-      onDone();
-    }
+    if (ok) onDone();
   }
   return (
     <div>

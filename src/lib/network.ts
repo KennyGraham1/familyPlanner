@@ -95,5 +95,5 @@ export function offlineMessage(
 ) {
   return online
     ? "Can’t reach your family space. Showing your last saved plans while it retries."
-    : "You’re offline. Showing your last saved plans; family changes will appear when you’re back online.";
+    : "You’re offline. Showing your last saved plans; changes you make are kept on this phone and sync when you’re back online.";
 }

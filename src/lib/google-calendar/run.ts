@@ -80,8 +80,18 @@ export async function runCalendarSync(
     const { reviewed, ...summary } = result;
     const visited = new Set(reviewed);
     // A bounded pass must not hide conflicts it has not reached yet.
-    const conflicts = result.pending ? [...result.conflicts, ...connection.conflicts.filter(c => !visited.has(c.eventId))] : result.conflicts;
-    const issues = result.pending ? [...result.issues, ...connection.issues.filter(i => !visited.has(i.eventId))] : result.issues;
+    const conflicts = result.pending
+      ? [
+          ...result.conflicts,
+          ...connection.conflicts.filter((c) => !visited.has(c.eventId)),
+        ]
+      : result.conflicts;
+    const issues = result.pending
+      ? [
+          ...result.issues,
+          ...connection.issues.filter((i) => !visited.has(i.eventId)),
+        ]
+      : result.issues;
     const saved = await db
       .from("planner_google_connections")
       .update({

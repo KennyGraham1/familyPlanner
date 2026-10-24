@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { themeScript } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "Kinfolk — Family planner",
@@ -21,13 +22,20 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Lets the phone tab bar sit clear of the iPhone home indicator.
   viewportFit: "cover",
-  themeColor: "#28634f",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#28634f" },
+    { media: "(prefers-color-scheme: dark)", color: "#101512" },
+  ],
 };
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // The theme script may set data-theme before React loads.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>{children}</body>
     </html>
   );

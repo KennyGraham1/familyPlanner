@@ -39,6 +39,9 @@
   --rose: #f6e5e0;
   --yellow: #f7efd6;
   --shadow: 0 2px 4px #203d2d03, 0 8px 24px #203d2d05;
+  /* Text and icons drawn on the brand colour (buttons, today's date). */
+  --on-accent: #fff;
+  color-scheme: light;
   --radius: 18px;
 }
 * {
@@ -156,7 +159,7 @@ input[type="checkbox"] {
   left: 20px;
   padding: 12px 20px;
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   z-index: 100;
 }
 .skip-link:focus {
@@ -196,7 +199,7 @@ input[type="checkbox"] {
   bottom: 0;
   width: 238px;
   border-right: 1px solid var(--border);
-  background: #fdfdf9;
+  background: var(--surface);
   padding: 30px 21px 0;
   z-index: 30;
   display: flex;
@@ -313,7 +316,7 @@ input[type="checkbox"] {
 }
 .nav-item.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 600;
   box-shadow: 0 3px 9px #203d2d12;
 }
@@ -332,7 +335,7 @@ input[type="checkbox"] {
 }
 .nav-item.active .nav-count {
   background: #ffffff26;
-  color: #fff;
+  color: var(--on-accent);
 }
 .nav-new-dot {
   width: 5px;
@@ -450,7 +453,7 @@ input[type="checkbox"] {
 }
 .avatar-group .avatar {
   margin-left: -6px;
-  border: 2px solid white;
+  border: 2px solid var(--surface);
   width: 25px;
   height: 25px;
   font-size: 12px;
@@ -462,7 +465,7 @@ input[type="checkbox"] {
   height: 75px;
   padding: 0 37px;
   border-bottom: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -518,7 +521,7 @@ input[type="checkbox"] {
   width: 5px;
   height: 5px;
   background: var(--accent-border);
-  border: 1px solid white;
+  border: 1px solid var(--surface);
   border-radius: 50%;
 }
 .profile-button {
@@ -605,14 +608,14 @@ input[type="checkbox"] {
 }
 .primary {
   background: var(--accent);
-  color: white;
+  color: var(--on-accent);
   box-shadow: 0 3px 8px #203d2d14;
 }
 .primary:hover {
   background: var(--accent-hover);
 }
 .secondary {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink);
 }
@@ -656,7 +659,7 @@ input[type="checkbox"] {
 }
 .icon-button.bordered {
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
 }
 .text-button {
   display: inline-flex;
@@ -1116,7 +1119,7 @@ input[type="checkbox"] {
   justify-content: center;
   padding: 0;
   flex-shrink: 0;
-  background: white;
+  background: var(--surface);
   border-color: var(--control-border);
 }
 .check-button:hover {
@@ -1125,7 +1128,7 @@ input[type="checkbox"] {
 .check-button.checked {
   background: var(--accent-border);
   border-color: var(--accent-border);
-  color: white;
+  color: var(--on-accent);
 }
 .task-title {
   font-size: 13px;
@@ -1327,7 +1330,7 @@ input[type="checkbox"] {
   gap: 5px;
 }
 .segmented-control > button.active {
-  background: white;
+  background: var(--surface);
   box-shadow: 0 1px 4px #203d2d0a;
   color: var(--accent-hover);
   font-weight: 650;
@@ -1348,7 +1351,7 @@ input[type="checkbox"] {
   padding: 7px 12px;
   font-size: 13px;
   color: var(--muted);
-  background: white;
+  background: var(--surface);
 }
 .filter-chip.active {
   background: var(--accent-soft);
@@ -1408,7 +1411,7 @@ input[type="checkbox"] {
 }
 .today-number {
   background: var(--accent);
-  color: #fff !important;
+  color: var(--on-accent) !important;
   border-radius: 50%;
   height: 28px;
   width: 28px;
@@ -1676,7 +1679,7 @@ input[type="checkbox"] {
   padding: 9px 12px;
   border: 1px solid var(--control-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
   color: var(--muted);
   min-width: 220px;
 }
@@ -2016,7 +2019,7 @@ input[type="checkbox"] {
   opacity: 1;
 }
 .standalone-select {
-  background: white;
+  background: var(--surface);
   color: var(--muted);
   font-size: 13px;
   border: 1px solid var(--border);
@@ -2447,7 +2450,7 @@ input[type="checkbox"] {
   padding: 8px;
   font-size: 13px;
   overflow-wrap: anywhere;
-  background: white;
+  background: var(--surface);
   border-radius: 5px;
   user-select: all;
 }
@@ -2493,7 +2496,7 @@ input[type="checkbox"] {
   padding: 0;
   width: min(510px, calc(100vw - 30px));
   max-height: 90dvh;
-  background: white;
+  background: var(--surface);
   box-shadow: 0 25px 90px #203d2d22;
   color: var(--ink);
   overflow: auto;
@@ -2552,7 +2555,7 @@ input[type="checkbox"] {
 .field select,
 .field textarea {
   width: 100%;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--control-border);
   border-radius: 8px;
   padding: 10px 12px;
@@ -2654,7 +2657,7 @@ input[type="checkbox"] {
   width: 31px;
   height: 31px;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 3px solid var(--surface);
   box-shadow: 0 0 0 1px var(--border);
 }
 .color-option.selected {
@@ -2726,7 +2729,7 @@ input[type="checkbox"] {
   padding: 14px 14px 14px 17px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 35px #203d2d1a;
-  background: #fff;
+  background: var(--surface);
   border-radius: 11px;
   z-index: 60;
   min-width: 280px;
@@ -4542,7 +4545,7 @@ input[type="checkbox"] {
 }
 .month-picker-grid button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .calendar-event.all-day {
   box-shadow: inset 3px 0 0 currentColor;
@@ -4622,7 +4625,7 @@ input[type="checkbox"] {
 }
 .year-day.today {
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 .year-day > .member-dot {
   position: absolute;
@@ -4946,7 +4949,7 @@ input[type="checkbox"] {
     padding: 0 5px;
     border-radius: 9px;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     font-size: 10px;
     font-style: normal;
     font-weight: 700;
@@ -4965,7 +4968,7 @@ input[type="checkbox"] {
     height: 58px;
     border-radius: 18px;
     background: var(--accent);
-    color: #fff;
+    color: var(--on-accent);
     box-shadow:
       0 10px 24px #203d2d55,
       0 2px 6px #203d2d33;
@@ -4999,7 +5002,7 @@ input[type="checkbox"] {
   color: var(--accent-hover);
 }
 .welcome-summary > button:hover {
-  background: #fff;
+  background: var(--surface);
   border-color: var(--accent);
 }
 .welcome-summary strong {
@@ -5259,7 +5262,7 @@ input[type="checkbox"] {
     color: var(--ink);
   }
   .calendar-container.week .day-label > .today-number {
-    color: #fff;
+    color: var(--on-accent);
     width: 32px;
     height: 32px;
     font-size: 16px;
@@ -5375,7 +5378,7 @@ input[type="checkbox"] {
     top: 0;
     z-index: 2;
     padding-top: 12px;
-    background: #fff;
+    background: var(--surface);
   }
   .modal .form-actions {
     position: sticky;
@@ -5383,7 +5386,7 @@ input[type="checkbox"] {
     z-index: 2;
     margin: 22px -21px -21px;
     padding: 12px 21px calc(12px + var(--safe-bottom));
-    background: #fff;
+    background: var(--surface);
     box-shadow: 0 -6px 16px #203d2d0f;
   }
   .modal .form-actions .button {
@@ -5592,18 +5595,723 @@ input[type="checkbox"] {
 }
 
 /* Google Calendar connection and conflict review. */
-.google-calendar-settings > p { margin-bottom: 16px; }
+.google-calendar-settings > p {
+  margin-bottom: 16px;
+}
 .google-calendar-settings > .button,
-.google-calendar-settings > .text-button { margin-top: 12px; }
-.google-calendar-hint { color: var(--muted); font-size: 13px; line-height: 1.65; }
-.google-calendar-account { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--accent-soft); overflow-wrap: anywhere; }
-.google-calendar-account span { font-size: 13px; color: var(--muted); }
-.google-calendar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 12px; }
-.google-calendar-review { margin-top: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; }
-.google-calendar-review h3 { font-size: 15px; margin-bottom: 8px; }
-.google-calendar-review p, .google-calendar-review li { font-size: 13px; color: var(--muted); line-height: 1.65; overflow-wrap: anywhere; }
-.google-calendar-review summary { cursor: pointer; font-weight: 600; }
-.google-calendar-conflict { padding: 16px 0; border-bottom: 1px solid var(--border); }
-.google-calendar-conflict:last-child { border-bottom: 0; padding-bottom: 0; }
-.google-calendar-settings form > .google-calendar-hint { margin: 12px 0; }
-.google-calendar-settings .form-success { color: var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 12px; }
+.google-calendar-settings > .text-button {
+  margin-top: 12px;
+}
+.google-calendar-hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.google-calendar-account {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--accent-soft);
+  overflow-wrap: anywhere;
+}
+.google-calendar-account span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.google-calendar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.google-calendar-review {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.google-calendar-review h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.google-calendar-review p,
+.google-calendar-review li {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.google-calendar-review summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.google-calendar-conflict {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.google-calendar-conflict:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.google-calendar-settings form > .google-calendar-hint {
+  margin: 12px 0;
+}
+.google-calendar-settings .form-success {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* Phone week list: days already gone fold into one row. */
+.earlier-days {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: left;
+}
+.earlier-days small {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* Meal planner on phones: one row per day instead of tall boxes. */
+@media (max-width: 760px) {
+  .meal-week .meal-days {
+    display: block;
+  }
+  .meal-week .meal-day {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 64px;
+    padding: 10px 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .meal-week .meal-day:last-child {
+    border-bottom: 0;
+  }
+  .meal-week .meal-day-label {
+    flex-direction: column;
+    gap: 1px;
+    margin: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .meal-week .meal-day-label strong {
+    font-size: 18px;
+    color: var(--ink);
+    text-transform: none;
+  }
+  .meal-week .meal-day-label small {
+    margin: 2px 0 0;
+    font-size: 10px;
+    text-transform: none;
+  }
+  .meal-week .planned-meal {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 10px;
+    align-items: center;
+  }
+  .meal-week .planned-meal img {
+    grid-row: 1 / span 2;
+    width: 48px;
+    height: 48px;
+    border-radius: 9px;
+  }
+  .meal-week .planned-meal strong {
+    margin: 0;
+    font-size: 15px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .meal-week .planned-meal small {
+    margin: 2px 0 0;
+    font-size: 12px;
+  }
+  .meal-week .meal-day-actions {
+    margin: 0;
+    padding: 0;
+    gap: 4px;
+  }
+  .meal-week .meal-day-actions > button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+  .meal-week .add-meal {
+    grid-column: 2 / 4;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    height: 44px;
+    padding: 0 12px;
+    border-style: dashed;
+    font-size: 14px;
+  }
+  .meal-week .add-meal svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+@media (max-width: 760px) {
+  /* The + button does the page's main action, so its heading button isn't repeated. */
+  .page-heading > .heading-action {
+    display: none;
+  }
+}
+.toast-action {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.toast-action:hover {
+  background: var(--accent-soft);
+}
+
+@media (max-width: 760px) {
+  /* Today on a phone: the plan first. The illustration stays on larger screens. */
+  .welcome-art {
+    display: none;
+  }
+  /* Comfortable thumb targets (about 44px) for small links and text buttons. */
+  .text-button,
+  .add-subtle {
+    min-height: 44px;
+  }
+  .section-header .text-button {
+    padding: 0 4px;
+    margin-right: -4px;
+  }
+  .welcome-summary > button,
+  .up-next-directions {
+    min-height: 40px;
+  }
+  .up-next-directions {
+    padding: 8px 12px;
+  }
+  .task-title {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+@media (max-width: 760px) {
+  /* Calendar toolbar: the view switch gets its own full-width row. */
+  .calendar-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .calendar-actions > .segmented-control {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+  }
+  .calendar-actions > .segmented-control > button {
+    flex: 1;
+  }
+  .calendar-actions > .small-button {
+    justify-self: start;
+    min-height: 44px;
+  }
+}
+@media (max-width: 760px) {
+  /* Meal week header: the slot switch spans the width; "Shop this week" sits below. */
+  .meal-week-header .toolbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .meal-week-header .toolbar-actions > .segmented-control {
+    flex: 1 1 100%;
+    display: flex;
+  }
+  .meal-week-header .toolbar-actions > .segmented-control > button {
+    flex: 1;
+  }
+  .meal-week-header .toolbar-actions > .button {
+    min-height: 44px;
+  }
+}
+
+/* Repeating chores, turns and stars */
+.repeat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+}
+.chore-person h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stars {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fff7d6;
+  color: #7a5b00;
+  font-size: 12px;
+  font-weight: 700;
+}
+.turn-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Calendar apps: Apple Calendar link */
+.calendar-apps-heading,
+.calendar-link h3 {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.calendar-link {
+  margin-top: 4px;
+}
+.modal-body .calendar-link {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.calendar-link > .button {
+  margin-top: 12px;
+}
+.calendar-link-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+.calendar-link-copy code {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   Dark mode: follows the device, or the choice in Family settings → Appearance.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101512;
+    --surface: #19201c;
+    --canvas-soft: #1e2621;
+    --ink: #e4ece6;
+    --muted: #a7b5ac;
+    --subtle: #97a69d;
+    --accent: #7cc9a2;
+    --accent-hover: #93d6b4;
+    --accent-soft: #233a2f;
+    --accent-border: #3f6b55;
+    --on-accent: #0d1a13;
+    --border: #2c3630;
+    --control-border: #6f8076;
+    --terracotta: #e09a80;
+    --lavender: #24352d;
+    --sage: #2c3122;
+    --peach: #3a2c22;
+    --blue: #22313a;
+    --rose: #3a2621;
+    --yellow: #37301a;
+    --shadow: 0 2px 4px #0005, 0 8px 24px #0007;
+    color-scheme: dark;
+  }
+  :root:not([data-theme="light"]) .sage {
+    color: #c9d4a6;
+  }
+  :root:not([data-theme="light"]) .peach {
+    color: #f0c8a8;
+  }
+  :root:not([data-theme="light"]) .blue {
+    color: #a9cbd6;
+  }
+  :root:not([data-theme="light"]) .rose {
+    color: #f0b6a6;
+  }
+  :root:not([data-theme="light"]) .yellow {
+    color: #e8d89a;
+  }
+  :root:not([data-theme="light"]) .welcome-banner {
+    background: var(--canvas-soft);
+    border-color: var(--border);
+  }
+  :root:not([data-theme="light"]) .welcome-copy {
+    background: linear-gradient(90deg, var(--canvas-soft) 84%, transparent);
+  }
+  :root:not([data-theme="light"]) .welcome-art {
+    mix-blend-mode: normal;
+    opacity: 0.9;
+  }
+  :root:not([data-theme="light"]) .welcome-art:before {
+    background: linear-gradient(90deg, var(--canvas-soft) 0%, transparent 25%);
+  }
+  :root:not([data-theme="light"]) .greeting-sun {
+    color: #e8d89a;
+  }
+  :root:not([data-theme="light"]) .mini-label,
+  :root:not([data-theme="light"]) .calendar-meal-indicator {
+    color: var(--muted);
+  }
+  :root:not([data-theme="light"]) .recipe-meta .diet-tag {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  :root:not([data-theme="light"]) .board-preview {
+    background: var(--yellow);
+    border-color: #4a4126;
+  }
+  :root:not([data-theme="light"]) .board-preview-icon {
+    background: #4a4126;
+    color: #e8d89a;
+  }
+  :root:not([data-theme="light"]) .board-preview .mini-label,
+  :root:not([data-theme="light"]) .board-preview h3,
+  :root:not([data-theme="light"]) .board-preview p {
+    color: #e8d89a;
+  }
+  :root:not([data-theme="light"]) .note-button {
+    background: var(--yellow);
+    border-color: #4a4126;
+    color: #e8d89a;
+  }
+  :root:not([data-theme="light"]) .all-done,
+  :root:not([data-theme="light"]) .up-next.ongoing .up-next-label {
+    color: #9fd8b5;
+  }
+  :root:not([data-theme="light"]) .segmented-control {
+    background: var(--bg);
+  }
+  :root:not([data-theme="light"]) .soft-purple:hover {
+    background: #2b4538;
+  }
+  :root:not([data-theme="light"]) .recipe-heart {
+    background: #19201cdd;
+    color: var(--ink);
+  }
+  :root:not([data-theme="light"]) .chore-task-meta .overdue {
+    color: #f0a8a0;
+  }
+  :root:not([data-theme="light"]) .priority-tag {
+    background: var(--peach);
+    color: #f0c8a8;
+  }
+  :root:not([data-theme="light"]) .note-footer {
+    border-top-color: #ffffff14;
+  }
+  :root:not([data-theme="light"]) .avatar {
+    border-color: #19201caa;
+  }
+  :root:not([data-theme="light"]) .note-footer .avatar {
+    border-color: #19201c77;
+  }
+  :root:not([data-theme="light"]) .local-mode {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--ink);
+  }
+  :root:not([data-theme="light"]) .local-mode p {
+    color: var(--muted);
+  }
+  :root:not([data-theme="light"]) .sync-warning {
+    background: #3a2f1c;
+    border-color: #5a4626;
+    color: #f2d6a8;
+  }
+  :root:not([data-theme="light"]) .form-error {
+    background: #3a1f23;
+    border-color: #5a2a31;
+    color: #f2b8be;
+  }
+  :root:not([data-theme="light"]) .form-success {
+    background: #1f3527;
+    border-color: #2f5a3d;
+    color: #b9e0c4;
+  }
+  :root:not([data-theme="light"]) .toast > span {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  :root:not([data-theme="light"]) .toast.error > span {
+    background: #3a1f23;
+    color: #f2b8be;
+  }
+  :root:not([data-theme="light"]) .toast.error p {
+    color: #f2b8be;
+  }
+  :root:not([data-theme="light"]) .danger-text,
+  :root:not([data-theme="light"]) .danger-quiet,
+  :root:not([data-theme="light"]) .signout-nav,
+  :root:not([data-theme="light"]) .account-menu .account-menu-signout {
+    color: #f08a96;
+  }
+  :root:not([data-theme="light"]) .account-menu .account-menu-signout:hover,
+  :root:not([data-theme="light"])
+    .account-menu
+    .account-menu-signout:focus-visible {
+    background: #3a1f23;
+  }
+  :root:not([data-theme="light"]) .recipe-timing,
+  :root:not([data-theme="light"]) .recipe-notes {
+    background: var(--canvas-soft);
+  }
+  :root:not([data-theme="light"]) .topbar {
+    background: #19201cf5;
+  }
+  :root:not([data-theme="light"]) .tab-bar {
+    background: #19201ceb;
+  }
+  :root:not([data-theme="light"]) .welcome-summary > button {
+    background: #19201cb3;
+    border-color: var(--border);
+  }
+  :root:not([data-theme="light"]) .up-next.ongoing {
+    background: #1d2e24;
+    border-color: #2f5a3d;
+  }
+  :root:not([data-theme="light"]) .person-progress {
+    background: #ffffff1f;
+  }
+  :root:not([data-theme="light"]) .stars {
+    background: #3a3214;
+    color: #f3d36b;
+  }
+  :root:not([data-theme="light"]) .modal::backdrop,
+  :root:not([data-theme="light"]) .sidebar-backdrop {
+    background: #000a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101512;
+  --surface: #19201c;
+  --canvas-soft: #1e2621;
+  --ink: #e4ece6;
+  --muted: #a7b5ac;
+  --subtle: #97a69d;
+  --accent: #7cc9a2;
+  --accent-hover: #93d6b4;
+  --accent-soft: #233a2f;
+  --accent-border: #3f6b55;
+  --on-accent: #0d1a13;
+  --border: #2c3630;
+  --control-border: #6f8076;
+  --terracotta: #e09a80;
+  --lavender: #24352d;
+  --sage: #2c3122;
+  --peach: #3a2c22;
+  --blue: #22313a;
+  --rose: #3a2621;
+  --yellow: #37301a;
+  --shadow: 0 2px 4px #0005, 0 8px 24px #0007;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .sage {
+  color: #c9d4a6;
+}
+:root[data-theme="dark"] .peach {
+  color: #f0c8a8;
+}
+:root[data-theme="dark"] .blue {
+  color: #a9cbd6;
+}
+:root[data-theme="dark"] .rose {
+  color: #f0b6a6;
+}
+:root[data-theme="dark"] .yellow {
+  color: #e8d89a;
+}
+:root[data-theme="dark"] .welcome-banner {
+  background: var(--canvas-soft);
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .welcome-copy {
+  background: linear-gradient(90deg, var(--canvas-soft) 84%, transparent);
+}
+:root[data-theme="dark"] .welcome-art {
+  mix-blend-mode: normal;
+  opacity: 0.9;
+}
+:root[data-theme="dark"] .welcome-art:before {
+  background: linear-gradient(90deg, var(--canvas-soft) 0%, transparent 25%);
+}
+:root[data-theme="dark"] .greeting-sun {
+  color: #e8d89a;
+}
+:root[data-theme="dark"] .mini-label,
+:root[data-theme="dark"] .calendar-meal-indicator {
+  color: var(--muted);
+}
+:root[data-theme="dark"] .recipe-meta .diet-tag {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+:root[data-theme="dark"] .board-preview {
+  background: var(--yellow);
+  border-color: #4a4126;
+}
+:root[data-theme="dark"] .board-preview-icon {
+  background: #4a4126;
+  color: #e8d89a;
+}
+:root[data-theme="dark"] .board-preview .mini-label,
+:root[data-theme="dark"] .board-preview h3,
+:root[data-theme="dark"] .board-preview p {
+  color: #e8d89a;
+}
+:root[data-theme="dark"] .note-button {
+  background: var(--yellow);
+  border-color: #4a4126;
+  color: #e8d89a;
+}
+:root[data-theme="dark"] .all-done,
+:root[data-theme="dark"] .up-next.ongoing .up-next-label {
+  color: #9fd8b5;
+}
+:root[data-theme="dark"] .segmented-control {
+  background: var(--bg);
+}
+:root[data-theme="dark"] .soft-purple:hover {
+  background: #2b4538;
+}
+:root[data-theme="dark"] .recipe-heart {
+  background: #19201cdd;
+  color: var(--ink);
+}
+:root[data-theme="dark"] .chore-task-meta .overdue {
+  color: #f0a8a0;
+}
+:root[data-theme="dark"] .priority-tag {
+  background: var(--peach);
+  color: #f0c8a8;
+}
+:root[data-theme="dark"] .note-footer {
+  border-top-color: #ffffff14;
+}
+:root[data-theme="dark"] .avatar {
+  border-color: #19201caa;
+}
+:root[data-theme="dark"] .note-footer .avatar {
+  border-color: #19201c77;
+}
+:root[data-theme="dark"] .local-mode {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--ink);
+}
+:root[data-theme="dark"] .local-mode p {
+  color: var(--muted);
+}
+:root[data-theme="dark"] .sync-warning {
+  background: #3a2f1c;
+  border-color: #5a4626;
+  color: #f2d6a8;
+}
+:root[data-theme="dark"] .form-error {
+  background: #3a1f23;
+  border-color: #5a2a31;
+  color: #f2b8be;
+}
+:root[data-theme="dark"] .form-success {
+  background: #1f3527;
+  border-color: #2f5a3d;
+  color: #b9e0c4;
+}
+:root[data-theme="dark"] .toast > span {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+:root[data-theme="dark"] .toast.error > span {
+  background: #3a1f23;
+  color: #f2b8be;
+}
+:root[data-theme="dark"] .toast.error p {
+  color: #f2b8be;
+}
+:root[data-theme="dark"] .danger-text,
+:root[data-theme="dark"] .danger-quiet,
+:root[data-theme="dark"] .signout-nav,
+:root[data-theme="dark"] .account-menu .account-menu-signout {
+  color: #f08a96;
+}
+:root[data-theme="dark"] .account-menu .account-menu-signout:hover,
+:root[data-theme="dark"] .account-menu .account-menu-signout:focus-visible {
+  background: #3a1f23;
+}
+:root[data-theme="dark"] .recipe-timing,
+:root[data-theme="dark"] .recipe-notes {
+  background: var(--canvas-soft);
+}
+:root[data-theme="dark"] .topbar {
+  background: #19201cf5;
+}
+:root[data-theme="dark"] .tab-bar {
+  background: #19201ceb;
+}
+:root[data-theme="dark"] .welcome-summary > button {
+  background: #19201cb3;
+  border-color: var(--border);
+}
+:root[data-theme="dark"] .up-next.ongoing {
+  background: #1d2e24;
+  border-color: #2f5a3d;
+}
+:root[data-theme="dark"] .person-progress {
+  background: #ffffff1f;
+}
+:root[data-theme="dark"] .stars {
+  background: #3a3214;
+  color: #f3d36b;
+}
+:root[data-theme="dark"] .modal::backdrop,
+:root[data-theme="dark"] .sidebar-backdrop {
+  background: #000a;
+}
+.appearance-choice {
+  display: flex;
+  margin-bottom: 10px;
+}
+.appearance-choice > button {
+  flex: 1;
+  min-height: 40px;
+}
+.quick-add-form > input {
+  background: transparent;
+}

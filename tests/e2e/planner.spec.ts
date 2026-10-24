@@ -37,6 +37,7 @@ async function saved(page: Page) {
 
 test("dashboard loads its artwork and stays within the viewport", async ({
   page,
+  isMobile,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -47,7 +48,9 @@ test("dashboard loads its artwork and stays within the viewport", async ({
       name: /^Good (morning|afternoon|evening), /,
     }),
   ).toBeVisible();
-  await expect(page.locator(".welcome-art img")).toBeVisible();
+  // Phones lead with the plan; the illustration shows on larger screens.
+  if (isMobile) await expect(page.locator(".welcome-art img")).toBeHidden();
+  else await expect(page.locator(".welcome-art img")).toBeVisible();
   await expect
     .poll(() =>
       page
@@ -686,4 +689,84 @@ test("iPhone users are shown how to add Kinfolk to their home screen", async ({
   await expect(card(installed.page)).toHaveCount(0);
   await installed.context.close();
   await safari?.close();
+});
+
+test("repeating chores pass to the next person and earn stars", async ({
+  page,
+}) => {
+  await go(page, "chores");
+  const column = (name: string) =>
+    page.locator(".chore-column").filter({
+      has: page.getByRole("heading", { name: new RegExp(`^${name}`) }),
+    });
+  await column("Oliver").getByRole("button", { name: "Add a chore" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("What needs doing?").fill("Take out the bins");
+  await dialog.getByLabel("Repeat", { exact: true }).selectOption("weekly");
+  await dialog.getByRole("button", { name: /Oliver/ }).click();
+  await dialog.getByRole("button", { name: /Sophie/ }).click();
+  await expect(dialog).toContainText("Oliver → Sophie");
+  await dialog.getByRole("button", { name: "Add chore", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(column("Oliver")).toContainText("Every week · next: Sophie");
+
+  await column("Oliver")
+    .getByRole("checkbox", { name: "Complete Take out the bins" })
+    .click();
+  const bins = async () =>
+    (await saved(page)).tasks.filter(
+      (t: { title: string }) => t.title === "Take out the bins",
+    );
+  const [first, next] = await bins();
+  expect(first).toMatchObject({ done: true, memberId: "oliver" });
+  expect(next).toMatchObject({ done: false, memberId: "sophie" });
+  expect(next.series).toBe(first.series);
+  await expect(column("Oliver").locator(".stars")).toHaveText("⭐ 1");
+
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect.poll(async () => (await bins()).length).toBe(1);
+  expect((await bins())[0]).toMatchObject({ done: false, memberId: "oliver" });
+  await expect(column("Oliver").locator(".stars")).toHaveCount(0);
+});
+
+test("appearance can follow the device or be set to light or dark", async ({
+  page,
+}) => {
+  await go(page, "settings");
+  const appearance = page.getByRole("region", { name: "Appearance" });
+  const background = () =>
+    page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const light = await background();
+  await appearance.getByRole("button", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  expect(await background()).not.toBe(light);
+  // Remembered on this device, and applied before the page draws.
+  await page.reload();
+  await expect(page.locator("main h1")).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page
+    .getByRole("region", { name: "Appearance" })
+    .getByRole("button", { name: "System" })
+    .click();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", /./);
+  expect(await background()).toBe(light);
+});
+
+test("dark mode meets automated WCAG AA accessibility checks", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  for (const view of ["overview", "chores"]) {
+    await go(page, view);
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    expect(
+      results.violations.map((v) => ({
+        id: v.id,
+        targets: v.nodes.map((n) => n.target),
+      })),
+      view,
+    ).toEqual([]);
+  }
 });

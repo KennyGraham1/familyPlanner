@@ -12,6 +12,7 @@ import {
   eventsOn,
   fromKey,
   ingredientsToShopping,
+  inverseOf,
   nextUp,
   occurrenceLabel,
   occurrenceOn,
@@ -372,5 +373,76 @@ describe("what's next", () => {
       ["Dentist", "2026-10-07", null],
     );
     assert.equal(nextUp(family([]), at("20:00")), null);
+  });
+});
+
+describe("undo", () => {
+  const seed = createSeed(fromKey("2026-09-28"));
+  const roundTrip = (mutations: Parameters<typeof inverseOf>[1]) => {
+    const undo = inverseOf(seed, mutations);
+    const changed = mutations.reduce(applyMutation, seed);
+    return undo.reduce(applyMutation, changed);
+  };
+  const sorted = (data: typeof seed) =>
+    JSON.stringify(
+      Object.fromEntries(
+        Object.entries(data).map(([k, v]) => [
+          k,
+          Array.isArray(v)
+            ? [...v].sort((a, b) => String(a.id).localeCompare(String(b.id)))
+            : v,
+        ]),
+      ),
+    );
+  it("brings back something deleted", () => {
+    assert.equal(
+      sorted(
+        roundTrip([
+          { collection: "events", action: "remove", id: seed.events[0].id },
+        ]),
+      ),
+      sorted(seed),
+    );
+  });
+  it("un-ticks a completed chore and removes something added", () => {
+    const task = seed.tasks[0];
+    assert.equal(
+      sorted(
+        roundTrip([
+          {
+            collection: "tasks",
+            action: "upsert",
+            value: { ...task, done: !task.done },
+          },
+          {
+            collection: "notes",
+            action: "upsert",
+            value: { ...seed.notes[0], id: "new-note" },
+          },
+        ]),
+      ),
+      sorted(seed),
+    );
+  });
+  it("restores the meal a new plan replaced", () => {
+    const planned = seed.meals[0];
+    assert.equal(
+      sorted(
+        roundTrip([
+          {
+            collection: "meals",
+            action: "upsert",
+            value: { ...planned, id: "swap", recipeId: "tacos" },
+          },
+        ]),
+      ),
+      sorted(seed),
+    );
+  });
+  it("puts back a removed family member and everything they had", () => {
+    assert.equal(
+      sorted(roundTrip(removeMemberChanges(seed, "alex", "jamie"))),
+      sorted(seed),
+    );
   });
 });

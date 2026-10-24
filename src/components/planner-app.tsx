@@ -35,6 +35,7 @@ import {
   type Recipe,
 } from "@/lib/data";
 import { offlineMessage } from "@/lib/network";
+import { registerServiceWorker } from "@/lib/service-worker";
 import { PlannerProvider, usePlanner } from "./planner-provider";
 import { Avatar, EmptyState, Modal, useDismiss } from "./ui";
 import { EditorModal, type Editor } from "./forms";
@@ -123,6 +124,10 @@ function AppContent() {
   useDismiss(accountMenu, accountOpen, closeAccount);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   useEffect(() => {
+    // Lets the app open without a connection (production builds only).
+    void registerServiceWorker()?.catch(() => undefined);
+  }, []);
+  useEffect(() => {
     const sync = () => {
       const hash = window.location.hash.slice(1);
       setView(Object.hasOwn(titles, hash) ? (hash as View) : "overview");
@@ -157,6 +162,21 @@ function AppContent() {
         preventScroll: true,
       });
     });
+  }
+  // The page's main action, shared by its heading button and the phone + button.
+  function pageAction() {
+    if (view === "shopping") {
+      // Adding is quickest in the list's own box: focus it and open the keyboard.
+      const input = document.querySelector<HTMLInputElement>(
+        ".quick-add-form input",
+      );
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      input?.focus();
+    } else if (heading.editor) open({ kind: heading.editor } as Editor);
+    else
+      document
+        .querySelector(".recipe-library-heading")
+        ?.scrollIntoView({ behavior: "smooth" });
   }
   function open(value: Editor) {
     setRecipe(null);
@@ -419,13 +439,7 @@ function AppContent() {
               </div>
               <button
                 className="button primary heading-action"
-                onClick={() =>
-                  heading.editor
-                    ? open({ kind: heading.editor } as Editor)
-                    : document
-                        .querySelector(".recipe-library-heading")
-                        ?.scrollIntoView({ behavior: "smooth" })
-                }
+                onClick={pageAction}
               >
                 <Plus size={17} />
                 {heading.button}
@@ -475,11 +489,7 @@ function AppContent() {
           </div>
         </main>
       </div>
-      <button
-        className="fab"
-        aria-label="Add something"
-        onClick={() => open({ kind: "quick" })}
-      >
+      <button className="fab" aria-label={heading.button} onClick={pageAction}>
         <Plus size={26} />
       </button>
       <nav className="tab-bar" aria-label="Sections">
@@ -611,6 +621,17 @@ function AppContent() {
         >
           <span>{toast.error ? <X size={17} /> : <Check size={17} />}</span>
           <p>{toast.message}</p>
+          {toast.action && (
+            <button
+              className="toast-action"
+              onClick={() => {
+                toast.action!.run();
+                dismissToast();
+              }}
+            >
+              {toast.action.label}
+            </button>
+          )}
           <button
             className="icon-button small"
             aria-label="Dismiss notification"

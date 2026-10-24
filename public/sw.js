@@ -1,6 +1,63 @@
-/* Push only: private family responses are never cached by this service worker. */
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
+/* Reminders, and (in production) the app's own files so it opens offline.
+   Family data, /api/ responses and other sites are never cached here. */
+const OFFLINE = new URL(self.location).searchParams.get('offline') === '1';
+const CACHE = 'kinfolk-app-v1';
+
+self.addEventListener('install', event => {
+  self.skipWaiting();
+  if (OFFLINE) event.waitUntil(caches.open(CACHE).then(cache =>
+    cache.addAll(['/', '/manifest.webmanifest', '/icons/icon-192.png'])).catch(() => {}));
+});
+self.addEventListener('activate', event => event.waitUntil((async () => {
+  // Remove older copies of the app (and everything when offline use is off).
+  for (const name of await caches.keys())
+    if (name.startsWith('kinfolk-app-') && (!OFFLINE || name !== CACHE)) await caches.delete(name);
+  await self.clients.claim();
+})()));
+
+async function networkFirst(request) {
+  const cache = await caches.open(CACHE);
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    // Offline: the saved page, or the app's start page (it routes with #hash).
+    return (await cache.match(request)) || (await cache.match('/')) || Response.error();
+  }
+}
+async function cacheFirst(request) {
+  const cache = await caches.open(CACHE);
+  const saved = await cache.match(request);
+  if (saved) return saved;
+  const response = await fetch(request);
+  if (response.ok) cache.put(request, response.clone());
+  return response;
+}
+async function staleWhileRevalidate(request, event) {
+  const cache = await caches.open(CACHE);
+  const saved = await cache.match(request);
+  const fresh = fetch(request).then(response => {
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  });
+  if (saved) {
+    event.waitUntil(fresh.catch(() => {}));
+    return saved;
+  }
+  return fresh;
+}
+self.addEventListener('fetch', event => {
+  if (!OFFLINE) return;
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+  if (request.mode === 'navigate') event.respondWith(networkFirst(request));
+  // Built files have content hashes in their names, so a saved copy is never stale.
+  else if (url.pathname.startsWith('/_next/static/')) event.respondWith(cacheFirst(request));
+  else if (/^\/(icons|images|fonts)\/|\.(webmanifest|svg|png|webp|jpg|woff2)$/.test(url.pathname))
+    event.respondWith(staleWhileRevalidate(request, event));
+});
 self.addEventListener('push', event => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { /* Show a generic reminder. */ }

@@ -51,7 +51,10 @@ export async function GET(request: Request) {
       calendarName: connection?.calendar_name,
       timezone: connection?.timezone,
       lastSynced: connection?.last_synced_at,
-      error: connection && connection.user_id !== ownerId ? "Disconnect the previous owner’s Google Calendar, then connect your own." : connection?.last_error,
+      error:
+        connection && connection.user_id !== ownerId
+          ? "Disconnect the previous owner’s Google Calendar, then connect your own."
+          : connection?.last_error,
       issues: connection?.issues ?? [],
       conflicts: connection?.conflicts ?? [],
       calendars,
@@ -72,7 +75,11 @@ export async function POST(request: Request) {
       throw new CalendarError("Choose a valid calendar action.");
     const body = parsed.data;
     const connection = await getConnection(db, familyId);
-    if (connection && connection.user_id !== userId && body.action !== "disconnect")
+    if (
+      connection &&
+      connection.user_id !== userId &&
+      body.action !== "disconnect"
+    )
       throw new CalendarError(
         "Disconnect the previous owner’s Google Calendar, then connect your own.",
         409,
@@ -93,19 +100,17 @@ export async function POST(request: Request) {
         .from("planner_google_oauth")
         .delete()
         .lt("expires_at", new Date().toISOString());
-      const saved = await db
-        .from("planner_google_oauth")
-        .insert({
-          state_hash: stateHash,
-          household_id: familyId,
-          user_id: userId,
-          encrypted_verifier: seal(
-            verifier,
-            config.encryptionKey,
-            `oauth:${stateHash}`,
-          ),
-          expires_at: new Date(Date.now() + 600000).toISOString(),
-        });
+      const saved = await db.from("planner_google_oauth").insert({
+        state_hash: stateHash,
+        household_id: familyId,
+        user_id: userId,
+        encrypted_verifier: seal(
+          verifier,
+          config.encryptionKey,
+          `oauth:${stateHash}`,
+        ),
+        expires_at: new Date(Date.now() + 600000).toISOString(),
+      });
       if (saved.error) throw saved.error;
       const params = new URLSearchParams({
         client_id: config.clientId,

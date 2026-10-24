@@ -30,6 +30,8 @@ import {
   useMediaQuery,
 } from "./ui";
 import { GoogleCalendarSettings } from "./google-calendar";
+import { CalendarLinkSettings } from "./calendar-link";
+import { calendarFile } from "@/lib/ics";
 import { EventRow, type ViewProps } from "./overview";
 
 type Mode = "week" | "month" | "year" | "agenda";
@@ -56,6 +58,7 @@ export function Calendar({ open }: ViewProps) {
   // On phones the month grid shows dots; tapping a day lists its events below.
   const phone = useMediaQuery(PHONE);
   const [selectedDay, setSelectedDay] = useState(today);
+  const [showEarlier, setShowEarlier] = useState(false);
   const monday = data.settings.weekStartsMonday;
   const year = date.getFullYear();
   const weekStart = startOfWeek(date, monday);
@@ -78,6 +81,18 @@ export function Calendar({ open }: ViewProps) {
           .map((d) => ({ d, key: dateKey(d), list: eventsFor(dateKey(d)) }))
           .filter(({ list }) => list.length > 0)
       : [];
+  // On phones this week's list opens at today; the days already gone fold away.
+  const earlierDays =
+    mode === "week" &&
+    phone &&
+    !showEarlier &&
+    days.some((d) => dateKey(d) === today)
+      ? days.filter((d) => dateKey(d) < today)
+      : [];
+  const earlierEvents = earlierDays.reduce(
+    (sum, d) => sum + eventsFor(dateKey(d)).length,
+    0,
+  );
   const personOf = (event: FamilyEvent) =>
     data.members.find((m) => m.id === event.memberIds[0]);
 
@@ -101,60 +116,11 @@ export function Calendar({ open }: ViewProps) {
   }
 
   function exportCalendar() {
-    const escape = (value: string) =>
-      value
-        .replace(/\\/g, "\\\\")
-        .replace(/\n/g, "\\n")
-        .replace(/;/g, "\\;")
-        .replace(/,/g, "\\,");
-    const compact = (key: string) => key.replaceAll("-", "");
-    const nextDay = (key: string) =>
-      dateKey(addDays(new Date(key + "T12:00:00"), 1));
-    const frequency = {
-      weekly: "FREQ=WEEKLY",
-      fortnightly: "FREQ=WEEKLY;INTERVAL=2",
-      monthly: "FREQ=MONTHLY",
-      yearly: "FREQ=YEARLY",
-    };
-    const events = data.events
-      .filter((e) => member === "all" || e.memberIds.includes(member))
-      .map((e) => {
-        const last = e.endDate ?? e.date;
-        const when = e.allDay
-          ? [
-              `DTSTART;VALUE=DATE:${compact(e.date)}`,
-              // All-day end dates are exclusive in iCalendar.
-              `DTEND;VALUE=DATE:${compact(nextDay(last))}`,
-            ]
-          : [
-              `DTSTART:${compact(e.date)}T${e.start.replace(":", "")}00`,
-              `DTEND:${compact(last)}T${e.end.replace(":", "")}00`,
-            ];
-        const until = e.until
-          ? `;UNTIL=${compact(e.until)}${e.allDay ? "" : "T235959"}`
-          : "";
-        return [
-          "BEGIN:VEVENT",
-          `UID:${e.id}@kinfolk.local`,
-          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").split(".")[0]}Z`,
-          ...when,
-          `SUMMARY:${escape(e.title)}`,
-          `LOCATION:${escape(e.location)}`,
-          `DESCRIPTION:${escape(e.notes)}`,
-          ...(e.repeat !== "none"
-            ? [`RRULE:${frequency[e.repeat]}${until}`]
-            : []),
-          "END:VEVENT",
-        ].join("\r\n");
-      });
-    const content = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Kinfolk//Family Planner//EN",
-      "CALSCALE:GREGORIAN",
-      ...events,
-      "END:VCALENDAR",
-    ].join("\r\n");
+    const content = calendarFile(
+      data.events.filter(
+        (e) => member === "all" || e.memberIds.includes(member),
+      ),
+    );
     const url = URL.createObjectURL(
       new Blob([content], { type: "text/calendar;charset=utf-8" }),
     );
@@ -271,12 +237,12 @@ export function Calendar({ open }: ViewProps) {
             Today
           </button>
         </div>
-        <div className="toolbar-actions">
+        <div className="toolbar-actions calendar-actions">
           <button
             className="button secondary small-button"
             onClick={() => setGoogleOpen(true)}
           >
-            <Link2 size={16} /> Google Calendar
+            <Link2 size={16} /> Calendar apps
           </button>
           <div className="segmented-control">
             {(["week", "month", "year", "agenda"] as const).map((m) => (
@@ -300,12 +266,10 @@ export function Calendar({ open }: ViewProps) {
         </div>
       </div>
       {googleOpen && (
-        <Modal
-          title="Google Calendar"
-          onClose={() => setGoogleOpen(false)}
-          wide
-        >
+        <Modal title="Calendar apps" onClose={() => setGoogleOpen(false)} wide>
+          <h3 className="calendar-apps-heading">Google Calendar</h3>
           <GoogleCalendarSettings embedded />
+          <CalendarLinkSettings embedded />
         </Modal>
       )}
       <div className="family-filters">
@@ -419,7 +383,23 @@ export function Calendar({ open }: ViewProps) {
                 {formatDate(d, { weekday: "short" })}
               </div>
             ))}
-            {days.map((d) => {
+            {earlierDays.length > 0 && (
+              <button
+                className="earlier-days"
+                onClick={() => setShowEarlier(true)}
+              >
+                <ChevronDown size={16} />
+                Show earlier this week
+                <small>
+                  {formatDate(earlierDays[0], { weekday: "short" })}
+                  {earlierDays.length > 1 &&
+                    `–${formatDate(earlierDays.at(-1)!, { weekday: "short" })}`}
+                  {earlierEvents > 0 &&
+                    ` · ${earlierEvents} ${earlierEvents === 1 ? "event" : "events"}`}
+                </small>
+              </button>
+            )}
+            {days.slice(earlierDays.length).map((d) => {
               const key = dateKey(d),
                 list = eventsFor(key),
                 shown = mode === "month" ? list.slice(0, MONTH_LIMIT) : list,

@@ -32,7 +32,7 @@ import {
   type Recipe,
 } from "@/lib/data";
 import { directionsUrl } from "@/lib/places";
-import { cheer } from "@/lib/chores";
+import { cheer, completeChore, reopenChore } from "@/lib/chores";
 import { InstallCard } from "./install-card";
 import { usePlanner } from "./planner-provider";
 import {
@@ -169,7 +169,7 @@ function UpNext({ open }: Pick<ViewProps, "open">) {
   );
 }
 export function Overview({ navigate, open, openRecipe }: ViewProps) {
-  const { data, apply, notify, currentMemberId } = usePlanner();
+  const { data, apply, applyWithUndo, currentMemberId } = usePlanner();
   const [selectedDay, setSelectedDay] = useState(dateKey(new Date()));
   const [week, setWeek] = useState(
     startOfWeek(new Date(), data.settings.weekStartsMonday),
@@ -418,24 +418,19 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                 <CheckButton
                   done={task.done}
                   label={`Complete ${task.title}`}
-                  onClick={async () => {
-                    if (
-                      (await apply({
-                        collection: "tasks",
-                        action: "upsert",
-                        value: { ...task, done: !task.done },
-                      })) &&
-                      !task.done
-                    )
-                      notify(
-                        cheer(
-                          todayTasks,
-                          task,
-                          data.members.find((m) => m.id === task.memberId)
-                            ?.name ?? "everyone",
-                        ),
-                      );
-                  }}
+                  onClick={() =>
+                    void (task.done
+                      ? apply(reopenChore(data, task))
+                      : applyWithUndo(
+                          completeChore(data, task),
+                          cheer(
+                            todayTasks,
+                            task,
+                            data.members.find((m) => m.id === task.memberId)
+                              ?.name ?? "everyone",
+                          ),
+                        ))
+                  }
                 />
                 <button
                   className="task-title"

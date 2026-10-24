@@ -256,7 +256,7 @@ function CalendarIcon() {
 }
 
 export function Meals({ openRecipe }: ViewProps) {
-  const { data, apply, notify } = usePlanner();
+  const { data, apply, applyWithUndo, notify } = usePlanner();
   const [week, setWeek] = useState(
     startOfWeek(new Date(), data.settings.weekStartsMonday),
   );
@@ -384,16 +384,16 @@ export function Meals({ openRecipe }: ViewProps) {
                       </button>
                       <button
                         aria-label={`Remove ${slot.toLowerCase()} on ${formatDate(d)}`}
-                        onClick={async () => {
-                          if (
-                            await apply({
+                        onClick={() =>
+                          void applyWithUndo(
+                            {
                               collection: "meals",
                               action: "remove",
                               id: meal!.id,
-                            })
+                            },
+                            `${recipe.name} removed from the plan.`,
                           )
-                            notify("Meal removed from the plan.");
-                        }}
+                        }
                       >
                         <Trash2 size={13} />
                       </button>

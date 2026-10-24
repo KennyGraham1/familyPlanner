@@ -15,14 +15,14 @@ Open [localhost:3000](http://localhost:3000). Visit **Family settings** to renam
 
 ## What works
 
-- **Family overview:** today’s agenda, chores, dinner, shopping, and a pinned family note.
-- **Calendar:** week, month and agenda views; individual family filters; add, edit and delete events; weekly recurrence; locations and notes; `.ics` export. Editing a recurring event changes the entire series.
+- **Today:** what’s up next with a countdown and directions, today’s agenda, chores, dinner, shopping, and a pinned family note.
+- **Calendar:** week, month, year and agenda views (on phones the week opens at today and the month shows the chosen day’s events); individual family filters; all-day, multi-day and repeating events; locations with place search; notes; `.ics` export. Editing a recurring event changes the entire series. With a shared family, Google Calendar two-way sync and a private **Apple Calendar link** (one per person; Family settings or Calendar → Calendar apps) that iPhones and other calendar apps can subscribe to.
 - **Meals:** breakfast, lunch and dinner slots; weekly navigation; 60 detailed recipes, including 24 West African dishes; country and ingredient search; West African, quick and meat-free filters; ingredient checklists, preparation/cooking/rest times, tips and serving suggestions; add or swap a meal; add missing ingredients to shopping.
-- **Shopping:** categorised lists; quick entry; quantities; search; mark items bought; clear bought items; text-file export. Existing unchecked ingredients are not duplicated. Quantities are not automatically combined when planning repeated meals.
-- **Chores:** assignments, due dates, overdue indicators, priority, progress, and completed-item filters.
+- **Shopping:** categorised lists; quick entry that guesses the aisle; quantities; search; tap an item to mark it bought; clear bought items; text-file export. Existing unchecked ingredients are not duplicated. Quantities are not automatically combined when planning repeated meals.
+- **Chores:** assignments, due dates, overdue indicators, priority, progress and completed-item filters; chores that repeat daily, weekly, fortnightly or monthly (ticking one off schedules the next, keeping its rhythm); taking turns between family members; and stars for each chore done this week.
 - **Family board:** editable coloured notes, authors, and pinning.
 - **Personalisation:** family name, member names, roles, colours, emoji and default greeting.
-- **Useful extras:** global search (`⌘K` / `Ctrl+K`), in-app reminders, keyboard-accessible dialogs, responsive navigation, JSON backup and validated restore, and a home-screen manifest.
+- **Useful extras:** Undo after deleting or completing things; light and dark appearance (follows the device, or set in Family settings); a phone tab bar with a + button that adds what fits the page; global search (`⌘K` / `Ctrl+K`); in-app and phone reminders, including a week-ahead summary on Sunday evenings; keyboard-accessible dialogs; JSON backup and validated restore; and installing to the home screen.
 
 Fonts and images are served from the project. No third-party image or font requests are required to use the app.
 
@@ -41,7 +41,7 @@ Vercel provides the supported [Next.js deployment configuration](https://vercel.
 This integration is implemented but **requires your own Supabase project and has not been exercised against a live project in this workspace**. All local functionality works without it.
 
 1. Create a Supabase project.
-2. Open its **SQL Editor** and run [`supabase/schema.sql`](supabase/schema.sql). It creates the tables, validation functions, access policies and invite functions. Supabase’s `pgcrypto` and `pg_jsonschema` extensions are used.
+2. Open its **SQL Editor** and run [`supabase/schema.sql`](supabase/schema.sql). It creates the tables, validation functions, access policies and invite functions. Supabase’s `pgcrypto` and `pg_jsonschema` extensions are used. **Run it again after updating Kinfolk**: new features (such as repeating chores and calendar links) add rules and tables, and the script is safe to re-run on an existing family.
 3. Find the project URL and **anon/public** API key in the project settings. Create `.env.local` from `.env.example`:
 
    ```dotenv
@@ -56,7 +56,7 @@ This integration is implemented but **requires your own Supabase project and has
 6. Open the app. It now starts on a sign-in screen: choose **Create account**, confirm the email and sign in. Then enter your name and family name to create your family space. You start as its only member; add everyone else from the sidebar or **Family settings**.
 7. The person who created the space can choose **Create invite code**. A family member creates their own account and enters this code under **Join family space**. Share it privately.
 
-Open apps update live: Supabase Realtime notifies every family member's app when plans change, and each fetches the latest version within about a second. If the live connection drops, the app checks every 15 seconds and whenever it returns to the screen. The status line at the bottom of each page says "Live" while connected. Changes are applied as atomic operations to the latest household document, so changes to different records do not overwrite each other. Changes to the same record use the last saved version. Failed saves are reported and must be retried; cloud mode does not claim to queue changes offline.
+Open apps update live: Supabase Realtime notifies every family member's app when plans change, and each fetches the latest version within about a second. If the live connection drops, the app checks every 15 seconds and whenever it returns to the screen. The status line at the bottom of each page says "Live" while connected. Changes are applied as atomic operations to the latest household document, so changes to different records do not overwrite each other. Changes to the same record use the last saved version. Changes made without a connection (in the shop, say) are kept on the phone, shown straight away, and sent in order when the connection returns; changes to the same record use the last saved version. The last plans seen are kept on the device so the app opens offline, and the installed app's own files are cached by its service worker in production builds (never family data or `/api/` responses). Signing out removes the offline copy, and is paused while offline changes are still waiting to sync.
 
 Access is restricted to household members. Direct client writes are disabled; authenticated database functions check membership and validate the resulting document. Invite codes contain 192 bits of randomness, are stored hashed, and expire after seven days. A new code invalidates the previous one. Every signed-in household member can edit shared plans; only the household creator can create invitations. Accounts currently belong to one household. Household membership administration is done in Supabase; local family profiles are organisational labels, not access-control roles.
 

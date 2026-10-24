@@ -13,7 +13,7 @@ async function click(windows: Client[], url = "/#chores") {
   const handlers: Record<string, (event: unknown) => void> = {};
   const opened: string[] = [];
   const self = {
-    location: { origin: "https://kinfolk.example" },
+    location: new URL("https://kinfolk.example/sw.js?offline=0"),
     addEventListener: (type: string, handler: (event: unknown) => void) =>
       (handlers[type] = handler),
     clients: {
@@ -57,5 +57,108 @@ describe("reminder notification clicks", () => {
     assert.deepEqual(await click([tab], "/#calendar"), [
       "https://kinfolk.example/#calendar",
     ]);
+  });
+});
+
+describe("opening the app offline", () => {
+  type FakeRequest = { url: string; method: string; mode: string };
+  // Runs sw.js with a fake cache and network.
+  function worker({ offline = true, online = true } = {}) {
+    const handlers: Record<string, (event: unknown) => void> = {};
+    const store = new Map<string, string>();
+    const network: string[] = [];
+    const key = (req: FakeRequest | string) =>
+      typeof req === "string"
+        ? new URL(req, "https://kinfolk.example").href
+        : req.url;
+    const cache = {
+      match: async (req: FakeRequest | string) =>
+        store.has(key(req)) ? new Response(store.get(key(req))) : undefined,
+      put: async (req: FakeRequest, res: Response) =>
+        void store.set(key(req), await res.text()),
+      addAll: async () => undefined,
+    };
+    const self = {
+      location: new URL(
+        `https://kinfolk.example/sw.js?offline=${offline ? 1 : 0}`,
+      ),
+      addEventListener: (type: string, handler: (event: unknown) => void) =>
+        (handlers[type] = handler),
+      clients: { claim: async () => undefined },
+      registration: {},
+      skipWaiting: () => undefined,
+    };
+    const fetch = async (req: FakeRequest) => {
+      network.push(new URL(req.url).pathname);
+      if (!online) throw new TypeError("Failed to fetch");
+      return new Response(`fresh ${new URL(req.url).pathname}`);
+    };
+    runInNewContext(readFileSync("public/sw.js", "utf8"), {
+      self,
+      URL,
+      Response,
+      fetch,
+      caches: {
+        open: async () => cache,
+        keys: async () => [],
+        delete: async () => true,
+      },
+    });
+    /** What the worker answers with, or null when it leaves the request alone. */
+    const request = async (url: string, mode = "no-cors") => {
+      let reply: Promise<Response> | null = null;
+      handlers.fetch({
+        request: {
+          url: new URL(url, "https://kinfolk.example").href,
+          method: "GET",
+          mode,
+        },
+        waitUntil: () => undefined,
+        respondWith: (r: Promise<Response>) => (reply = r),
+      });
+      return reply ? (reply as Promise<Response>).then((r) => r.text()) : null;
+    };
+    return { request, store, network };
+  }
+
+  it("opens the saved app when there's no connection", async () => {
+    const sw = worker({ online: false });
+    sw.store.set("https://kinfolk.example/", "saved app");
+    assert.equal(
+      await sw.request("/?googleCalendar=connected", "navigate"),
+      "saved app",
+    );
+  });
+  it("saves pages while online, and serves built files without the network", async () => {
+    const sw = worker();
+    assert.equal(await sw.request("/", "navigate"), "fresh /");
+    assert.equal(sw.store.get("https://kinfolk.example/"), "fresh /");
+    sw.store.set(
+      "https://kinfolk.example/_next/static/chunks/app.js",
+      "saved chunk",
+    );
+    assert.equal(
+      await sw.request("/_next/static/chunks/app.js"),
+      "saved chunk",
+    );
+    assert.deepEqual(sw.network, ["/"]);
+  });
+  it("never touches family data, API replies or other sites", async () => {
+    const sw = worker();
+    assert.equal(await sw.request("/api/calendar/abc.ics"), null);
+    assert.equal(
+      await sw.request(
+        "https://kinfolktest.supabase.co/rest/v1/rpc/planner_get_context",
+      ),
+      null,
+    );
+    assert.equal(
+      await sw.request("https://photon.komoot.io/api/?q=park"),
+      null,
+    );
+  });
+  it("stays out of the way in development", async () => {
+    const sw = worker({ offline: false });
+    assert.equal(await sw.request("/", "navigate"), null);
   });
 });

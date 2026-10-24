@@ -2,6 +2,8 @@ import { describe, it, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
+import { pgcrypto } from "@electric-sql/pglite/contrib/pgcrypto";
+import { createHash } from "node:crypto";
 import { createSeed, fromKey, type FamilyEvent } from "../src/lib/data";
 import { plannerJsonSchema } from "../src/lib/json-schema";
 
@@ -25,7 +27,9 @@ const supabaseStubs = `
   create publication supabase_realtime;
   create schema auth;
   create table auth.users (id uuid primary key, email text);
-  create function auth.uid() returns uuid language sql stable as 'select null::uuid';
+  -- Tests sign in as someone with: set test.uid = '<uuid>'.
+  create function auth.uid() returns uuid language sql stable
+    as 'select nullif(current_setting(''test.uid'', true), '''')::uuid';
   create schema extensions;
   create function extensions.jsonb_matches_schema(schema json, instance jsonb)
     returns boolean language sql as 'select true';
@@ -168,6 +172,83 @@ describe("schema.sql with existing families", () => {
   });
 });
 
+describe("calendar links", () => {
+  const seed = createSeed(fromKey("2026-09-28"));
+  const family = "00000000-0000-4000-8000-0000000000f1";
+  const alex = "00000000-0000-4000-8000-00000000000a";
+  const stranger = "00000000-0000-4000-8000-00000000000c";
+  let db: PGlite;
+  const as = (user: string) => db.exec(`set test.uid = '${user}'`);
+  const hash = (token: string) =>
+    createHash("sha256").update(token).digest("hex");
+  const create = async () =>
+    (
+      await db.query<{ t: string }>(
+        "select public.planner_create_calendar_feed($1) as t",
+        [family],
+      )
+    ).rows[0].t;
+  const lookup = async (token: string) =>
+    (
+      await db.query<{ data: unknown }>(
+        "select public.planner_calendar_feed($1) as data",
+        [hash(token)],
+      )
+    ).rows[0].data;
+
+  before(async () => {
+    // Real pgcrypto, so the database's hash matches the server's.
+    db = new PGlite({ extensions: { pgcrypto } });
+    const stubs = supabaseStubs.replace(
+      / {2}create function extensions\.(digest|gen_random_bytes)[\s\S]*?';\n/g,
+      "",
+    );
+    await db.exec(stubs + "create extension pgcrypto with schema extensions;");
+    await db.exec(sql.replace(/^create extension .*$/gm, ""));
+    await db.exec(
+      `insert into auth.users(id) values ('${alex}'), ('${stranger}');`,
+    );
+    await db.query(
+      "insert into public.planner_households(id, owner_id, data) values ($1, $2, $3::jsonb)",
+      [family, alex, JSON.stringify(seed)],
+    );
+    await db.exec(
+      `insert into public.planner_memberships(household_id, user_id) values ('${family}', '${alex}');`,
+    );
+  });
+  after(() => db.close());
+
+  it("creates a private link that shows the family's plans", async () => {
+    await as(alex);
+    const token = await create();
+    assert.match(token, /^[0-9a-f]{64}$/);
+    assert.deepEqual(await lookup(token), seed);
+    const status = (
+      await db.query<{ s: string | null }>(
+        "select public.planner_calendar_feed_status($1) as s",
+        [family],
+      )
+    ).rows[0].s;
+    assert.ok(status);
+  });
+  it("stops the old link working when a new one is made, or it's turned off", async () => {
+    await as(alex);
+    const first = await create();
+    const second = await create();
+    assert.equal(await lookup(first), null);
+    assert.deepEqual(await lookup(second), seed);
+    await db.query("select public.planner_remove_calendar_feed($1)", [family]);
+    assert.equal(await lookup(second), null);
+  });
+  it("only lets family members make one", async () => {
+    await as(stranger);
+    await assert.rejects(
+      db.query("select public.planner_create_calendar_feed($1)", [family]),
+      /This family space is private/,
+    );
+  });
+});
+
 describe("planner_validate_data", () => {
   let db: PGlite;
   const seed = createSeed(fromKey("2026-09-28"));
@@ -228,6 +309,20 @@ describe("planner_validate_data", () => {
       await valid(withEvent({ repeat: "weekly", until: "2026-09-01" })),
       false,
     );
+  });
+  it("accepts repeating chores and checks who takes turns", async () => {
+    const chore = {
+      ...seed.tasks[0],
+      repeat: "weekly",
+      series: seed.tasks[0].id,
+      doneAt: "2026-10-06T07:00:00.000Z",
+    };
+    const withChore = (rotation: string[]) => ({
+      ...seed,
+      tasks: [{ ...chore, rotation }, ...seed.tasks.slice(1)],
+    });
+    assert.equal(await valid(withChore(["oliver", "sophie"])), true);
+    assert.equal(await valid(withChore(["oliver", "nobody"])), false);
   });
   it("rejects a repeating event as long as its interval", async () => {
     assert.equal(

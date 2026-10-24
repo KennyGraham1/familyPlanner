@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   applyMutation,
+  inverseOf,
   createFamily,
   dataSchema,
   type Mutation,
@@ -16,6 +17,14 @@ import {
 } from "@/lib/data";
 import { getCloud, cloudConfigured } from "@/lib/cloud";
 import { errorMessage } from "@/lib/errors";
+import {
+  forgetOffline,
+  readOutbox,
+  readSnapshot,
+  rebase,
+  saveSnapshot,
+  writeOutbox,
+} from "@/lib/outbox";
 import {
   connectionState,
   isNetworkError,
@@ -28,7 +37,13 @@ const STORAGE_KEY = "kinfolk-planner-v1";
 // With a live connection, polling is only a safety net for missed messages.
 const POLL_LIVE = 60000;
 const POLL_FALLBACK = 15000;
-type Toast = { id: number; message: string; error: boolean };
+type ToastAction = { label: string; run: () => void };
+type Toast = {
+  id: number;
+  message: string;
+  error: boolean;
+  action?: ToastAction;
+};
 export type Phase = "loading" | "signin" | "setup" | "profile" | "ready";
 type Context = {
   data: PlannerData;
@@ -39,7 +54,12 @@ type Context = {
     next: PlannerData,
     expectedRevision: string | null,
   ) => Promise<boolean>;
-  notify: (message: string, error?: boolean) => void;
+  notify: (message: string, error?: boolean, action?: ToastAction) => void;
+  /** Saves a change and offers to reverse it from the confirmation message. */
+  applyWithUndo: (
+    input: Mutation | Mutation[],
+    message: string,
+  ) => Promise<boolean>;
   toast: Toast | null;
   dismissToast: () => void;
   cloudConfigured: boolean;
@@ -101,8 +121,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   const localDataInvalid = useRef(false);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const notify = useCallback(
-    (message: string, error = false) =>
-      setToast({ id: Date.now(), message, error }),
+    (message: string, error = false, action?: ToastAction) =>
+      setToast({ id: Date.now(), message, error, action }),
     [],
   );
   const update = useCallback((next: PlannerData) => {
@@ -139,12 +159,88 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       );
     }
   }, [notify, update]);
+  const queueOffline = useCallback(
+    (familyId: string, mutations: Mutation[]) => {
+      try {
+        const next = dataSchema.parse(
+          mutations.reduce(applyMutation, dataRef.current),
+        );
+        const waiting = readOutbox(familyId);
+        writeOutbox(familyId, [...waiting, mutations]);
+        update(next);
+        noteReachable(false);
+        // Say it once, not for every item ticked off in the shop.
+        if (!waiting.length)
+          notify("Saved on this phone. It’ll sync when you’re back online.");
+        return true;
+      } catch {
+        notify("Your change was not saved. Please try again.", true);
+        return false;
+      }
+    },
+    [noteReachable, notify, update],
+  );
+  const flushing = useRef(false);
+  /** Sends changes made offline, oldest first, once the connection is back. */
+  const flushOutbox = useCallback(async () => {
+    const familyId = householdRef.current,
+      cloud = getCloud();
+    if (!familyId || !cloud || flushing.current) return;
+    flushing.current = true;
+    pending.current++;
+    try {
+      let batches = readOutbox(familyId);
+      while (batches.length) {
+        const { data: result, error } = await cloud.rpc(
+          "planner_apply_changes",
+          { family_id: familyId, changes: batches[0] },
+        );
+        // Still unreachable: try again on the next reconnect.
+        if (error && isNetworkError(error)) break;
+        batches = batches.slice(1);
+        writeOutbox(familyId, batches);
+        if (error)
+          notify(
+            `A change made offline couldn’t be saved: ${errorMessage(error, "it no longer fits the family’s plans")}`,
+            true,
+          );
+        else update(rebase(dataSchema.parse(result), batches));
+      }
+      if (!batches.length) noteReachable(true);
+    } finally {
+      flushing.current = false;
+      pending.current--;
+    }
+  }, [noteReachable, notify, update]);
   const refreshCloud = useCallback(
     async (quiet = false) => {
       const cloud = getCloud();
       if (!cloud) return;
       const request = ++generation.current;
       if (!quiet) setBusy(true);
+      let user: string | null = null;
+      const showFamily = (
+        family: ReturnType<typeof familyContextSchema.parse>,
+        account: string,
+      ) => {
+        householdRef.current = family.household_id;
+        scopeRef.current = `${account}:${family.household_id}`;
+        setHousehold(family.household_id);
+        setProfileId(family.member_id);
+        setIsOwner(family.owner_id === account);
+        setAccess(family.access);
+        setRevision(family.updated_at);
+        // Changes made offline stay on screen until they've been sent.
+        const waiting = readOutbox(family.household_id);
+        update(waiting.length ? rebase(family.data, waiting) : family.data);
+        setPhase(
+          family.member_id &&
+            family.data.members.some((m) => m.id === family.member_id)
+            ? "ready"
+            : "profile",
+        );
+        return waiting.length > 0;
+      };
       try {
         const { data: auth, error: authError } = await cloud.auth.getSession();
         if (authError) throw authError;
@@ -157,6 +253,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           setPhase("signin");
           return;
         }
+        user = auth.session.user.id;
         if (pending.current) return;
         const { data: snapshot, error } = await cloud.rpc(
           "planner_get_context",
@@ -170,25 +267,18 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           return;
         }
         const family = familyContextSchema.parse(snapshot);
-        householdRef.current = family.household_id;
-        scopeRef.current = `${auth.session.user.id}:${family.household_id}`;
-        setHousehold(family.household_id);
-        setProfileId(family.member_id);
-        setIsOwner(family.owner_id === auth.session.user.id);
-        setAccess(family.access);
-        setRevision(family.updated_at);
-        update(family.data);
+        saveSnapshot(auth.session.user.id, snapshot);
+        const waiting = showFamily(family, auth.session.user.id);
         noteReachable(true);
-        setPhase(
-          family.member_id &&
-            family.data.members.some((m) => m.id === family.member_id)
-            ? "ready"
-            : "profile",
-        );
         setSyncError(null);
+        if (waiting) void flushOutbox();
       } catch (error) {
         if (request !== generation.current) return;
         if (isNetworkError(error)) {
+          // Opened without a connection: show the plans kept on this phone.
+          const kept =
+            !householdRef.current && user ? readSnapshot(user) : null;
+          if (kept && user) showFamily(kept, user);
           // Usually brief (a phone waking up): keep what's on screen and try again soon.
           noteReachable(false);
           return;
@@ -204,7 +294,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         if (request === generation.current && !pending.current) setBusy(false);
       }
     },
-    [clearFamily, noteReachable, update],
+    [clearFamily, flushOutbox, noteReachable, update],
   );
   useEffect(() => {
     // Retry soon after a failure instead of waiting for the next regular check.
@@ -298,7 +388,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   }, [household, refreshCloud]);
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 5000);
+    // A little longer when there's something to undo.
+    const timer = setTimeout(() => setToast(null), toast.action ? 8000 : 5000);
     return () => clearTimeout(timer);
   }, [toast]);
   const apply = useCallback(
@@ -336,6 +427,9 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           return false;
         }
       }
+      // Offline, or with older offline changes still waiting: queue behind them.
+      if (!navigator.onLine || readOutbox(familyId).length)
+        return queueOffline(familyId, mutations);
       const scope = scopeRef.current;
       ++generation.current;
       pending.current++;
@@ -354,6 +448,9 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           noteReachable(true);
           return true;
         } catch (e) {
+          // The connection dropped: keep the change on this phone and send it later.
+          if (scopeRef.current === scope && isNetworkError(e))
+            return queueOffline(familyId, mutations);
           if (scopeRef.current === scope) {
             const reason = isNetworkError(e)
               ? "Couldn’t reach your family space, so this wasn’t saved. Check your connection and try again."
@@ -381,7 +478,22 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       queue.current = job;
       return job;
     },
-    [noteReachable, notify, refreshCloud, update],
+    [noteReachable, notify, queueOffline, refreshCloud, update],
+  );
+  const applyWithUndo = useCallback(
+    async (input: Mutation | Mutation[], message: string) => {
+      const mutations = Array.isArray(input) ? input : [input];
+      const undo = inverseOf(dataRef.current, mutations);
+      const saved = await apply(mutations);
+      if (saved)
+        notify(message, false, {
+          label: "Undo",
+          run: () =>
+            void apply(undo).then((undone) => undone && notify("Undone.")),
+        });
+      return saved;
+    },
+    [apply, notify],
   );
   const replaceData = useCallback(
     (next: PlannerData) => {
@@ -448,6 +560,14 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     const cloud = getCloud();
     if (!cloud) return;
+    const family = householdRef.current;
+    if (family && readOutbox(family).length) {
+      notify(
+        "Some changes made offline haven’t synced yet. Reconnect for a moment, then sign out.",
+        true,
+      );
+      return;
+    }
     try {
       await disableDevicePush();
     } catch {
@@ -462,13 +582,15 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     ++generation.current;
+    // The plans kept for offline use are private: remove them from this device.
+    forgetOffline(userId, family);
     clearFamily();
     setEmail(null);
     setUserId(null);
     setSyncError(null);
     setPhase("signin");
     notify("Signed out.");
-  }, [clearFamily, notify]);
+  }, [clearFamily, notify, userId]);
   const startFamily = useCallback(
     async (name: string, familyName: string) => {
       const fresh = createFamily(name, familyName);
@@ -530,6 +652,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         data,
         phase,
         apply,
+        applyWithUndo,
         replaceData,
         restoreData,
         notify,

@@ -120,14 +120,52 @@ export const eventSchema = z
         `An event that repeats ${repeatLabels[e.repeat].toLowerCase()} can last at most ${repeatInterval[e.repeat]} days`,
       );
   });
-export const taskSchema = z.object({
-  id,
-  title: short,
-  memberId: id,
-  due: dateSchema,
-  done: z.boolean(),
-  priority: z.enum(["normal", "high"]),
-});
+export const choreRepeats = [
+  "none",
+  "daily",
+  "weekly",
+  "fortnightly",
+  "monthly",
+] as const;
+export const choreRepeatLabels: Record<(typeof choreRepeats)[number], string> =
+  {
+    none: "Doesn’t repeat",
+    daily: "Every day",
+    weekly: "Every week",
+    fortnightly: "Every 2 weeks",
+    monthly: "Every month",
+  };
+export const taskSchema = z
+  .object({
+    id,
+    title: short,
+    memberId: id,
+    due: dateSchema,
+    done: z.boolean(),
+    priority: z.enum(["normal", "high"]),
+    // Optional so families saved before these existed stay valid.
+    repeat: z.enum(["daily", "weekly", "fortnightly", "monthly"]).optional(),
+    /** People who take turns, in order; each time it's done it passes on. */
+    rotation: z.array(id).min(2).max(30).optional(),
+    /** Shared by every occurrence of a repeating chore. */
+    series: id.optional(),
+    /** When it was ticked off, for this week's stars. */
+    doneAt: z.string().datetime().optional(),
+  })
+  .superRefine((t, ctx) => {
+    if (t.rotation && new Set(t.rotation).size !== t.rotation.length)
+      ctx.addIssue({
+        code: "custom",
+        path: ["rotation"],
+        message: "Each person can only take one turn",
+      });
+    if (t.rotation && !t.repeat)
+      ctx.addIssue({
+        code: "custom",
+        path: ["rotation"],
+        message: "Taking turns needs a chore that repeats",
+      });
+  });
 export const shoppingSchema = z.object({
   id,
   name: short,
@@ -189,7 +227,10 @@ export const dataSchema = z
     }
     if (
       data.events.some((e) => e.memberIds.some((m) => !members.has(m))) ||
-      data.tasks.some((t) => !members.has(t.memberId)) ||
+      data.tasks.some(
+        (t) =>
+          !members.has(t.memberId) || t.rotation?.some((m) => !members.has(m)),
+      ) ||
       data.notes.some((n) => !members.has(n.memberId))
     )
       ctx.addIssue({
@@ -461,13 +502,23 @@ export function removeMemberChanges(
       value: { ...event, memberIds: others.length ? others : [heirId] },
     });
   }
-  for (const task of data.tasks)
-    if (task.memberId === memberId)
-      changes.push({
-        collection: "tasks",
-        action: "upsert",
-        value: { ...task, memberId: heirId },
-      });
+  for (const task of data.tasks) {
+    const inRotation = task.rotation?.includes(memberId);
+    if (task.memberId !== memberId && !inRotation) continue;
+    const rotation = task.rotation?.filter((id) => id !== memberId);
+    const { rotation: _old, ...rest } = task;
+    void _old;
+    changes.push({
+      collection: "tasks",
+      action: "upsert",
+      value: {
+        ...rest,
+        memberId: task.memberId === memberId ? heirId : task.memberId,
+        // Taking turns needs at least two people.
+        ...(rotation && rotation.length >= 2 ? { rotation } : {}),
+      },
+    });
+  }
   for (const note of data.notes)
     if (note.memberId === memberId)
       changes.push({
@@ -483,6 +534,52 @@ export function removeMemberChanges(
     });
   changes.push({ collection: "members", action: "remove", id: memberId });
   return changes;
+}
+/**
+ * The changes that reverse `mutations`, worked out against the data before they
+ * apply. Used for "Undo": applying them afterwards restores the original state.
+ */
+export function inverseOf(
+  data: PlannerData,
+  mutations: Mutation[],
+): Mutation[] {
+  const undo: Mutation[] = [];
+  let current = data;
+  for (const mutation of mutations) {
+    if (mutation.action === "settings") {
+      undo.push({
+        collection: "settings",
+        action: "settings",
+        value: current.settings,
+      });
+    } else {
+      const list = current[mutation.collection] as RecordItem[];
+      const id = mutation.action === "remove" ? mutation.id : mutation.value.id;
+      const before = list.find((item) => item.id === id);
+      undo.push(
+        before
+          ? { collection: mutation.collection, action: "upsert", value: before }
+          : { collection: mutation.collection, action: "remove", id },
+      );
+      // Planning a meal replaces whatever was planned in that slot; undo brings it back.
+      if (mutation.action === "upsert" && mutation.collection === "meals") {
+        const meal = mutation.value as Meal;
+        for (const displaced of current.meals)
+          if (
+            displaced.id !== meal.id &&
+            displaced.date === meal.date &&
+            displaced.slot === meal.slot
+          )
+            undo.push({
+              collection: "meals",
+              action: "upsert",
+              value: displaced,
+            });
+      }
+    }
+    current = applyMutation(current, mutation);
+  }
+  return undo.reverse();
 }
 export function ingredientsToShopping(
   data: PlannerData,
