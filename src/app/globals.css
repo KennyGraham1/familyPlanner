@@ -2598,6 +2598,38 @@ input[type="checkbox"] {
   line-height: 1.7;
   margin-top: 16px;
 }
+.event-conflicts {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--control-border);
+  border-radius: 10px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.event-conflicts-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.event-conflicts ul {
+  margin: 12px 0;
+  padding-left: 18px;
+}
+.event-conflicts li + li {
+  margin-top: 9px;
+}
+.event-conflicts li span {
+  display: block;
+  margin-top: 2px;
+}
+.event-conflicts-scope {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .form-success {
   color: #54644b;
   background: #f1f7ea;

@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  AlertTriangle,
   CalendarDays,
   CheckSquare,
   ShoppingBasket,
@@ -13,6 +14,10 @@ import {
   colors,
   dateKey,
   daysBetween,
+  formatDate,
+  formatTime,
+  isMultiDay,
+  occurrenceLabel,
   shiftDate,
   uid,
   eventSchema,
@@ -32,6 +37,7 @@ import {
   type Note,
   type Member,
 } from "@/lib/data";
+import { eventConflicts } from "@/lib/event-conflicts";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, FormActions, Modal } from "./ui";
 import { PlaceInput } from "./place-input";
@@ -60,6 +66,7 @@ export function EditorModal({
       ? access.find((a) => a.member_id === editor.item!.id)
       : undefined;
   const [saving, setSaving] = useState(false);
+  const [draftId] = useState(uid);
   const [error, setError] = useState("");
   const [removing, setRemoving] = useState(false);
   const event = editor.kind === "event" ? editor.item : undefined;
@@ -101,11 +108,52 @@ export function EditorModal({
   const [repeat, setRepeat] = useState<(typeof repeats)[number]>(
     event?.repeat ?? "none",
   );
+  const [startTime, setStartTime] = useState(
+    event && !event.allDay ? event.start : "09:00",
+  );
+  const [endTime, setEndTime] = useState(
+    event && !event.allDay ? event.end : "10:00",
+  );
+  const [repeatUntil, setRepeatUntil] = useState(event?.until ?? "");
   const [selected, setSelected] = useState<string[]>(
     editor.kind === "event" && editor.item
       ? editor.item.memberIds
       : [currentMemberId],
   );
+  const conflicts = useMemo(() => {
+    if (editor.kind !== "event") return [];
+    // Validate the schedule before checking it, even while the title is empty.
+    const draft = eventSchema.safeParse({
+      id: event?.id ?? draftId,
+      title: "New event",
+      date: startDate,
+      start: allDay ? "00:00" : startTime,
+      end: allDay ? "23:59" : endTime,
+      memberIds: selected,
+      repeat,
+      location: "",
+      notes: "",
+      category: "Activity",
+      ...(multiDay ? { endDate } : {}),
+      ...(repeat !== "none" && repeatUntil ? { until: repeatUntil } : {}),
+      ...(allDay ? { allDay: true } : {}),
+    });
+    return draft.success ? eventConflicts(draft.data, data.events) : [];
+  }, [
+    editor.kind,
+    event?.id,
+    draftId,
+    startDate,
+    startTime,
+    endTime,
+    selected,
+    repeat,
+    multiDay,
+    endDate,
+    repeatUntil,
+    allDay,
+    data.events,
+  ]);
   const [color, setColor] = useState(
     editor.kind === "member"
       ? (editor.item?.color ?? "lavender")
@@ -128,7 +176,7 @@ export function EditorModal({
     setSaving(true);
     const f = new FormData(e.currentTarget),
       get = (key: string) => String(f.get(key) ?? "").trim();
-    const id = item?.id ?? uid();
+    const id = item?.id ?? draftId;
     let success = false;
     try {
       if (editor.kind === "event") {
@@ -391,11 +439,8 @@ export function EditorModal({
                     <input
                       name="start"
                       type="time"
-                      defaultValue={
-                        editor.item && !editor.item.allDay
-                          ? editor.item.start
-                          : "09:00"
-                      }
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
                       required
                     />
                   </Field>
@@ -403,11 +448,8 @@ export function EditorModal({
                     <input
                       name="end"
                       type="time"
-                      defaultValue={
-                        editor.item && !editor.item.allDay
-                          ? editor.item.end
-                          : "10:00"
-                      }
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
                       required
                     />
                   </Field>
@@ -421,6 +463,7 @@ export function EditorModal({
                       type="button"
                       className={`member-chip ${selected.includes(m.id) ? "selected" : ""}`}
                       key={m.id}
+                      aria-label={m.name}
                       aria-pressed={selected.includes(m.id)}
                       onClick={() =>
                         setSelected(
@@ -489,9 +532,57 @@ export function EditorModal({
                   <input
                     name="until"
                     type="date"
-                    defaultValue={editor.item?.until}
+                    value={repeatUntil}
+                    onChange={(e) => setRepeatUntil(e.target.value)}
                   />
                 </Field>
+              )}
+              <div role="status" aria-live="polite" aria-atomic="true">
+                {conflicts.length > 0 && (
+                  <div className="event-conflicts">
+                    <strong className="event-conflicts-heading">
+                      <AlertTriangle size={17} aria-hidden="true" />
+                      Scheduling overlap
+                    </strong>
+                    <p>
+                      These plans include the same family members. You can still
+                      save this event.
+                    </p>
+                    <ul>
+                      {conflicts
+                        .slice(0, 3)
+                        .map(({ event: other, day, memberIds }) => (
+                          <li key={other.id}>
+                            <strong>{other.title}</strong>
+                            <span>
+                              {data.members
+                                .filter((m) => memberIds.includes(m.id))
+                                .map((m) => m.name)
+                                .join(", ")}
+                              {" · "}
+                              {formatDate(day, {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              })}
+                              {" · "}
+                              {other.allDay || isMultiDay(other)
+                                ? occurrenceLabel(other, day)
+                                : `${formatTime(other.start)}–${formatTime(other.end)}`}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                    {conflicts.length > 3 && (
+                      <p>+{conflicts.length - 3} more overlapping plans</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {(repeat !== "none" || multiDay) && (
+                <p className="event-conflicts-scope">
+                  Overlaps are checked up to one year from the start date.
+                </p>
               )}
               <Field label="Notes">
                 <textarea

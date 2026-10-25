@@ -1,6 +1,6 @@
 import { test, expect, devices, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { createSeed } from "../../src/lib/data";
+import { createSeed, shiftDate } from "../../src/lib/data";
 
 const storage = "kinfolk-planner-v1";
 // New visitors start with an empty family; these tests use the sample family as a fixture.
@@ -131,6 +131,80 @@ test("invalid event times are explained and Escape closes the form", async ({
   );
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).not.toBeVisible();
+});
+
+test("event overlaps update with times and people and still allow saving", async ({
+  page,
+}) => {
+  await go(page, "calendar");
+  const football = (await saved(page)).events.find(
+    (e: { id: string }) => e.id === "e2",
+  );
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  const warning = dialog.locator(".event-conflicts");
+  await dialog.getByLabel("What's happening?").fill("Dentist visit");
+  await dialog.getByLabel("Date", { exact: true }).fill(football.date);
+  await dialog.getByLabel("Ends at").fill("17:30");
+  await dialog.getByLabel("Starts at").fill("16:30");
+  await expect(warning).toContainText("Football practice");
+  await expect(warning).toContainText("Alex");
+  await expect(warning).toContainText("You can still save this event");
+  await dialog.getByLabel("Starts at").fill("17:00");
+  await expect(warning).toHaveCount(0);
+  await dialog.getByLabel("Starts at").fill("16:30");
+  await dialog.getByRole("button", { name: "Alex", exact: true }).click();
+  await dialog.getByRole("button", { name: "Jamie", exact: true }).click();
+  await expect(warning).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Alex", exact: true }).click();
+  await expect(warning).toContainText("Football practice");
+  expect(await dialog.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(
+    true,
+  );
+  const axe = await new AxeBuilder({ page })
+    .include(".modal")
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+    .analyze();
+  expect(axe.violations).toEqual([]);
+  await dialog.getByRole("button", { name: "Add event", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(
+    (await saved(page)).events.some(
+      (e: { title: string }) => e.title === "Dentist visit",
+    ),
+  ).toBe(true);
+});
+
+test("event overlaps check later repeats and preserve times when toggling all day", async ({
+  page,
+}) => {
+  await go(page, "calendar");
+  const coffee = (await saved(page)).events.find(
+    (e: { id: string }) => e.id === "e5",
+  );
+  await page.getByRole("button", { name: "Add an event", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  const warning = dialog.locator(".event-conflicts");
+  await dialog
+    .getByLabel("Date", { exact: true })
+    .fill(shiftDate(coffee.date, -7));
+  await dialog.getByLabel("Ends at").fill("11:30");
+  await dialog.getByLabel("Starts at").fill("10:30");
+  await expect(warning).toHaveCount(0);
+  await dialog.getByLabel("Repeat", { exact: true }).selectOption("weekly");
+  await expect(warning).toContainText("Coffee & catch-up");
+  await expect(dialog).toContainText("up to one year from the start date");
+  await dialog
+    .getByLabel("Repeat until", { exact: true })
+    .fill(shiftDate(coffee.date, -1));
+  await expect(warning).toHaveCount(0);
+  await dialog.getByLabel("Repeat until", { exact: true }).fill(coffee.date);
+  await expect(warning).toContainText("Coffee & catch-up");
+  await dialog.getByLabel("All day", { exact: true }).check();
+  await expect(warning).toContainText("Coffee & catch-up");
+  await dialog.getByLabel("All day", { exact: true }).uncheck();
+  await expect(dialog.getByLabel("Starts at")).toHaveValue("10:30");
+  await expect(dialog.getByLabel("Ends at")).toHaveValue("11:30");
 });
 
 test("shopping items can be added, filtered, completed and cleared", async ({

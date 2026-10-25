@@ -1,6 +1,6 @@
 # Kinfolk — a little more together
 
-A warm, responsive family planner.sßßß It works immediately with editable example data and browser storage. Add the included Supabase backend to share plans between family members on different devices.
+A warm, responsive family planner. It works immediately with browser storage. Add the included Supabase backend to share plans between family members on different devices.
 
 ## Run locally
 
@@ -17,6 +17,7 @@ Open [localhost:3000](http://localhost:3000). Visit **Family settings** to renam
 
 - **Today:** what’s up next with a countdown and directions, today’s agenda, chores, dinner, shopping, and a pinned family note.
 - **Calendar:** week, month, year and agenda views (on phones the week opens at today and the month shows the chosen day’s events); individual family filters; all-day, multi-day and repeating events; locations with place search; notes; `.ics` export. Editing a recurring event changes the entire series. With a shared family, Google Calendar two-way sync and a private **Apple Calendar link** (one per person; Family settings or Calendar → Calendar apps) that iPhones and other calendar apps can subscribe to.
+- **Scheduling overlaps:** the event form shows overlapping plans for the same family members as dates, times and attendees change. Checks include all-day, overnight and recurring plans for up to one year from the event’s start date. Warnings show the shared members and date, and you can still save intentional overlaps.
 - **Meals:** breakfast, lunch and dinner slots; weekly navigation; 60 detailed recipes, including 24 West African dishes; country and ingredient search; West African, quick and meat-free filters; ingredient checklists, preparation/cooking/rest times, tips and serving suggestions; add or swap a meal; add missing ingredients to shopping.
 - **Shopping:** categorised lists; quick entry that guesses the aisle; quantities; search; tap an item to mark it bought; clear bought items; text-file export. Existing unchecked ingredients are not duplicated. Quantities are not automatically combined when planning repeated meals.
 - **Chores:** assignments, due dates, overdue indicators, priority, progress and completed-item filters; chores that repeat daily, weekly, fortnightly or monthly (ticking one off schedules the next, keeping its rhythm); taking turns between family members; and stars for each chore done this week.
