@@ -168,6 +168,15 @@ test("event overlaps update with times and people and still allow saving", async
   expect(axe.violations).toEqual([]);
   await dialog.getByRole("button", { name: "Add event", exact: true }).click();
   await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole("status")).toContainText(
+    "Event saved. Overlaps with Football practice",
+  );
+  await page.getByRole("button", { name: "Review", exact: true }).click();
+  await expect(dialog.getByLabel("What's happening?")).toHaveValue(
+    "Dentist visit",
+  );
+  await expect(warning).toContainText("Football practice");
+  await dialog.getByRole("button", { name: "Close dialog" }).click();
   expect(
     (await saved(page)).events.some(
       (e: { title: string }) => e.title === "Dentist visit",

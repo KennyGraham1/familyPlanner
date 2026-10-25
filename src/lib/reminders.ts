@@ -37,6 +37,17 @@ export const pushDeviceSchema = z.object({
 export type PushCandidate = z.infer<typeof pushDeviceSchema> & {
   data: PlannerData;
 };
+export type ReminderSchedule = Pick<
+  PushCandidate,
+  | "data"
+  | "member_id"
+  | "timezone"
+  | "scope"
+  | "event_minutes"
+  | "chore_time"
+  | "events_enabled"
+  | "chores_enabled"
+>;
 export type Reminder = {
   key: string;
   title: string;
@@ -136,7 +147,7 @@ const ALL_DAY_TIME = "08:00";
 /** Minute-based clock comparison handles IANA zones and a five-minute scheduler delay.
  * Repeated DST wall times share a delivery key; nonexistent wall times are skipped. */
 export function dueReminders(
-  candidate: PushCandidate,
+  candidate: ReminderSchedule,
   now = new Date(),
 ): Reminder[] {
   if (candidate.scope === "mine" && !candidate.member_id) return [];

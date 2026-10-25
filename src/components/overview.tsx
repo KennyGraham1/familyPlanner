@@ -240,8 +240,8 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
         </div>
         <div className="welcome-art">
           <img
-            src="/images/family-breakfast-african.webp"
-            alt="A Black African family enjoying breakfast together in a warm, sunny kitchen"
+            src="/images/family-breakfast-five.webp"
+            alt="Two Black African parents, their boys aged 10 and 6, and baby girl enjoying breakfast in a sunny kitchen"
             fetchPriority="high"
           />
         </div>

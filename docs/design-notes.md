@@ -13,7 +13,7 @@ Kinfolk adapts these useful organisational patterns into an original interface: 
 
 The primary colour is forest green (`#28634f`) on warm ivory (`#f6f5ef`), with charcoal text, white cards and soft sage selections. Navigation, forms, calendar colours, recipe controls, the app icon and installed-app theme use the same palette. Existing stored `lavender` values are retained for compatibility and display as forest green; the colour picker names that swatch “Forest green”.
 
-The current welcome illustration is [`public/images/family-breakfast-african.webp`](../public/images/family-breakfast-african.webp), edited with the **built-in imagegen tool** to show a Black African family and match the new palette. The exact edit prompts are saved in [`ui-refresh-image-prompt.json`](./ui-refresh-image-prompt.json). The original artwork is retained below.
+The current welcome illustration is [`public/images/family-breakfast-five.webp`](../public/images/family-breakfast-five.webp), edited with the **built-in imagegen tool** to show two Black African adults, two boys aged 10 and 6, and a baby girl, with no dog. The exact edit prompts are saved in [`family-picture-edit-prompt.json`](./family-picture-edit-prompt.json). The preceding illustration and palette prompts are retained in [`ui-refresh-image-prompt.json`](./ui-refresh-image-prompt.json), alongside the earlier artwork.
 
 ## Original dashboard illustration
 

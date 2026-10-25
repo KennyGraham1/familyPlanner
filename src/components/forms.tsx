@@ -178,6 +178,7 @@ export function EditorModal({
       get = (key: string) => String(f.get(key) ?? "").trim();
     const id = item?.id ?? draftId;
     let success = false;
+    let savedEvent: FamilyEvent | undefined;
     try {
       if (editor.kind === "event") {
         const date = get("date"),
@@ -205,6 +206,7 @@ export function EditorModal({
           action: "upsert",
           value,
         });
+        if (success) savedEvent = value;
       } else if (editor.kind === "task") {
         const repeating = choreRepeat !== "none";
         const value = taskSchema.parse({
@@ -263,11 +265,22 @@ export function EditorModal({
         });
       }
       if (success) {
-        notify(
-          item
-            ? "Changes saved."
-            : `${titles[editor.kind].charAt(0).toUpperCase() + titles[editor.kind].slice(1)} added.`,
-        );
+        const overlappingEvent = savedEvent;
+        if (overlappingEvent && conflicts.length > 0) {
+          notify(
+            `Event saved. Overlaps with ${conflicts[0].event.title}${conflicts.length > 1 ? ` and ${conflicts.length - 1} more ${conflicts.length === 2 ? "plan" : "plans"}` : ""}.`,
+            false,
+            {
+              label: "Review",
+              run: () => open({ kind: "event", item: overlappingEvent }),
+            },
+          );
+        } else
+          notify(
+            item
+              ? "Changes saved."
+              : `${titles[editor.kind].charAt(0).toUpperCase() + titles[editor.kind].slice(1)} added.`,
+          );
         onClose();
       }
     } catch (e) {

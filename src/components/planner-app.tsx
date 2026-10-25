@@ -46,6 +46,7 @@ import { Shopping, Chores, Board } from "./lists";
 import { Settings } from "./settings";
 import { AuthScreen, SetupScreen, ProfileScreen } from "./onboarding";
 import { GoogleCalendarAutoSync } from "./google-calendar";
+import { DeviceReminders } from "./device-reminders";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Today", Icon: House },
@@ -225,6 +226,7 @@ function AppContent() {
   return (
     <div className="app-shell">
       <GoogleCalendarAutoSync />
+      <DeviceReminders />
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
@@ -378,7 +380,8 @@ function AppContent() {
               onClick={() => setNotificationsOpen(true)}
             >
               <Bell size={19} />
-              {eventsOn(data, today).length > 0 && <span />}
+              {(eventsOn(data, today).length > 0 ||
+                data.tasks.some((t) => !t.done && t.due <= today)) && <span />}
             </button>
             {email ? (
               <div className="account-menu-wrap" ref={accountMenu}>
@@ -610,8 +613,23 @@ function AppContent() {
               )}
           </div>
           <p className="form-hint">
-            These are in-app reminders. Keep Kinfolk handy to see what’s next.
+            Choose event and chore notifications for this device in notification
+            settings.
           </p>
+          <button
+            className="button secondary"
+            onClick={() => {
+              setNotificationsOpen(false);
+              navigate("settings");
+              requestAnimationFrame(() =>
+                document
+                  .getElementById("phone-reminders")
+                  ?.scrollIntoView({ block: "start" }),
+              );
+            }}
+          >
+            <Bell size={16} /> Notification settings
+          </button>
         </Modal>
       )}
       {toast && (

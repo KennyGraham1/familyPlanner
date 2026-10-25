@@ -11,11 +11,18 @@ import {
   type ReminderPreferences,
 } from "@/lib/push-client";
 import { registerServiceWorker } from "@/lib/service-worker";
+import {
+  devicePreferencesSnapshot,
+  parseDevicePreferences,
+  saveDevicePreferences,
+  showDeviceReminder,
+} from "@/lib/device-reminders";
 import { usePlanner } from "./planner-provider";
 import { Field, SectionHeader } from "./ui";
 
 export function ReminderSettings() {
-  const { household, notify } = usePlanner();
+  const { data, household, notify } = usePlanner();
+  const familyId = data.members[0].id;
   const [supported, setSupported] = useState(false);
   const [config, setConfig] = useState<{
     configured: boolean;
@@ -35,10 +42,21 @@ export function ReminderSettings() {
     chores_enabled: true,
   });
   useEffect(() => {
-    if (!household) return;
     let cancelled = false;
     async function load() {
       try {
+        if (!household) {
+          const saved = parseDevicePreferences(
+            devicePreferencesSnapshot(familyId),
+          );
+          if (cancelled) return;
+          setSupported("Notification" in window);
+          setConfig({ configured: true, publicKey: "" });
+          setActive(saved.enabled);
+          setPreferences(saved);
+          if ("Notification" in window) setPermission(Notification.permission);
+          return;
+        }
         const canPush =
           "Notification" in window &&
           "serviceWorker" in navigator &&
@@ -87,8 +105,7 @@ export function ReminderSettings() {
     return () => {
       cancelled = true;
     };
-  }, [household]);
-  if (!household) return null;
+  }, [household, familyId]);
   function change<K extends keyof ReminderPreferences>(
     key: K,
     value: ReminderPreferences[K],
@@ -113,6 +130,14 @@ export function ReminderSettings() {
         throw new Error(
           "Notifications were not allowed. You can enable them in your browser or phone settings.",
         );
+      if (!household) {
+        saveDevicePreferences(familyId, { ...preferences, enabled: true });
+        setActive(true);
+        notify(
+          "Device reminders enabled. Keep the planner open to receive them.",
+        );
+        return;
+      }
       const registration = (await registerServiceWorker())!;
       await navigator.serviceWorker.ready;
       let sub = await registration.pushManager.getSubscription();
@@ -144,7 +169,12 @@ export function ReminderSettings() {
     setLoading(true);
     setError("");
     try {
-      await disableDevicePush();
+      if (household) await disableDevicePush();
+      else
+        saveDevicePreferences(familyId, {
+          ...parseDevicePreferences(devicePreferencesSnapshot(familyId)),
+          enabled: false,
+        });
       setActive(false);
       notify("Reminders turned off on this device.");
     } catch (e) {
@@ -155,14 +185,49 @@ export function ReminderSettings() {
       setLoading(false);
     }
   }
+  async function testNotification() {
+    setLoading(true);
+    setError("");
+    try {
+      await showDeviceReminder(
+        {
+          title: "Kinfolk reminders are working",
+          body: "Event and chore reminders will appear here on this device.",
+          url: "/#calendar",
+        },
+        "kinfolk-test",
+      );
+      notify("Test notification sent to this device.");
+    } catch (e) {
+      setError(errorMessage(e, "Could not show a test notification."));
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
-    <section className="card settings-card">
-      <SectionHeader icon={Bell} title="Phone reminders" />
+    <section
+      className="card settings-card"
+      id="phone-reminders"
+      aria-label="Device notifications"
+    >
+      <SectionHeader
+        icon={Bell}
+        title={household ? "Phone reminders" : "Device reminders"}
+      />
       <p className="settings-description">
-        Get event and chore notifications even when the planner is closed, plus
-        a look at the week ahead on Sunday evenings. Settings apply to this
-        device.
+        Get event and chore notifications
+        {household
+          ? " even when the planner is closed"
+          : " while the planner is open"}
+        , plus a look at the week ahead on Sunday evenings. Settings apply to
+        this device.
       </p>
+      {!household && (
+        <p className="form-hint">
+          Keep this app open to receive reminders. Notifications with the app
+          closed need a shared family with phone reminders set up.
+        </p>
+      )}
       {loading && !config ? (
         <p role="status">Loading reminder settings…</p>
       ) : !supported ? (
@@ -267,6 +332,16 @@ export function ReminderSettings() {
                 onClick={() => void disable()}
               >
                 Turn off reminders
+              </button>
+            )}
+            {active && (
+              <button
+                type="button"
+                className="button secondary"
+                disabled={loading || permission !== "granted"}
+                onClick={() => void testNotification()}
+              >
+                Send test notification
               </button>
             )}
           </div>
