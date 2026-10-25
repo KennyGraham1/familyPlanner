@@ -279,6 +279,7 @@ export type Recipe = {
   cuisine?: string;
   region?: "West Africa" | "Everyday";
   diet?: "Plant-based" | "Vegetarian" | "Meat & fish";
+  lighter?: boolean;
   prepTime?: number;
   cookTime?: number;
   restTime?: number;

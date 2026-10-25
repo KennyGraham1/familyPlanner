@@ -21,18 +21,12 @@ import {
   type FamilyEvent,
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
-import {
-  Avatar,
-  EmptyState,
-  Modal,
-  PHONE,
-  useDismiss,
-  useMediaQuery,
-} from "./ui";
+import { EmptyState, Modal, PHONE, useDismiss, useMediaQuery } from "./ui";
 import { GoogleCalendarSettings } from "./google-calendar";
 import { CalendarLinkSettings } from "./calendar-link";
 import { calendarFile } from "@/lib/ics";
 import { EventRow, type ViewProps } from "./overview";
+import { CalendarWeek } from "./calendar-week";
 
 type Mode = "week" | "month" | "year" | "agenda";
 const AGENDA_DAYS = 30;
@@ -58,7 +52,6 @@ export function Calendar({ open }: ViewProps) {
   // On phones the month grid shows dots; tapping a day lists its events below.
   const phone = useMediaQuery(PHONE);
   const [selectedDay, setSelectedDay] = useState(today);
-  const [showEarlier, setShowEarlier] = useState(false);
   const monday = data.settings.weekStartsMonday;
   const year = date.getFullYear();
   const weekStart = startOfWeek(date, monday);
@@ -81,18 +74,6 @@ export function Calendar({ open }: ViewProps) {
           .map((d) => ({ d, key: dateKey(d), list: eventsFor(dateKey(d)) }))
           .filter(({ list }) => list.length > 0)
       : [];
-  // On phones this week's list opens at today; the days already gone fold away.
-  const earlierDays =
-    mode === "week" &&
-    phone &&
-    !showEarlier &&
-    days.some((d) => dateKey(d) === today)
-      ? days.filter((d) => dateKey(d) < today)
-      : [];
-  const earlierEvents = earlierDays.reduce(
-    (sum, d) => sum + eventsFor(dateKey(d)).length,
-    0,
-  );
   const personOf = (event: FamilyEvent) =>
     data.members.find((m) => m.id === event.memberIds[0]);
 
@@ -132,7 +113,7 @@ export function Calendar({ open }: ViewProps) {
     notify("Calendar exported. Import it into your calendar app.");
   }
 
-  function chip(event: FamilyEvent, key: string, detailed: boolean) {
+  function chip(event: FamilyEvent, key: string) {
     const person = personOf(event);
     const occurrence = occurrenceOn(event, key);
     const spansDays = occurrence && occurrence.start !== occurrence.end;
@@ -149,14 +130,6 @@ export function Calendar({ open }: ViewProps) {
           )}
         </span>
         <strong>{event.title}</strong>
-        {detailed && (
-          <>
-            {(event.location || event.category) && (
-              <small>{event.location || event.category}</small>
-            )}
-            <Avatar member={person} small />
-          </>
-        )}
       </button>
     );
   }
@@ -375,6 +348,8 @@ export function Calendar({ open }: ViewProps) {
             <p className="day-empty">Nothing planned in these 30 days.</p>
           )}
         </section>
+      ) : mode === "week" ? (
+        <CalendarWeek days={days} member={member} open={open} />
       ) : (
         <section className={`card calendar-container ${mode}`}>
           <div className="calendar-grid">
@@ -383,23 +358,7 @@ export function Calendar({ open }: ViewProps) {
                 {formatDate(d, { weekday: "short" })}
               </div>
             ))}
-            {earlierDays.length > 0 && (
-              <button
-                className="earlier-days"
-                onClick={() => setShowEarlier(true)}
-              >
-                <ChevronDown size={16} />
-                Show earlier this week
-                <small>
-                  {formatDate(earlierDays[0], { weekday: "short" })}
-                  {earlierDays.length > 1 &&
-                    `–${formatDate(earlierDays.at(-1)!, { weekday: "short" })}`}
-                  {earlierEvents > 0 &&
-                    ` · ${earlierEvents} ${earlierEvents === 1 ? "event" : "events"}`}
-                </small>
-              </button>
-            )}
-            {days.slice(earlierDays.length).map((d) => {
+            {days.map((d) => {
               const key = dateKey(d),
                 list = eventsFor(key),
                 shown = mode === "month" ? list.slice(0, MONTH_LIMIT) : list,
@@ -455,10 +414,7 @@ export function Calendar({ open }: ViewProps) {
                     </span>
                   )}
                   <div className="day-events">
-                    {mode === "week" && list.length === 0 && (
-                      <span className="day-free">No plans</span>
-                    )}
-                    {shown.map((event) => chip(event, key, mode === "week"))}
+                    {shown.map((event) => chip(event, key))}
                     {hidden > 0 && (
                       <button
                         className="more-events"
@@ -468,12 +424,6 @@ export function Calendar({ open }: ViewProps) {
                       </button>
                     )}
                   </div>
-                  {mode === "week" &&
-                    data.meals.some((m) => m.date === key) && (
-                      <div className="calendar-meal-indicator">
-                        🍽 Meal planned
-                      </div>
-                    )}
                 </div>
               );
             })}

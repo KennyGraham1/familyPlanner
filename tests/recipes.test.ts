@@ -12,11 +12,12 @@ import {
 } from "../src/lib/data";
 import { isMeatFree, matchesRecipe } from "../src/lib/recipe-helpers";
 
-it("has 60 distinct, complete recipes, including a broad set of 24 West African dishes", () => {
-  assert.equal(recipes.length, 60);
-  assert.equal(new Set(recipes.map((r) => r.id)).size, 60);
+it("has 68 distinct, complete recipes, including 32 West African dishes and 14 Ghanaian dishes", () => {
+  assert.equal(recipes.length, 68);
+  assert.equal(new Set(recipes.map((r) => r.id)).size, 68);
   const regional = recipes.filter((r) => r.region === "West Africa");
-  assert.equal(regional.length, 24);
+  assert.equal(regional.length, 32);
+  assert.equal(regional.filter((r) => r.cuisine === "Ghana").length, 14);
   for (const cuisine of [
     "Nigeria",
     "Ghana",
@@ -54,6 +55,23 @@ it("has 60 distinct, complete recipes, including a broad set of 24 West African 
     if (recipe.region === "West Africa")
       assert.ok(recipe.source?.url.startsWith("https://"), recipe.id);
   }
+});
+
+it("offers lighter dishes across Ghanaian and everyday cooking, without relabelling fried favourites", () => {
+  const lighter = recipes.filter((r) => r.lighter);
+  assert.equal(lighter.length, 13);
+  assert.equal(lighter.filter((r) => r.cuisine === "Ghana").length, 5);
+  assert.ok(lighter.some((r) => isMeatFree(r)));
+  assert.ok(lighter.some((r) => r.diet === "Meat & fish"));
+  assert.ok(lighter.every((r) => r.servingSuggestion && r.tips?.length));
+  assert.ok(
+    matchesRecipe(
+      lighter.find((r) => r.id === "ghana-tuna-cabbage")!,
+      "ghana lighter",
+    ),
+  );
+  assert.equal(recipes.find((r) => r.id === "kelewele")?.lighter, undefined);
+  assert.equal(recipes.find((r) => r.id === "tatale")?.lighter, undefined);
 });
 
 it("searches countries, accented dish names and ingredients without confusing meat-free dishes", () => {
@@ -133,7 +151,7 @@ describe("shared recipe validation", () => {
     );
   });
 
-  it("accepts all 60 recipes and rejects unknown recipes in PostgreSQL", async () => {
+  it("accepts all 68 recipes and rejects unknown recipes in PostgreSQL", async () => {
     const family = createSeed(fromKey("2026-10-04"));
     for (const recipeId of [...recipes.map((r) => r.id), "does-not-exist"]) {
       family.meals = [

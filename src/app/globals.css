@@ -2588,6 +2588,19 @@ input[type="checkbox"] {
   line-height: 1.9;
   margin-top: 12px;
 }
+.lighter-meals-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-left: 2px solid var(--accent-border);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.lighter-meals-note a {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .form-error {
   color: #7e5358;
   background: #fcf0f1;

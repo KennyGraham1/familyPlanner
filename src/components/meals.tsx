@@ -276,6 +276,8 @@ export function Meals({ openRecipe }: ViewProps) {
       matchesRecipe(r, search) &&
       (filter === "All recipes" ||
         (filter === "West African" && r.region === "West Africa") ||
+        (filter === "Ghanaian" && r.cuisine === "Ghana") ||
+        (filter === "Lighter meals" && r.lighter) ||
         (filter === "Quick & easy" && r.time <= 30) ||
         (filter === "Meat-free" && isMeatFree(r))),
   );
@@ -425,21 +427,26 @@ export function Meals({ openRecipe }: ViewProps) {
       </div>
       <div className="recipe-library-toolbar">
         <div className="family-filters">
-          {["All recipes", "West African", "Quick & easy", "Meat-free"].map(
-            (f) => (
-              <button
-                className={`filter-chip ${filter === f ? "active" : ""}`}
-                key={f}
-                aria-pressed={filter === f}
-                onClick={() => {
-                  setFilter(f);
-                  setLimit(12);
-                }}
-              >
-                {f === "Meat-free" && <Leaf size={14} />} {f}
-              </button>
-            ),
-          )}
+          {[
+            "All recipes",
+            "Ghanaian",
+            "Lighter meals",
+            "West African",
+            "Quick & easy",
+            "Meat-free",
+          ].map((f) => (
+            <button
+              className={`filter-chip ${filter === f ? "active" : ""}`}
+              key={f}
+              aria-pressed={filter === f}
+              onClick={() => {
+                setFilter(f);
+                setLimit(12);
+              }}
+            >
+              {f === "Meat-free" && <Leaf size={14} />} {f}
+            </button>
+          ))}
         </div>
         <label className="search-field">
           <Search size={17} />
@@ -454,6 +461,19 @@ export function Meals({ openRecipe }: ViewProps) {
           />
         </label>
       </div>
+      {filter === "Lighter meals" && (
+        <p className="lighter-meals-note">
+          Vegetable-rich meals with beans, fish, eggs or lean meat, measured oil
+          and practical serving suggestions.{" "}
+          <a
+            href="https://www.nhs.uk/better-health/lose-weight/healthy-eating-when-trying-to-lose-weight/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Balanced meal ideas
+          </a>
+        </p>
+      )}
       <p className="recipe-result-count" aria-live="polite">
         Showing {Math.min(limit, visible.length)} of {visible.length} recipes
       </p>
@@ -478,7 +498,9 @@ export function Meals({ openRecipe }: ViewProps) {
               </span>
             </div>
             <div className="recipe-card-content">
-              <span className={`recipe-category ${r.color}`}>{r.category}</span>
+              <span className={`recipe-category ${r.color}`}>
+                {r.lighter ? "Lighter meal" : r.category}
+              </span>
               <span className="recipe-cuisine">{r.cuisine}</span>
               <h3>{r.name}</h3>
               <p>{r.subtitle}</p>

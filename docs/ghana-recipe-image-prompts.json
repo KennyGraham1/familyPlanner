@@ -1,0 +1,45 @@
+{
+  "tool": "built-in imagegen",
+  "images": [
+    {
+      "id": "kontomire-spinach",
+      "asset": "public/images/recipes/kontomire-spinach.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian kontomire-style stew made with chopped dark-green spinach in a tomato-onion base, small soft agushie melon-seed curds and generous flakes of smoked mackerel. Thick leafy stew in a shallow cream bowl, not a green puree."
+    },
+    {
+      "id": "garden-egg-stew",
+      "asset": "public/images/recipes/garden-egg-stew.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian garden egg stew: roughly mashed cooked pale African eggplant in a warm reddish tomato-onion sauce with visible flakes of smoked mackerel. Thick rustic texture, gentle palm-oil orange colour, in a shallow cream bowl."
+    },
+    {
+      "id": "ghana-fish-light-soup",
+      "asset": "public/images/recipes/ghana-fish-light-soup.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian fresh fish light soup: a light reddish tomato-and-ginger broth with two or three large pieces of cooked white fish fillet, in a cream soup bowl. The fish is opaque and tender, the broth is thin rather than creamy. No rice, bread or fufu."
+    },
+    {
+      "id": "ghana-tuna-cabbage",
+      "asset": "public/images/recipes/ghana-tuna-cabbage.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian tuna and cabbage stew: tender but distinct shredded pale-green cabbage and grated carrot in chunky tomato sauce, with visible large flakes of tuna, in a cream bowl. The vegetables dominate, with a natural modest amount of oil, not a creamy soup."
+    },
+    {
+      "id": "ghana-chicken-carrots",
+      "asset": "public/images/recipes/ghana-chicken-carrots.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian chicken and carrot sauce: thin strips of cooked chicken breast, plenty of orange carrot slices, green bell pepper and onion in a light glossy pale ginger sauce, in a shallow cream bowl. No tomato, no cream, no rice."
+    },
+    {
+      "id": "yam-eto",
+      "asset": "public/images/recipes/yam-eto.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian yam eto: a rustic mound of mashed African white yam turned golden-orange with a little red palm oil, topped with soft cooked onion, with one halved hard-boiled egg and a few avocado slices beside it on a simple cream plate. The egg is fully cooked. No sweet potato, no meat."
+    },
+    {
+      "id": "ghana-corn-porridge",
+      "asset": "public/images/recipes/ghana-corn-porridge.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian spiced fermented corn dough porridge: a smooth warm pale ivory-beige porridge in a simple cream breakfast bowl, with a small swirl of milk. Natural home breakfast, very simple and unadorned. No oats, berries, granola, nuts, visible spices or extra foods."
+    },
+    {
+      "id": "ghana-egg-stew",
+      "asset": "public/images/recipes/ghana-egg-stew.webp",
+      "prompt": "Use case: photorealistic-natural. Asset type: recipe card image for a family meal planner. Create one natural, realistic food photograph, landscape 3:2. A modest home-cooked serving in simple cream ceramic on a light wooden table, soft daylight, slightly overhead three-quarter view, believable irregular food textures, restrained styling. Show only the described finished dish; no added ingredients or unrelated sides, people, hands, lettering, logos, watermark, collage or interface. Keep the food centred so the image crops well. Dish: Ghanaian egg stew with boiled plantain: large tender fully cooked egg curds folded into chunky red tomato, sweet red pepper and onion sauce, served beside a few pieces of pale boiled ripe plantain on a cream plate. The egg is mixed in the stew, not a fried or poached egg. No fish, no meat, no rice."
+    }
+  ]
+}

@@ -47,6 +47,7 @@ export function matchesRecipe(recipe: Recipe, query: string) {
       recipe.subtitle,
       recipe.cuisine,
       recipe.region,
+      recipe.lighter ? "lighter light meals weight management" : "",
       ...recipe.ingredients.map((i) => i.name),
     ].join(" "),
   );

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { createSeed } from "../../src/lib/data";
+import { createSeed, recipes } from "../../src/lib/data";
 
 const storage = "kinfolk-planner-v1";
 test.beforeEach(async ({ page }) => {
@@ -14,23 +14,26 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator("main h1")).toBeVisible();
 });
 
-test("browse all 60 recipes and filter the broad West African collection", async ({
+test("browse all recipes and filter the broad West African collection", async ({
   page,
 }) => {
   const cards = page.locator(".recipe-card");
   await expect(page.locator(".recipe-result-count")).toHaveText(
-    "Showing 12 of 60 recipes",
+    "Showing 12 of 68 recipes",
   );
-  for (let count = 24; count <= 60; count += 12) {
-    await page.getByRole("button", { name: "Show 12 more recipes" }).click();
-    await expect(cards).toHaveCount(count);
+  for (let count = 12; count < recipes.length; count += 12) {
+    const next = Math.min(12, recipes.length - count);
+    await page
+      .getByRole("button", { name: `Show ${next} more recipes` })
+      .click();
+    await expect(cards).toHaveCount(count + next);
   }
   await expect(
     page.getByRole("button", { name: "Show 12 more recipes" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "West African", exact: true }).click();
   await expect(page.locator(".recipe-result-count")).toHaveText(
-    "Showing 12 of 24 recipes",
+    "Showing 12 of 32 recipes",
   );
   await page.getByLabel("Search recipes").fill("cote ivoire");
   await expect(cards).toHaveCount(2);
@@ -43,6 +46,85 @@ test("browse all 60 recipes and filter the broad West African collection", async
   await expect(
     page.getByText("No recipes found. Try another search."),
   ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("Ghanaian and lighter meals can be found, cooked, shopped and planned", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Ghanaian", exact: true }).click();
+  await expect(page.locator(".recipe-result-count")).toHaveText(
+    "Showing 12 of 14 recipes",
+  );
+  await page.getByLabel("Search recipes").fill("tuna cabbage");
+  const card = page.locator(".recipe-card");
+  await expect(card).toHaveCount(1);
+  await expect(card).toContainText("Ghana");
+  await expect(card).toContainText("Lighter meal");
+  await card.click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.locator(".recipe-modal-photo")).toHaveAttribute(
+    "src",
+    "/images/recipes/ghana-tuna-cabbage.webp",
+  );
+  await expect
+    .poll(() =>
+      dialog
+        .locator(".recipe-modal-photo")
+        .evaluate((el) => (el as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await dialog
+    .getByRole("button", { name: "Add missing ingredients to shopping list" })
+    .click();
+  await expect(page.locator(".toast")).toContainText("ingredients added");
+  await dialog.getByLabel("Which day?").fill("2026-11-06");
+  await dialog.getByRole("button", { name: "Add to meal plan" }).click();
+  await expect(dialog).not.toBeVisible();
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("kinfolk-planner-v1")!),
+  );
+  expect(saved.shopping).toContainEqual(
+    expect.objectContaining({ name: "Cabbage" }),
+  );
+  expect(saved.meals).toContainEqual(
+    expect.objectContaining({
+      recipeId: "ghana-tuna-cabbage",
+      date: "2026-11-06",
+    }),
+  );
+  await page.getByLabel("Search recipes").fill("");
+  await page
+    .getByRole("button", { name: "Lighter meals", exact: true })
+    .click();
+  await expect(page.locator(".recipe-result-count")).toHaveText(
+    "Showing 12 of 13 recipes",
+  );
+  await expect(page.locator(".lighter-meals-note")).toContainText(
+    "practical serving suggestions",
+  );
+  await page.getByLabel("Search recipes").fill("Ghana");
+  await expect(page.locator(".recipe-card")).toHaveCount(5);
+  await expect(
+    page.locator(".recipe-card", { hasText: "Kelewele" }),
+  ).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page
+        .locator(".recipe-card img")
+        .evaluateAll((images) =>
+          images.every(
+            (el) =>
+              (el as HTMLImageElement).complete &&
+              (el as HTMLImageElement).naturalWidth > 0,
+          ),
+        ),
+    )
+    .toBe(true);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
