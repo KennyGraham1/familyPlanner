@@ -31,6 +31,7 @@ import { CalendarWeek } from "./calendar-week";
 type Mode = "week" | "month" | "year" | "agenda";
 const AGENDA_DAYS = 30;
 const MONTH_LIMIT = 3;
+const PHONE_MONTH_LIMIT = 2;
 const monthNames = Array.from({ length: 12 }, (_, m) =>
   formatDate(new Date(2026, m, 1), { month: "short" }),
 );
@@ -49,9 +50,10 @@ export function Calendar({ open }: ViewProps) {
   const closePicker = useCallback(() => setPickerYear(null), []);
   useDismiss(picker, pickerYear !== null, closePicker);
   const today = dateKey(new Date());
-  // On phones the month grid shows dots; tapping a day lists its events below.
+  // The month grid previews events; phones also show the chosen day's agenda.
   const phone = useMediaQuery(PHONE);
   const [selectedDay, setSelectedDay] = useState(today);
+  const dayDetail = useRef<HTMLDivElement>(null);
   const monday = data.settings.weekStartsMonday;
   const year = date.getFullYear();
   const weekStart = startOfWeek(date, monday);
@@ -78,22 +80,32 @@ export function Calendar({ open }: ViewProps) {
     data.members.find((m) => m.id === event.memberIds[0]);
 
   function move(direction: number) {
-    setDate(
+    const next =
       mode === "month"
         ? new Date(year, date.getMonth() + direction, 1)
         : mode === "year"
           ? new Date(year + direction, date.getMonth(), 1)
-          : addDays(date, direction * (mode === "agenda" ? AGENDA_DAYS : 7)),
-    );
+          : addDays(date, direction * (mode === "agenda" ? AGENDA_DAYS : 7));
+    show(next, mode);
   }
   function show(next: Date, nextMode: Mode) {
     setDate(next);
     setMode(nextMode);
+    setSelectedDay(dateKey(next));
   }
   function jumpTo(month: number) {
-    setDate(new Date(pickerYear ?? year, month, 1));
-    if (mode === "agenda" || mode === "week") setMode("month");
+    show(
+      new Date(pickerYear ?? year, month, 1),
+      mode === "agenda" || mode === "week" ? "month" : mode,
+    );
     setPickerYear(null);
+  }
+  function revealDay(key: string) {
+    setSelectedDay(key);
+    requestAnimationFrame(() => {
+      dayDetail.current?.scrollIntoView({ block: "start" });
+      dayDetail.current?.focus({ preventScroll: true });
+    });
   }
 
   function exportCalendar() {
@@ -117,14 +129,19 @@ export function Calendar({ open }: ViewProps) {
     const person = personOf(event);
     const occurrence = occurrenceOn(event, key);
     const spansDays = occurrence && occurrence.start !== occurrence.end;
+    const label = `${event.title}, ${occurrenceLabel(event, key)}, ${formatDate(key)}`;
     return (
       <button
         key={event.id}
         className={`calendar-event ${person?.color ?? "lavender"} ${event.allDay || spansDays ? "all-day" : ""}`}
+        aria-label={label}
+        title={label}
         onClick={() => open({ kind: "event", item: event })}
       >
         <span>
-          {occurrenceLabel(event, key)}
+          <span className="calendar-event-time">
+            {occurrenceLabel(event, key)}
+          </span>
           {event.repeat !== "none" && (
             <Repeat2 size={11} aria-label="Repeats" />
           )}
@@ -205,7 +222,7 @@ export function Calendar({ open }: ViewProps) {
           </button>
           <button
             className="button secondary small-button"
-            onClick={() => setDate(new Date())}
+            onClick={() => show(new Date(), mode)}
           >
             Today
           </button>
@@ -222,7 +239,7 @@ export function Calendar({ open }: ViewProps) {
               <button
                 key={m}
                 className={mode === m ? "active" : ""}
-                onClick={() => setMode(m)}
+                onClick={() => show(date, m)}
               >
                 {m[0].toUpperCase() + m.slice(1)}
               </button>
@@ -351,7 +368,10 @@ export function Calendar({ open }: ViewProps) {
       ) : mode === "week" ? (
         <CalendarWeek days={days} member={member} open={open} />
       ) : (
-        <section className={`card calendar-container ${mode}`}>
+        <section
+          className={`card calendar-container ${mode}`}
+          aria-label="Month calendar"
+        >
           <div className="calendar-grid">
             {days.slice(0, 7).map((d) => (
               <div className="calendar-weekday" key={dateKey(d)}>
@@ -361,11 +381,12 @@ export function Calendar({ open }: ViewProps) {
             {days.map((d) => {
               const key = dateKey(d),
                 list = eventsFor(key),
-                shown = mode === "month" ? list.slice(0, MONTH_LIMIT) : list,
+                shown = list.slice(0, phone ? PHONE_MONTH_LIMIT : MONTH_LIMIT),
                 hidden = list.length - shown.length;
               return (
                 <div
                   key={key}
+                  data-date={key}
                   className={`calendar-day ${key === today ? "today" : ""} ${mode === "month" && d.getMonth() !== date.getMonth() ? "outside-month" : ""} ${mode === "month" && phone && key === selectedDay ? "selected" : ""}`}
                 >
                   <div className="calendar-day-top">
@@ -403,22 +424,15 @@ export function Calendar({ open }: ViewProps) {
                       <Plus size={15} />
                     </button>
                   </div>
-                  {mode === "month" && list.length > 0 && (
-                    <span className="day-dots" aria-hidden="true">
-                      {list.slice(0, 3).map((event) => (
-                        <i
-                          key={event.id}
-                          className={`member-dot ${personOf(event)?.color ?? "lavender"}`}
-                        />
-                      ))}
-                    </span>
-                  )}
                   <div className="day-events">
                     {shown.map((event) => chip(event, key))}
                     {hidden > 0 && (
                       <button
                         className="more-events"
-                        onClick={() => show(d, "week")}
+                        aria-label={`Show all ${list.length} events on ${formatDate(d)}`}
+                        onClick={() =>
+                          phone ? revealDay(key) : show(d, "week")
+                        }
                       >
                         +{hidden} more
                       </button>
@@ -429,7 +443,13 @@ export function Calendar({ open }: ViewProps) {
             })}
           </div>
           {mode === "month" && phone && (
-            <div className="month-day-detail">
+            <div
+              className="month-day-detail"
+              ref={dayDetail}
+              role="region"
+              aria-label={`Events on ${formatDate(selectedDay, { day: "numeric", month: "long", year: "numeric" })}`}
+              tabIndex={-1}
+            >
               <div className="agenda-day-heading">
                 <span className={selectedDay === today ? "today-number" : ""}>
                   {Number(selectedDay.slice(8))}

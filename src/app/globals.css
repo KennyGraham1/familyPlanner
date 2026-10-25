@@ -5245,14 +5245,13 @@ input[type="checkbox"] {
   }
 }
 
-/* Calendar: phone layouts (week as a list of days, month as dots + day detail). */
+/* Calendar: phone layouts, including month previews and a full day agenda. */
 .day-label {
   display: inline-flex;
   align-items: center;
 }
 .day-name,
 .day-free,
-.day-dots,
 .month-day-detail {
   display: none;
 }
@@ -5345,13 +5344,14 @@ input[type="checkbox"] {
     grid-row: 2;
     margin-top: 8px;
   }
-  /* Month: a compact grid with dots; the chosen day's events show below. */
+  /* Month: readable previews in each cell; the chosen day's full agenda below. */
   .calendar-container.month .calendar-day {
-    min-height: 52px;
+    min-height: 76px;
+    min-width: 0;
     padding: 6px 2px 4px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 3px;
   }
   .calendar-container.month .calendar-weekday {
@@ -5361,9 +5361,50 @@ input[type="checkbox"] {
     margin: 0;
     justify-content: center;
   }
-  .calendar-container.month .calendar-day-top > .icon-button,
-  .calendar-container.month .day-events {
+  .calendar-container.month .calendar-day-top > .icon-button {
     display: none;
+  }
+  .calendar-container.month .day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .calendar-container.month .calendar-event {
+    margin: 0;
+    padding: 4px 3px 4px 5px;
+    min-height: 44px;
+    border-radius: 3px;
+    box-shadow: inset 2px 0 0 currentColor;
+  }
+  .calendar-container.month .calendar-event > span {
+    gap: 2px;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+  .calendar-container.month .calendar-event-time {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .calendar-container.month .calendar-event svg {
+    display: none;
+  }
+  .calendar-container.month .calendar-event strong {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.25;
+    font-weight: 600;
+  }
+  .calendar-container.month .more-events {
+    padding: 4px 1px;
+    min-height: 28px;
+    font-size: 10px;
+    text-align: left;
   }
   .calendar-container.month .day-number {
     width: 34px;
@@ -5377,22 +5418,19 @@ input[type="checkbox"] {
     box-shadow: inset 0 0 0 2px var(--accent);
     color: var(--accent-hover);
   }
-  .calendar-container.month .day-dots {
-    display: flex;
-    gap: 3px;
-    height: 6px;
-  }
-  .calendar-container.month .day-dots > i {
-    width: 6px;
-    height: 6px;
-  }
   .month-day-detail {
     display: block;
     padding: 16px;
     border-top: 1px solid var(--border);
+    scroll-margin-top: 80px;
   }
   .month-day-detail .event-row {
     padding-left: 0;
+  }
+}
+@media (max-width: 380px) {
+  .calendar-container.month .calendar-event strong {
+    font-size: 10px;
   }
 }
 
