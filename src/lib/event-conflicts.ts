@@ -35,9 +35,14 @@ function interval(event: FamilyEvent, occurrence: Occurrence): Interval {
 
 function intervals(event: FamilyEvent, days: string[]): Interval[] {
   if (event.repeat === "none")
-    return [
-      interval(event, { start: event.date, end: event.endDate ?? event.date }),
-    ];
+    return startsOn(event, event.date)
+      ? [
+          interval(event, {
+            start: event.date,
+            end: event.endDate ?? event.date,
+          }),
+        ]
+      : [];
 
   const result: Interval[] = [];
   // Include a repeat that started earlier, such as an overnight trip.
@@ -79,9 +84,14 @@ export function eventConflicts(
 
   for (const event of events) {
     if (event.id === draft.id || event.date > days.at(-1)!) continue;
-    const memberIds = draft.memberIds.filter((id) =>
-      event.memberIds.includes(id),
-    );
+    const people = (e: FamilyEvent) => [
+      ...new Set(
+        [...e.memberIds, e.dropOffMemberId, e.pickupMemberId].filter(
+          (v): v is string => Boolean(v),
+        ),
+      ),
+    ];
+    const memberIds = people(draft).filter((id) => people(event).includes(id));
     if (!memberIds.length) continue;
     const existing = intervals(event, days);
     let i = 0;

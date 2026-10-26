@@ -34,6 +34,14 @@ async function click(windows: Client[], url = "/#chores") {
 }
 
 describe("reminder notification clicks", () => {
+  it("opens the affected event and rejects external notification URLs", async () => {
+    assert.deepEqual(await click([], "/#calendar?event=swim&day=2026-11-02"), [
+      "https://kinfolk.example/#calendar?event=swim&day=2026-11-02",
+    ]);
+    assert.deepEqual(await click([], "https://example.test/untrusted"), [
+      "https://kinfolk.example/#calendar",
+    ]);
+  });
   it("reuses an open planner tab", async () => {
     const visited: string[] = [];
     const tab: Client = {

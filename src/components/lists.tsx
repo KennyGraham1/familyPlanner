@@ -23,6 +23,7 @@ import {
   uid,
 } from "@/lib/data";
 import { guessAisle } from "@/lib/shopping";
+import { matchScore } from "@/lib/text-search";
 import {
   cheer,
   completeChore,
@@ -35,7 +36,7 @@ import { Avatar, CheckButton, EmptyState } from "./ui";
 import type { ViewProps } from "./overview";
 
 export function Shopping({ open }: ViewProps) {
-  const { data, apply, applyWithUndo, notify } = usePlanner();
+  const { data, apply, applyWithUndo, notify, toggleShopping } = usePlanner();
   const [name, setName] = useState("");
   const [category, setCategory] =
     useState<(typeof categories)[number]>("Produce");
@@ -53,7 +54,7 @@ export function Shopping({ open }: ViewProps) {
   const done = data.shopping.filter((i) => i.done).length;
   const visible = data.shopping.filter(
     (i) =>
-      i.name.toLowerCase().includes(search.toLowerCase()) &&
+      matchScore(i.name, i.category, search) > 0 &&
       (filter === "All items" ||
         (filter === "To buy" && !i.done) ||
         (filter === "In the bag" && i.done)),
@@ -211,26 +212,14 @@ export function Shopping({ open }: ViewProps) {
                   <CheckButton
                     done={item.done}
                     label={`Bought ${item.name}`}
-                    onClick={() =>
-                      void apply({
-                        collection: "shopping",
-                        action: "upsert",
-                        value: { ...item, done: !item.done },
-                      })
-                    }
+                    onClick={() => void toggleShopping(item.id)}
                   />
                   {/* A bigger target for ticking off; the checkbox is the accessible control. */}
                   <button
                     className="shopping-item-name"
                     tabIndex={-1}
                     aria-hidden="true"
-                    onClick={() =>
-                      void apply({
-                        collection: "shopping",
-                        action: "upsert",
-                        value: { ...item, done: !item.done },
-                      })
-                    }
+                    onClick={() => void toggleShopping(item.id)}
                   >
                     {item.name}
                     <small>{item.quantity}</small>

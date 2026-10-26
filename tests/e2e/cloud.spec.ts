@@ -26,6 +26,7 @@ const session = {
 
 class FakeSupabase {
   plan = createSeed();
+  pushPreferences: Record<string, unknown> | null = null;
   /** Requests to fail as if the connection dropped; Infinity means it's down. */
   failNext = 0;
   /** This person's calendar link, when one is on. */
@@ -36,6 +37,12 @@ class FakeSupabase {
       return route.abort("failed");
     }
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/rpc/planner_save_push")) {
+      this.pushPreferences = route.request().postDataJSON().preferences;
+      return route.fulfill({ json: null });
+    }
+    if (path.endsWith("/planner_push_subscriptions"))
+      return route.fulfill({ json: this.pushPreferences });
     if (path.endsWith("/rpc/planner_get_context"))
       return route.fulfill({
         json: {
@@ -99,6 +106,76 @@ const notice = (page: Page) => page.locator(".connection-notice");
 const status = (page: Page) => page.locator(".save-status");
 const wakeUp = (page: Page) =>
   page.evaluate(() => window.dispatchEvent(new Event("focus")));
+
+test("shared phone registration saves push preferences and tests the server delivery path", async ({
+  page,
+}) => {
+  const key = Buffer.from(new Uint8Array(65).fill(4)).toString("base64url");
+  await page.route("**/api/push/config", (route) =>
+    route.fulfill({ json: { configured: true, publicKey: key } }),
+  );
+  await page.addInitScript((key) => {
+    let registered = false;
+    Object.defineProperty(Notification, "permission", {
+      configurable: true,
+      get: () => "granted",
+    });
+    const sub = {
+      endpoint: "https://web.push.apple.com/test-phone",
+      options: {
+        applicationServerKey: Uint8Array.from(
+          atob(key.replace(/-/g, "+").replace(/_/g, "/")),
+          (c) => c.charCodeAt(0),
+        ).buffer,
+      },
+      unsubscribe: async () => {
+        registered = false;
+        return true;
+      },
+      toJSON: () => ({
+        endpoint: "https://web.push.apple.com/test-phone",
+        keys: { p256dh: "test", auth: "test" },
+      }),
+    };
+    PushManager.prototype.getSubscription = async () =>
+      registered ? (sub as unknown as PushSubscription) : null;
+    PushManager.prototype.subscribe = async () => {
+      registered = true;
+      return sub as unknown as PushSubscription;
+    };
+  }, key);
+  let tested = false;
+  await page.route("**/api/push/test", async (route) => {
+    expect(route.request().headers().authorization).toMatch(/^Bearer /);
+    expect(route.request().postDataJSON().endpoint).toBe(
+      "https://web.push.apple.com/test-phone",
+    );
+    tested = true;
+    await route.fulfill({
+      json: {
+        sent: true,
+        message:
+          "The push service accepted the test. Check your phone’s notification centre.",
+      },
+    });
+  });
+  await page.goto("/?push-test=1#settings");
+  const settings = page.getByRole("region", { name: "Device notifications" });
+  await settings.getByRole("button", { name: "Enable on this device" }).click();
+  await expect(
+    settings.getByRole("button", { name: "Save reminder settings" }),
+  ).toBeVisible();
+  expect(supabase.pushPreferences?.events_enabled).toBe(true);
+  await settings
+    .getByRole("button", { name: "Send test notification" })
+    .click();
+  await expect(page.locator(".toast")).toContainText("push service accepted");
+  expect(tested).toBe(true);
+  await settings
+    .getByRole("button", { name: "Pause reminders for one hour" })
+    .click();
+  expect(supabase.pushPreferences?.snoozed_until).toBeTruthy();
+});
 
 test("signing out is easy to find", async ({ page }) => {
   await page.getByRole("button", { name: /^Account:/ }).click();
@@ -225,6 +302,53 @@ test("shopping offline: changes are kept and sync when back online", async ({
   await expect(page.locator(".connection-notice")).toHaveCount(0, {
     timeout: 12000,
   });
+});
+
+test("shopping toggles respond before a slow save, preserve rapid taps and roll back failures", async ({
+  page,
+}) => {
+  await page.goto("/#shopping");
+  const checkbox = page.getByRole("checkbox", { name: "Bought Avocados" });
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let waiting = false;
+  await page.route(
+    `${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`,
+    async (route) => {
+      if (!waiting) {
+        waiting = true;
+        await held;
+      }
+      await supabase.handle(route);
+    },
+  );
+  await checkbox.click();
+  await expect(checkbox).toBeChecked({ timeout: 300 });
+  expect(supabase.plan.shopping.find((i) => i.name === "Avocados")?.done).toBe(
+    false,
+  );
+  await checkbox.click();
+  await expect(checkbox).not.toBeChecked({ timeout: 300 });
+  release();
+  await expect(status(page)).not.toContainText("Saving", { timeout: 10000 });
+  await expect(checkbox).not.toBeChecked();
+  expect(supabase.plan.shopping.find((i) => i.name === "Avocados")?.done).toBe(
+    false,
+  );
+  await page.unroute(`${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`);
+  await page.route(
+    `${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`,
+    (route) =>
+      route.fulfill({
+        status: 400,
+        json: { message: "The updated family data is not valid." },
+      }),
+  );
+  await checkbox.click();
+  await expect(page.locator(".toast.error")).toBeVisible();
+  await expect(checkbox).not.toBeChecked();
 });
 
 test("opens with the plans kept on this phone when the server can't be reached", async ({

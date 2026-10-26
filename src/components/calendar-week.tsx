@@ -118,7 +118,9 @@ export function CalendarWeek({
                   }}
                   aria-label={description}
                   title={description}
-                  onClick={() => open({ kind: "event", item: event })}
+                  onClick={() =>
+                    open({ kind: "event", item: event, day: occurrence.start })
+                  }
                 >
                   {continuesBefore && (
                     <ChevronLeft size={12} aria-hidden="true" />
@@ -178,7 +180,9 @@ export function CalendarWeek({
                     className={`${styles.appointment} ${color(event)}`}
                     title={`${event.title} · ${people(event)}${event.location ? ` · ${event.location}` : ""}`}
                     aria-label={`${formatTime(event.start)} to ${formatTime(event.end)}. ${event.title}. ${people(event)}${event.location ? `. ${event.location}` : ""}`}
-                    onClick={() => open({ kind: "event", item: event })}
+                    onClick={() =>
+                      open({ kind: "event", item: event, day: key })
+                    }
                   >
                     <span className={styles.time}>
                       {formatTime(event.start)}

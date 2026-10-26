@@ -33,6 +33,7 @@ export const pushDeviceSchema = z.object({
   chore_time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   events_enabled: z.boolean(),
   chores_enabled: z.boolean(),
+  snoozed_until: z.string().datetime({ offset: true }).nullish(),
 });
 export type PushCandidate = z.infer<typeof pushDeviceSchema> & {
   data: PlannerData;
@@ -47,17 +48,17 @@ export type ReminderSchedule = Pick<
   | "chore_time"
   | "events_enabled"
   | "chores_enabled"
+  | "snoozed_until"
 >;
 export type Reminder = {
   key: string;
   title: string;
   body: string;
-  url: "/#calendar" | "/#chores";
+  url: `/#calendar${string}` | `/#chores${string}`;
 };
 // Sunday evening: a look at the week ahead, so planning becomes a habit.
 const DIGEST_TIME = "18:00";
 // 1 January 1970 was a Thursday.
-const isSunday = (date: string) => (dayNumber(date) + 4) % 7 === 0;
 const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 /** "Your week ahead" for Monday to Sunday after `sunday`, or null when nothing's planned. */
 export function weekAhead(
@@ -151,15 +152,29 @@ export function dueReminders(
   now = new Date(),
 ): Reminder[] {
   if (candidate.scope === "mine" && !candidate.member_id) return [];
+  if (
+    candidate.snoozed_until &&
+    Date.parse(candidate.snoozed_until) > now.getTime()
+  )
+    return [];
   const found = new Map<string, Reminder>();
+  const zone = candidate.data.settings.timezone ?? candidate.timezone;
+  const clock = wallClock(now.getTime(), zone);
+  const { quietStart, quietEnd } = candidate.data.settings;
+  if (
+    quietStart &&
+    quietEnd &&
+    quietStart !== quietEnd &&
+    (quietStart < quietEnd
+      ? clock.time >= quietStart && clock.time < quietEnd
+      : clock.time >= quietStart || clock.time < quietEnd)
+  )
+    return [];
   const currentMinute = Math.floor(now.getTime() / 60000) * 60000;
   for (let delay = 0; delay <= 5; delay++) {
     const minute = currentMinute - delay * 60000;
     if (candidate.events_enabled) {
-      const target = wallClock(
-        minute + candidate.event_minutes * 60000,
-        candidate.timezone,
-      );
+      const target = wallClock(minute + candidate.event_minutes * 60000, zone);
       for (const event of candidate.data.events) {
         const time = event.allDay ? ALL_DAY_TIME : event.start;
         // Multi-day events are reminded once, before their first day.
@@ -167,7 +182,11 @@ export function dueReminders(
           time !== target.time ||
           !startsOn(event, target.date) ||
           (candidate.scope === "mine" &&
-            !event.memberIds.includes(candidate.member_id!))
+            ![
+              ...event.memberIds,
+              event.dropOffMemberId,
+              event.pickupMemberId,
+            ].includes(candidate.member_id!))
         )
           continue;
         const key = `event:${event.id}:${target.date}:${time}`;
@@ -176,19 +195,23 @@ export function dueReminders(
           key,
           title: event.title,
           body: `${when}${event.location ? ` · ${event.location}` : ""}`,
-          url: "/#calendar",
+          url: `/#calendar?event=${encodeURIComponent(event.id)}&day=${target.date}`,
         });
       }
     }
     if (candidate.events_enabled || candidate.chores_enabled) {
-      const target = wallClock(minute, candidate.timezone);
-      if (target.time === DIGEST_TIME && isSunday(target.date)) {
+      const target = wallClock(minute, zone);
+      if (
+        target.time === (candidate.data.settings.digestTime ?? DIGEST_TIME) &&
+        (dayNumber(target.date) + 4) % 7 ===
+          (candidate.data.settings.digestDay ?? 0)
+      ) {
         const digest = weekAhead(candidate, target.date);
         if (digest) found.set(digest.key, digest);
       }
     }
     if (candidate.chores_enabled) {
-      const target = wallClock(minute, candidate.timezone);
+      const target = wallClock(minute, zone);
       if (target.time !== candidate.chore_time) continue;
       const tasks = candidate.data.tasks.filter(
         (t) =>
@@ -208,6 +231,44 @@ export function dueReminders(
           url: "/#chores",
         });
       }
+    }
+  }
+  if (
+    candidate.data.settings.changeAlerts !== false &&
+    (candidate.events_enabled || candidate.chores_enabled)
+  ) {
+    const changes = (candidate.data.activity ?? []).filter(
+      (a) =>
+        a.actorMemberId !== candidate.member_id &&
+        Math.floor(Date.parse(a.createdAt) / 60000) <
+          Math.floor(now.getTime() / 60000) &&
+        now.getTime() - Date.parse(a.createdAt) < 300000 &&
+        (candidate.scope === "family" ||
+          a.memberIds.includes(candidate.member_id ?? "")) &&
+        (a.collection === "tasks"
+          ? candidate.chores_enabled
+          : candidate.events_enabled),
+    );
+    // Group edits made in the same minute; retries use a stable delivery key.
+    const groups = new Map<number, typeof changes>();
+    for (const change of changes) {
+      const bucket = Math.floor(Date.parse(change.createdAt) / 60000);
+      groups.set(bucket, [...(groups.get(bucket) ?? []), change]);
+    }
+    for (const [bucket, items] of groups) {
+      const last = items.at(-1)!;
+      found.set(`changes:${bucket}`, {
+        key: `changes:${bucket}`,
+        title:
+          items.length === 1
+            ? `${last.actorName} updated ${last.title}`
+            : `${items.length} family updates`,
+        body: last.after || `${last.title} was removed`,
+        url:
+          last.collection === "tasks"
+            ? `/#chores?task=${encodeURIComponent(last.recordId)}`
+            : `/#calendar?event=${encodeURIComponent(last.recordId)}`,
+      });
     }
   }
   return [...found.values()];

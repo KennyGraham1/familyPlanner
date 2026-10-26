@@ -6398,3 +6398,348 @@ input[type="checkbox"] {
 .quick-add-form > input {
   background: transparent;
 }
+
+/* Shared planning tools use the same quiet surfaces and controls as the planner. */
+.recipe-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  text-align: left;
+}
+.recipe-save-actions,
+.meal-plan-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.recipe-card .recipe-save-actions {
+  padding: 0 16px 16px;
+}
+.recipe-save-actions {
+  margin-bottom: 16px;
+}
+.recipe-save-actions button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.meal-plan-tools {
+  padding: 0 20px 16px;
+}
+.meal-note {
+  padding: 20px 8px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.meal-note-form {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.shopping-review {
+  margin: 16px 0 24px;
+}
+.shopping-review-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 130px);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.shopping-review-line label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.shopping-review-line small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 3px;
+}
+.shopping-review-line > input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--control-border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 8px;
+}
+.template-list > div {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.plan-preview {
+  padding-left: 20px;
+}
+.plan-preview li {
+  margin: 8px 0;
+}
+.tool-tabs {
+  margin-bottom: 20px;
+}
+.tool-card {
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.tool-card h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+.tool-card h3 {
+  margin: 0 0 10px;
+}
+.tool-card p {
+  color: var(--muted);
+}
+.tool-card small,
+.tool-list-row small {
+  display: block;
+  color: var(--muted);
+}
+.tool-card form {
+  margin-top: 16px;
+}
+.tool-list-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tool-list-row > div:first-child,
+.tool-list-row > span:first-child {
+  flex: 1;
+  min-width: 100px;
+  overflow-wrap: anywhere;
+}
+.tool-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.tool-inline-form .field {
+  flex: 1;
+  min-width: 140px;
+  margin: 0;
+}
+.review-days {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.review-days article {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+  min-width: 0;
+}
+.review-event {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  padding: 12px;
+  background: var(--canvas-soft);
+  margin-top: 10px;
+  border-radius: 8px;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.review-event span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.routine-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.routine-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  min-height: 48px;
+}
+.routine-step input,
+.weekday-choices input {
+  accent-color: var(--accent);
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.routine-step.is-done span {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.routine-grid progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.weekday-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0;
+}
+.weekday-choices label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.kid-view .routine-step {
+  font-size: 20px;
+  min-height: 64px;
+}
+.kid-view .routine-step input {
+  width: 28px;
+  height: 28px;
+}
+.tool-person {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.tool-person select {
+  padding: 8px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.spending-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.spending-categories p {
+  flex: 1;
+  min-width: 90px;
+}
+.spending-categories strong {
+  display: block;
+  color: var(--ink);
+}
+.activity-entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.activity-entry p {
+  margin: 6px 0;
+  white-space: pre-wrap;
+}
+.event-responsibilities {
+  display: block;
+  color: var(--muted);
+  margin: 5px 0;
+  font-size: 12px;
+}
+.event-collaboration {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.event-collaboration h3 {
+  margin: 24px 0 12px;
+}
+.event-collaboration form {
+  padding: 16px;
+  background: var(--canvas-soft);
+  border-radius: 10px;
+}
+.event-comments article {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.event-comments article small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.event-comments p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.event-documents {
+  padding: 0;
+  list-style: none;
+}
+.event-documents li {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.event-documents a {
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+.schedule-exceptions {
+  margin: 18px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.schedule-exceptions summary,
+details.tool-card summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.notice-draft {
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+.notice-source {
+  padding: 10px;
+  background: var(--canvas-soft);
+  color: var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.search-filters {
+  margin: 12px 0;
+}
+.search-results .form-hint {
+  padding: 4px 0;
+}
+@media (max-width: 760px) {
+  .tool-card {
+    padding: 18px;
+  }
+  .routine-grid,
+  .review-days {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .meal-plan-tools {
+    padding: 0 14px 14px;
+  }
+  .recipe-card .recipe-save-actions {
+    padding: 0 12px 12px;
+    gap: 6px;
+  }
+  .recipe-card .recipe-save-actions button {
+    font-size: 11px;
+    padding: 7px;
+  }
+  .shopping-review-line {
+    grid-template-columns: minmax(0, 1fr) 90px;
+    gap: 8px;
+  }
+  .tool-inline-form {
+    align-items: stretch;
+  }
+  .tool-inline-form > button {
+    align-self: end;
+  }
+  .event-collaboration form {
+    padding: 12px;
+  }
+}

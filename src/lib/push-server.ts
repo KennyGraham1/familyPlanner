@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { timingSafeEqual, createECDH } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 export function pushConfiguration() {
@@ -20,6 +20,18 @@ export function pushConfiguration() {
   )
     return null;
   if (!/^https:\/\/|^mailto:/.test(subject)) return null;
+  try {
+    const contact = new URL(subject);
+    if (!["https:", "mailto:"].includes(contact.protocol)) return null;
+    const curve = createECDH("prime256v1");
+    curve.setPrivateKey(Buffer.from(privateKey, "base64url"));
+    const expected = curve.getPublicKey();
+    const actual = Buffer.from(publicKey, "base64url");
+    if (actual.length !== expected.length || !timingSafeEqual(expected, actual))
+      return null;
+  } catch {
+    return null;
+  }
   return { url, key, publicKey, privateKey, subject, cronSecret };
 }
 export function validCronAuthorization(header: string | null, secret: string) {

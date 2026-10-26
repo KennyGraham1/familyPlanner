@@ -1,5 +1,12 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useDeferredValue,
+} from "react";
 import {
   ArrowRight,
   Bell,
@@ -28,10 +35,10 @@ import {
 } from "lucide-react";
 import {
   dateKey,
+  dateSchema,
   eventsOn,
-  formatDate,
   occurrenceLabel,
-  recipes,
+  allRecipes,
   type Recipe,
 } from "@/lib/data";
 import { offlineMessage } from "@/lib/network";
@@ -47,6 +54,8 @@ import { Settings } from "./settings";
 import { AuthScreen, SetupScreen, ProfileScreen } from "./onboarding";
 import { GoogleCalendarAutoSync } from "./google-calendar";
 import { DeviceReminders } from "./device-reminders";
+import { FamilyTools } from "./family-tools";
+import { plannerSearch, buildSearchIndex, type SearchKind } from "@/lib/search";
 
 const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "overview", label: "Today", Icon: House },
@@ -55,6 +64,7 @@ const navigation: { id: View; label: string; Icon: LucideIcon }[] = [
   { id: "shopping", label: "Shopping", Icon: ShoppingBasket },
   { id: "chores", label: "Chores", Icon: CheckSquare },
   { id: "board", label: "Family board", Icon: StickyNote },
+  { id: "tools", label: "Family tools", Icon: Users },
 ];
 // Phone tab bar: the four places families visit daily; the rest live under "More".
 const tabs: { id: View; label: string; Icon: LucideIcon }[] = [
@@ -81,6 +91,7 @@ const titles: Record<
   },
   chores: { title: "Chores", button: "Add a chore", editor: "task" },
   board: { title: "Family board", button: "Leave a note", editor: "note" },
+  tools: { title: "Family tools", button: "Weekly review" },
   settings: {
     title: "Family settings",
     button: "Add a member",
@@ -130,7 +141,7 @@ function AppContent() {
   }, []);
   useEffect(() => {
     const sync = () => {
-      const hash = window.location.hash.slice(1);
+      const hash = window.location.hash.slice(1).split("?")[0];
       setView(Object.hasOwn(titles, hash) ? (hash as View) : "overview");
     };
     sync();
@@ -148,6 +159,37 @@ function AppContent() {
       window.removeEventListener("keydown", key);
     };
   }, []);
+  useEffect(() => {
+    const showLinkedPlan = () => {
+      if (phase !== "ready") return;
+      const [section, query] = window.location.hash.slice(1).split("?");
+      if (!query) return;
+      const params = new URLSearchParams(query);
+      if (section === "calendar" && params.get("event")) {
+        const event = data.events.find((e) => e.id === params.get("event"));
+        if (event)
+          setEditor({
+            kind: "event",
+            item: event,
+            ...(dateSchema.safeParse(params.get("day")).success
+              ? { day: params.get("day")! }
+              : {}),
+          });
+      }
+      if (section === "chores" && params.get("task")) {
+        const task = data.tasks.find((t) => t.id === params.get("task"));
+        if (task) setEditor({ kind: "task", item: task });
+      }
+      history.replaceState(
+        null,
+        "",
+        `${location.pathname}${location.search}#${section}`,
+      );
+    };
+    showLinkedPlan();
+    window.addEventListener("hashchange", showLinkedPlan);
+    return () => window.removeEventListener("hashchange", showLinkedPlan);
+  }, [phase, data.events, data.tasks]);
   function navigate(next: View) {
     setView(next);
     window.location.hash = next;
@@ -166,7 +208,10 @@ function AppContent() {
   }
   // The page's main action, shared by its heading button and the phone + button.
   function pageAction() {
-    if (view === "shopping") {
+    if (view === "tools") {
+      document.getElementById("tool-review")?.click();
+      window.scrollTo({ top: 0, behavior: "instant" });
+    } else if (view === "shopping") {
       // Adding is quickest in the list's own box: focus it and open the keyboard.
       const input = document.querySelector<HTMLInputElement>(
         ".quick-add-form input",
@@ -474,6 +519,7 @@ function AppContent() {
           {view === "chores" && <Chores {...props} />}{" "}
           {view === "board" && <Board {...props} />}{" "}
           {view === "settings" && <Settings {...props} />}
+          {view === "tools" && <FamilyTools {...props} />}
           <div className="save-status">
             <span
               className={`status-dot ${syncError || connection === "offline" ? "warning" : ""}`}
@@ -612,6 +658,18 @@ function AppContent() {
                 />
               )}
           </div>
+          <button
+            className="button secondary"
+            onClick={() => {
+              setNotificationsOpen(false);
+              navigate("tools");
+              requestAnimationFrame(() =>
+                document.getElementById("tool-activity")?.click(),
+              );
+            }}
+          >
+            Recent family changes
+          </button>
           <p className="form-hint">
             Choose event and chore notifications for this device in notification
             settings.
@@ -676,50 +734,56 @@ function SearchModal({
 }) {
   const { data } = usePlanner();
   const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase();
-  const results = [
-    ...data.events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      detail: `Calendar · ${formatDate(e.date)}`,
-      Icon: CalendarDays,
-      action: () => open({ kind: "event", item: e }),
-    })),
-    ...data.tasks.map((t) => ({
-      id: t.id,
-      title: t.title,
-      detail: `Chore · ${t.done ? "Done" : "To do"}`,
-      Icon: CheckSquare,
-      action: () => open({ kind: "task", item: t }),
-    })),
-    ...data.shopping.map((i) => ({
-      id: i.id,
-      title: i.name,
-      detail: `Shopping · ${i.category}`,
-      Icon: ShoppingBasket,
-      action: () => open({ kind: "shopping", item: i }),
-    })),
-    ...recipes.map((r) => ({
-      id: r.id,
-      title: r.name,
-      detail: `Recipe · ${r.time} minutes`,
-      Icon: Utensils,
-      action: () => openRecipe(r),
-    })),
-    ...data.notes.map((n) => ({
-      id: n.id,
-      title: n.title,
-      detail: "Family board",
-      Icon: StickyNote,
-      action: () => open({ kind: "note", item: n }),
-    })),
-  ]
-    .filter((r) => r.title.toLowerCase().includes(q))
-    .slice(0, 12);
+  const [filter, setFilter] = useState<SearchKind | "All">("All");
+  const [limit, setLimit] = useState(20);
+  const q = query.trim();
+  const index = useMemo(() => buildSearchIndex(data), [data]);
+  const deferredQuery = useDeferredValue(q);
+  const matches = useMemo(
+    () => plannerSearch(data, deferredQuery, filter, new Date(), index),
+    [data, deferredQuery, filter, index],
+  );
+  const results = matches.map((entry) => ({
+    ...entry,
+    Icon: {
+      Calendar: CalendarDays,
+      Recipes: Utensils,
+      Chores: CheckSquare,
+      Shopping: ShoppingBasket,
+      Notes: StickyNote,
+      Routines: CheckSquare,
+      Pantry: ShoppingBasket,
+      Spending: House,
+    }[entry.kind],
+    action: () => {
+      if (entry.kind === "Calendar") {
+        const item = data.events.find((e) => e.id === entry.id);
+        if (item) open({ kind: "event", item });
+      } else if (entry.kind === "Recipes") {
+        const recipe = allRecipes(data).find((r) => r.id === entry.id);
+        if (recipe) openRecipe(recipe);
+      } else if (entry.kind === "Chores") {
+        const item = data.tasks.find((e) => e.id === entry.id);
+        if (item) open({ kind: "task", item });
+      } else if (entry.kind === "Shopping") {
+        const item = data.shopping.find((e) => e.id === entry.id);
+        if (item) open({ kind: "shopping", item });
+      } else if (entry.kind === "Notes") {
+        const item = data.notes.find((e) => e.id === entry.id);
+        if (item) open({ kind: "note", item });
+      } else {
+        onClose();
+        navigate("tools");
+        requestAnimationFrame(() =>
+          document.getElementById(`tool-${entry.kind.toLowerCase()}`)?.click(),
+        );
+      }
+    },
+  }));
   return (
     <Modal
       title="Search"
-      subtitle="Search your plans, recipes, lists and notes."
+      subtitle="Search titles, ingredients, places, people and notes. Try ‘chores overdue’ or ‘events tomorrow’."
       onClose={onClose}
     >
       <label className="search-field modal-search">
@@ -729,14 +793,37 @@ function SearchModal({
           placeholder="Try ‘pasta’, ‘football’ or ‘milk’…"
           aria-label="Search your family planner"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setLimit(20);
+          }}
         />
         <kbd>esc</kbd>
       </label>
+      <div className="family-filters search-filters">
+        {(
+          ["All", "Calendar", "Recipes", "Chores", "Shopping", "Notes"] as const
+        ).map((kind) => (
+          <button
+            key={kind}
+            className={`filter-chip ${filter === kind ? "active" : ""}`}
+            aria-pressed={filter === kind}
+            onClick={() => {
+              setFilter(kind);
+              setLimit(20);
+            }}
+          >
+            {kind}
+          </button>
+        ))}
+      </div>
       {q ? (
         <div className="search-results">
+          <p className="form-hint" role="status">
+            {results.length} {results.length === 1 ? "match" : "matches"}
+          </p>
           {results.length ? (
-            results.map((r, i) => (
+            results.slice(0, limit).map((r, i) => (
               <button key={`${r.id}-${i}`} onClick={r.action}>
                 <r.Icon size={19} />
                 <span>
@@ -750,8 +837,16 @@ function SearchModal({
             <EmptyState
               icon={Search}
               title="No matches"
-              text="Try a different word or check the spelling."
+              text="Try a dish, ingredient, location or family member. Short phrases work best."
             />
+          )}
+          {results.length > limit && (
+            <button
+              className="button secondary"
+              onClick={() => setLimit(limit + 20)}
+            >
+              Show more matches
+            </button>
           )}
         </div>
       ) : (

@@ -7,6 +7,7 @@ import {
   deviceSubscription,
   disableDevicePush,
   saveDevicePush,
+  sendPhonePushTest,
   vapidBytes,
   type ReminderPreferences,
 } from "@/lib/push-client";
@@ -22,6 +23,11 @@ import { Field, SectionHeader } from "./ui";
 
 export function ReminderSettings() {
   const { data, household, notify } = usePlanner();
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
   const familyId = data.members[0].id;
   const [supported, setSupported] = useState(false);
   const [config, setConfig] = useState<{
@@ -71,7 +77,7 @@ export function ReminderSettings() {
           const { data, error } = await getCloud()!
             .from("planner_push_subscriptions")
             .select(
-              "timezone,scope,event_minutes,chore_time,events_enabled,chores_enabled",
+              "timezone,scope,event_minutes,chore_time,events_enabled,chores_enabled,snoozed_until",
             )
             .eq("endpoint", sub.endpoint)
             .eq("household_id", household!)
@@ -106,6 +112,33 @@ export function ReminderSettings() {
       cancelled = true;
     };
   }, [household, familyId]);
+  async function snooze(minutes: number) {
+    setLoading(true);
+    setError("");
+    const next = {
+      ...preferences,
+      snoozed_until: minutes
+        ? new Date(Date.now() + minutes * 60000).toISOString()
+        : null,
+    };
+    try {
+      if (household) {
+        const sub = await deviceSubscription();
+        if (!sub) throw new Error("Enable reminders on this device first.");
+        await saveDevicePush(sub, next);
+      } else saveDevicePreferences(familyId, { ...next, enabled: true });
+      setPreferences(next);
+      notify(
+        minutes
+          ? "Reminders paused for one hour on this device."
+          : "Reminders resumed on this device.",
+      );
+    } catch (e) {
+      setError(errorMessage(e, "Could not update reminder pause."));
+    } finally {
+      setLoading(false);
+    }
+  }
   function change<K extends keyof ReminderPreferences>(
     key: K,
     value: ReminderPreferences[K],
@@ -189,6 +222,10 @@ export function ReminderSettings() {
     setLoading(true);
     setError("");
     try {
+      if (household) {
+        notify(await sendPhonePushTest());
+        return;
+      }
       await showDeviceReminder(
         {
           title: "Kinfolk reminders are working",
@@ -219,8 +256,8 @@ export function ReminderSettings() {
         {household
           ? " even when the planner is closed"
           : " while the planner is open"}
-        , plus a look at the week ahead on Sunday evenings. Settings apply to
-        this device.
+        , plus a look at the week ahead at your family’s review time. Settings
+        apply to this device.
       </p>
       {!household && (
         <p className="form-hint">
@@ -312,6 +349,29 @@ export function ReminderSettings() {
               Notifications are blocked. Allow them in your browser or phone
               settings, then reload this page.
             </p>
+          )}
+          {active && (
+            <div className="toolbar-actions">
+              <button
+                type="button"
+                className="button secondary"
+                disabled={loading}
+                onClick={() => void snooze(60)}
+              >
+                Pause reminders for one hour
+              </button>
+              {preferences.snoozed_until &&
+                Date.parse(preferences.snoozed_until) > now && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    disabled={loading}
+                    onClick={() => void snooze(0)}
+                  >
+                    Resume reminders now
+                  </button>
+                )}
+            </div>
           )}
           <div className="backup-buttons">
             <button

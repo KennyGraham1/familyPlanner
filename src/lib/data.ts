@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { extraRecipes } from "./recipe-library";
+import { combineQuantities, ingredientKey } from "./quantities";
 
 export const colors = [
   "lavender",
@@ -28,6 +29,11 @@ export const dateSchema = z
     return !isNaN(d.getTime()) && dateKey(d) === v;
   }, "Choose a valid date");
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+const webLink = z
+  .string()
+  .url()
+  .max(2000)
+  .refine((url) => /^https?:\/\//i.test(url), "Use an http or https link");
 export const memberSchema = z.object({
   id,
   name: short,
@@ -91,6 +97,19 @@ export const eventSchema = z
     /** Last day a repeating event may start on; absent repeats forever. */
     until: dateSchema.optional(),
     allDay: z.boolean().optional(),
+    dropOffMemberId: id.optional(),
+    pickupMemberId: id.optional(),
+    origin: z.object({ eventId: id, day: dateSchema }).optional(),
+    checklist: z
+      .array(z.object({ id, title: short }))
+      .max(40)
+      .optional(),
+    checklistDone: z.record(z.string(), z.array(id).max(40)).optional(),
+    excludedDates: z.array(dateSchema).max(366).optional(),
+    excludedRanges: z
+      .array(z.object({ start: dateSchema, end: dateSchema }))
+      .max(30)
+      .optional(),
     /** Map position of the location, when it was picked from search results. */
     place: z
       .object({
@@ -114,6 +133,26 @@ export const eventSchema = z
       );
     if (e.until && e.until < e.date)
       issue("until", "The repeat can’t end before the event starts");
+    if (
+      e.excludedRanges?.some(
+        (r) => r.end < r.start || daysBetween(r.start, r.end) > 366,
+      )
+    )
+      issue("excludedRanges", "A holiday must end after it starts");
+    if (
+      e.checklistDone &&
+      Object.entries(e.checklistDone).some(
+        ([day, ids]) =>
+          !dateSchema.safeParse(day).success ||
+          new Set(ids).size !== ids.length ||
+          ids.some((id) => !e.checklist?.some((s) => s.id === id)),
+      )
+    )
+      issue("checklistDone", "Check the occurrence date and checklist items");
+    if (
+      new Set(e.checklist?.map((x) => x.id)).size !== (e.checklist?.length ?? 0)
+    )
+      issue("checklist", "Checklist items must have unique IDs");
     if (e.repeat !== "none" && span >= repeatInterval[e.repeat])
       issue(
         "endDate",
@@ -169,16 +208,158 @@ export const taskSchema = z
 export const shoppingSchema = z.object({
   id,
   name: short,
-  quantity: z.string().max(50),
+  quantity: z.string().max(500),
   category: z.enum(categories),
   done: z.boolean(),
 });
-export const mealSchema = z.object({
+export const mealSchema = z
+  .object({
+    id,
+    date: dateSchema,
+    slot: z.enum(["Breakfast", "Lunch", "Dinner"]),
+    recipeId: id.optional(),
+    note: short.optional(),
+    servings: z.number().int().min(1).max(50).optional(),
+  })
+  .refine(
+    (m) => Boolean(m.recipeId) !== Boolean(m.note),
+    "Choose a recipe or a meal note",
+  );
+export const recipeSchema = z.object({
   id,
-  date: dateSchema,
-  slot: z.enum(["Breakfast", "Lunch", "Dinner"]),
-  recipeId: id,
+  name: short,
+  subtitle: z.string().max(300),
+  time: z.number().int().min(1).max(1440),
+  servings: z.number().int().min(1).max(50),
+  category: short,
+  image: z.string().max(2000),
+  color: z.enum(colors),
+  cuisine: z.string().max(100).optional(),
+  region: z.enum(["West Africa", "Everyday"]).optional(),
+  diet: z.enum(["Plant-based", "Vegetarian", "Meat & fish"]).optional(),
+  lighter: z.boolean().optional(),
+  prepTime: z.number().optional(),
+  cookTime: z.number().optional(),
+  restTime: z.number().optional(),
+  restLabel: z.string().optional(),
+  servingSuggestion: z.string().max(1000).optional(),
+  tips: z.array(z.string().max(1000)).optional(),
+  source: z.object({ name: short, url: webLink }).optional(),
+  ingredients: z
+    .array(
+      z.object({
+        name: short,
+        quantity: z.string().max(50),
+        category: z.enum(categories),
+      }),
+    )
+    .min(1)
+    .max(100),
+  steps: z.array(z.string().trim().min(1).max(2000)).min(1).max(100),
 });
+export const featureSchemas = {
+  recipePrefs: z.object({
+    id,
+    memberId: id,
+    recipeId: id,
+    favourite: z.boolean(),
+    cookSoon: z.boolean(),
+  }),
+  customRecipes: recipeSchema,
+  mealTemplates: z.object({
+    id,
+    name: short,
+    entries: z
+      .array(
+        z.object({
+          weekday: z.number().int().min(0).max(6),
+          slot: z.enum(["Breakfast", "Lunch", "Dinner"]),
+          recipeId: id.optional(),
+          note: short.optional(),
+          servings: z.number().int().min(1).max(50).optional(),
+        }),
+      )
+      .min(1)
+      .max(21),
+  }),
+  pantry: z.object({
+    id,
+    name: short,
+    quantity: z.string().max(50),
+    category: z.enum(categories),
+    useBy: dateSchema.optional(),
+  }),
+  routines: z.object({
+    id,
+    title: short,
+    memberId: id,
+    period: z.enum(["Morning", "After school", "Bedtime"]),
+    days: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+    steps: z
+      .array(z.object({ id, title: short }))
+      .min(1)
+      .max(20),
+    from: dateSchema.optional(),
+    until: dateSchema.optional(),
+    excludedDates: z.array(dateSchema).max(366).optional(),
+    excludedRanges: z
+      .array(z.object({ start: dateSchema, end: dateSchema }))
+      .max(30)
+      .optional(),
+  }),
+  routineChecks: z.object({
+    id,
+    routineId: id,
+    memberId: id,
+    date: dateSchema,
+    steps: z.array(id).max(20),
+  }),
+  rewards: z.object({
+    id,
+    title: short,
+    memberId: id,
+    cost: z.number().int().min(1).max(10000),
+  }),
+  rewardClaims: z.object({
+    id,
+    rewardId: id,
+    memberId: id,
+    date: dateSchema,
+    cost: z.number().int().min(1).max(10000),
+    approved: z.boolean(),
+  }),
+  comments: z.object({
+    id,
+    eventId: id,
+    day: dateSchema.optional(),
+    memberId: id,
+    body: z.string().trim().min(1).max(2000),
+    createdAt: z.string().datetime(),
+  }),
+  eventLinks: z.object({ id, eventId: id, name: short, url: webLink }),
+  expenses: z.object({
+    id,
+    title: short,
+    memberId: id,
+    date: dateSchema,
+    cents: z.number().int().min(1).max(100000000),
+    category: z.enum(["Groceries", "School", "Transport", "Home", "Other"]),
+  }),
+  activity: z.object({
+    id,
+    actorId: id,
+    actorMemberId: id,
+    actorName: short,
+    createdAt: z.string().datetime(),
+    collection: short,
+    recordId: id,
+    title: short,
+    before: z.string().max(500),
+    after: z.string().max(500),
+    memberIds: z.array(id),
+    source: z.enum(["device", "server"]),
+  }),
+};
 export const noteSchema = z.object({
   id,
   title: short,
@@ -188,11 +369,34 @@ export const noteSchema = z.object({
   pinned: z.boolean(),
   createdAt: z.string().datetime(),
 });
-export const settingsSchema = z.object({
-  familyName: short,
-  currentMemberId: id,
-  weekStartsMonday: z.boolean(),
-});
+export const settingsSchema = z
+  .object({
+    familyName: short,
+    currentMemberId: id,
+    weekStartsMonday: z.boolean(),
+    timezone: z
+      .string()
+      .max(100)
+      .refine((v) => {
+        try {
+          new Intl.DateTimeFormat("en", { timeZone: v });
+          return true;
+        } catch {
+          return false;
+        }
+      }, "Choose a valid time zone")
+      .optional(),
+    digestDay: z.number().int().min(0).max(6).optional(),
+    digestTime: time.optional(),
+    quietStart: time.optional(),
+    quietEnd: time.optional(),
+    changeAlerts: z.boolean().optional(),
+    monthlyBudget: z.number().int().min(0).max(100000000).optional(),
+  })
+  .refine(
+    (s) => Boolean(s.quietStart) === Boolean(s.quietEnd),
+    "Choose both the start and end of quiet hours",
+  );
 export const dataSchema = z
   .object({
     version: z.literal(1),
@@ -203,6 +407,18 @@ export const dataSchema = z
     shopping: z.array(shoppingSchema).max(5000),
     meals: z.array(mealSchema).max(5000),
     notes: z.array(noteSchema).max(5000),
+    recipePrefs: z.array(featureSchemas.recipePrefs).max(5000).optional(),
+    customRecipes: z.array(recipeSchema).max(500).optional(),
+    mealTemplates: z.array(featureSchemas.mealTemplates).max(100).optional(),
+    pantry: z.array(featureSchemas.pantry).max(1000).optional(),
+    routines: z.array(featureSchemas.routines).max(500).optional(),
+    routineChecks: z.array(featureSchemas.routineChecks).max(10000).optional(),
+    rewards: z.array(featureSchemas.rewards).max(500).optional(),
+    rewardClaims: z.array(featureSchemas.rewardClaims).max(5000).optional(),
+    comments: z.array(featureSchemas.comments).max(5000).optional(),
+    eventLinks: z.array(featureSchemas.eventLinks).max(1000).optional(),
+    expenses: z.array(featureSchemas.expenses).max(10000).optional(),
+    activity: z.array(featureSchemas.activity).max(200).optional(),
   })
   .superRefine((data, ctx) => {
     const members = new Set(data.members.map((m) => m.id));
@@ -218,6 +434,9 @@ export const dataSchema = z
       data.shopping,
       data.meals,
       data.notes,
+      ...Object.keys(featureSchemas).map(
+        (key) => data[key as keyof typeof featureSchemas] ?? [],
+      ),
     ]) {
       if (new Set(list.map((x) => x.id)).size !== list.length)
         ctx.addIssue({
@@ -226,19 +445,114 @@ export const dataSchema = z
         });
     }
     if (
-      data.events.some((e) => e.memberIds.some((m) => !members.has(m))) ||
+      data.events.some((e) =>
+        [
+          ...e.memberIds,
+          ...[e.pickupMemberId, e.dropOffMemberId].filter((v): v is string =>
+            Boolean(v),
+          ),
+        ].some((m) => !members.has(m)),
+      ) ||
       data.tasks.some(
         (t) =>
           !members.has(t.memberId) || t.rotation?.some((m) => !members.has(m)),
       ) ||
-      data.notes.some((n) => !members.has(n.memberId))
+      data.notes.some((n) => !members.has(n.memberId)) ||
+      [
+        data.recipePrefs,
+        data.routines,
+        data.routineChecks,
+        data.rewards,
+        data.rewardClaims,
+        data.comments,
+        data.expenses,
+      ].some((list) => list?.some((item) => !members.has(item.memberId)))
     )
       ctx.addIssue({
         code: "custom",
         message: "An item refers to a missing family member",
       });
-    if (data.meals.some((m) => !recipes.some((r) => r.id === m.recipeId)))
+    const catalogue = [...recipes, ...(data.customRecipes ?? [])];
+    if (
+      new Set(data.recipePrefs?.map((p) => `${p.memberId}:${p.recipeId}`))
+        .size !== (data.recipePrefs?.length ?? 0)
+    )
+      ctx.addIssue({ code: "custom", message: "Duplicate recipe preferences" });
+    if (
+      data.mealTemplates?.some(
+        (t) =>
+          new Set(t.entries.map((e) => `${e.weekday}:${e.slot}`)).size !==
+          t.entries.length,
+      )
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "A template slot cannot have two meals",
+      });
+    if (new Set(catalogue.map((r) => r.id)).size !== catalogue.length)
+      ctx.addIssue({ code: "custom", message: "Recipe IDs must be unique" });
+    if (
+      data.meals.some(
+        (m) => m.recipeId && !catalogue.some((r) => r.id === m.recipeId),
+      ) ||
+      data.recipePrefs?.some(
+        (p) => !catalogue.some((r) => r.id === p.recipeId),
+      ) ||
+      data.mealTemplates?.some((t) =>
+        t.entries.some(
+          (e) =>
+            Boolean(e.recipeId) === Boolean(e.note) ||
+            (e.recipeId && !catalogue.some((r) => r.id === e.recipeId)),
+        ),
+      )
+    )
       ctx.addIssue({ code: "custom", message: "An unknown recipe was found" });
+    if (
+      [...(data.comments ?? []), ...(data.eventLinks ?? [])].some(
+        (c) => !data.events.some((e) => e.id === c.eventId),
+      )
+    )
+      ctx.addIssue({ code: "custom", message: "The event no longer exists" });
+    if (
+      data.routines?.some(
+        (r) =>
+          (r.from && r.until && r.until < r.from) ||
+          r.excludedRanges?.some(
+            (x) => x.end < x.start || daysBetween(x.start, x.end) > 366,
+          ) ||
+          new Set(r.days).size !== r.days.length ||
+          new Set(r.steps.map((s) => s.id)).size !== r.steps.length,
+      )
+    )
+      ctx.addIssue({
+        code: "custom",
+        message: "Check routine dates and steps",
+      });
+    if (
+      data.routineChecks?.some((c) => {
+        const r = data.routines?.find((r) => r.id === c.routineId);
+        return (
+          !r ||
+          r.memberId !== c.memberId ||
+          c.steps.some((id) => !r.steps.some((s) => s.id === id)) ||
+          new Set(c.steps).size !== c.steps.length ||
+          c.id !== `${r.id}:${c.date}`
+        );
+      })
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid routine completion" });
+    if (
+      data.rewardClaims?.some((c) => {
+        const r = data.rewards?.find((r) => r.id === c.rewardId);
+        return (
+          !r ||
+          r.memberId !== c.memberId ||
+          r.cost !== c.cost ||
+          c.id !== `${r.id}:${c.date}`
+        );
+      })
+    )
+      ctx.addIssue({ code: "custom", message: "Invalid reward claim" });
     if (
       new Set(data.meals.map((m) => `${m.date}:${m.slot}`)).size !==
       data.meals.length
@@ -256,9 +570,24 @@ export type Meal = z.infer<typeof mealSchema>;
 export type Note = z.infer<typeof noteSchema>;
 export type PlannerData = z.infer<typeof dataSchema>;
 export type Collection =
-  "members" | "events" | "tasks" | "shopping" | "meals" | "notes";
+  | "members"
+  | "events"
+  | "tasks"
+  | "shopping"
+  | "meals"
+  | "notes"
+  | keyof typeof featureSchemas;
+export type Feature<K extends keyof typeof featureSchemas> = z.infer<
+  (typeof featureSchemas)[K]
+>;
 export type RecordItem =
-  Member | FamilyEvent | Task | ShoppingItem | Meal | Note;
+  | Member
+  | FamilyEvent
+  | Task
+  | ShoppingItem
+  | Meal
+  | Note
+  | Feature<keyof typeof featureSchemas>;
 export type Mutation =
   | { collection: Collection; action: "upsert"; value: RecordItem }
   | { collection: Collection; action: "remove"; id: string }
@@ -324,6 +653,11 @@ export function formatTime(time: string) {
 /** Whether an occurrence of the event begins on `day`. */
 export function startsOn(event: FamilyEvent, day: string) {
   if (day < event.date || (event.until && day > event.until)) return false;
+  if (
+    event.excludedDates?.includes(day) ||
+    event.excludedRanges?.some((r) => day >= r.start && day <= r.end)
+  )
+    return false;
   const diff = dayNumber(day) - dayNumber(event.date);
   switch (event.repeat) {
     case "none":
@@ -348,7 +682,9 @@ export function occurrenceOn(
   if (day < event.date) return null;
   const last = event.endDate ?? event.date;
   if (event.repeat === "none")
-    return day <= last ? { start: event.date, end: last } : null;
+    return day <= last && startsOn(event, event.date)
+      ? { start: event.date, end: last }
+      : null;
   // A repeating event is shorter than its interval, so at most one occurrence covers the day.
   const span = dayNumber(last) - dayNumber(event.date);
   const n = dayNumber(day);
@@ -451,11 +787,43 @@ export function applyMutation(
 ): PlannerData {
   if (mutation.action === "settings")
     return { ...data, settings: mutation.value };
-  const list = data[mutation.collection] as RecordItem[];
+  const list = (data[mutation.collection] ?? []) as RecordItem[];
   if (mutation.action === "remove")
     return {
       ...data,
       [mutation.collection]: list.filter((x) => x.id !== mutation.id),
+      ...(mutation.collection === "events"
+        ? {
+            ...(data.comments
+              ? {
+                  comments: data.comments.filter(
+                    (c) => c.eventId !== mutation.id,
+                  ),
+                }
+              : {}),
+            ...(data.eventLinks
+              ? {
+                  eventLinks: data.eventLinks.filter(
+                    (c) => c.eventId !== mutation.id,
+                  ),
+                }
+              : {}),
+          }
+        : {}),
+      ...(mutation.collection === "routines" && data.routineChecks
+        ? {
+            routineChecks: data.routineChecks.filter(
+              (c) => c.routineId !== mutation.id,
+            ),
+          }
+        : {}),
+      ...(mutation.collection === "rewards" && data.rewardClaims
+        ? {
+            rewardClaims: data.rewardClaims.filter(
+              (c) => c.rewardId !== mutation.id,
+            ),
+          }
+        : {}),
     };
   const filtered =
     mutation.collection === "meals"
@@ -495,12 +863,26 @@ export function removeMemberChanges(
 ): Mutation[] {
   const changes: Mutation[] = [];
   for (const event of data.events) {
-    if (!event.memberIds.includes(memberId)) continue;
+    if (
+      !event.memberIds.includes(memberId) &&
+      event.pickupMemberId !== memberId &&
+      event.dropOffMemberId !== memberId
+    )
+      continue;
     const others = event.memberIds.filter((id) => id !== memberId);
     changes.push({
       collection: "events",
       action: "upsert",
-      value: { ...event, memberIds: others.length ? others : [heirId] },
+      value: {
+        ...event,
+        memberIds: others.length ? others : [heirId],
+        ...(event.pickupMemberId === memberId
+          ? { pickupMemberId: heirId }
+          : {}),
+        ...(event.dropOffMemberId === memberId
+          ? { dropOffMemberId: heirId }
+          : {}),
+      },
     });
   }
   for (const task of data.tasks) {
@@ -533,6 +915,22 @@ export function removeMemberChanges(
       action: "settings",
       value: { ...data.settings, currentMemberId: heirId },
     });
+  for (const collection of [
+    "recipePrefs",
+    "routines",
+    "routineChecks",
+    "rewards",
+    "rewardClaims",
+    "comments",
+    "expenses",
+  ] as const)
+    for (const value of data[collection] ?? [])
+      if (value.memberId === memberId)
+        changes.push({
+          collection,
+          action: "upsert",
+          value: { ...value, memberId: heirId },
+        });
   changes.push({ collection: "members", action: "remove", id: memberId });
   return changes;
 }
@@ -554,9 +952,29 @@ export function inverseOf(
         value: current.settings,
       });
     } else {
-      const list = current[mutation.collection] as RecordItem[];
+      const list = (current[mutation.collection] ?? []) as RecordItem[];
       const id = mutation.action === "remove" ? mutation.id : mutation.value.id;
       const before = list.find((item) => item.id === id);
+      if (mutation.action === "remove") {
+        const dependents: (
+          "comments" | "eventLinks" | "routineChecks" | "rewardClaims"
+        )[] =
+          mutation.collection === "events"
+            ? ["comments", "eventLinks"]
+            : mutation.collection === "routines"
+              ? ["routineChecks"]
+              : mutation.collection === "rewards"
+                ? ["rewardClaims"]
+                : [];
+        for (const collection of dependents)
+          for (const value of current[collection] ?? [])
+            if (
+              ("eventId" in value && value.eventId === id) ||
+              ("routineId" in value && value.routineId === id) ||
+              ("rewardId" in value && value.rewardId === id)
+            )
+              undo.push({ collection, action: "upsert", value });
+      }
       undo.push(
         before
           ? { collection: mutation.collection, action: "upsert", value: before }
@@ -592,10 +1010,20 @@ export function ingredientsToShopping(
       .map((x) => x.name.toLowerCase().trim()),
   );
   const result: ShoppingItem[] = [];
-  for (const recipeId of new Set(recipeIds)) {
-    const recipe = recipes.find((r) => r.id === recipeId);
+  for (const recipeId of recipeIds) {
+    const recipe = allRecipes(data).find((r) => r.id === recipeId);
     for (const ingredient of recipe?.ingredients ?? []) {
       const key = ingredient.name.toLowerCase().trim();
+      const pending = result.find(
+        (r) => ingredientKey(r.name) === ingredientKey(ingredient.name),
+      );
+      if (pending) {
+        pending.quantity = combineQuantities(
+          pending.quantity,
+          ingredient.quantity,
+        );
+        continue;
+      }
       if (!existing.has(key)) {
         result.push({ ...ingredient, id: uid(), done: false });
         existing.add(key);
@@ -603,6 +1031,9 @@ export function ingredientsToShopping(
     }
   }
   return result;
+}
+export function allRecipes(data: Pick<PlannerData, "customRecipes">): Recipe[] {
+  return [...recipes, ...(data.customRecipes ?? [])];
 }
 
 export const recipes: Recipe[] = [

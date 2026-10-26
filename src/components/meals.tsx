@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
-  Heart,
   Leaf,
   Plus,
   Search,
@@ -21,20 +20,31 @@ import {
   addDays,
   dateKey,
   formatDate,
-  ingredientsToShopping,
-  recipes,
+  allRecipes,
   startOfWeek,
   uid,
   type Meal,
   type Recipe,
 } from "@/lib/data";
 import { usePlanner } from "./planner-provider";
-import { isMeatFree, matchesRecipe } from "@/lib/recipe-helpers";
+import {
+  RecipeSaveButtons,
+  MealWeekTools,
+  ShoppingReview,
+  CustomRecipeButton,
+} from "./meal-tools";
+import { scaleQuantity } from "@/lib/quantities";
+import { shoppingPlan } from "@/lib/planning";
+import {
+  isMeatFree,
+  matchesRecipe,
+  recipeSearchScore,
+} from "@/lib/recipe-helpers";
 import { Field, Modal, SectionHeader } from "./ui";
 import type { ViewProps } from "./overview";
 
 export function RecipeModal({
-  recipe,
+  recipe: originalRecipe,
   onClose,
   initialDate,
   initialSlot,
@@ -45,15 +55,28 @@ export function RecipeModal({
   initialSlot?: Meal["slot"];
 }) {
   const { data, apply, notify } = usePlanner();
+  const recipe =
+    data.customRecipes?.find((r) => r.id === originalRecipe.id) ??
+    originalRecipe;
   const [date, setDate] = useState(initialDate ?? dateKey(new Date()));
   const [slot, setSlot] = useState<Meal["slot"]>(
     initialSlot ?? (recipe.category === "Breakfast" ? "Breakfast" : "Dinner"),
   );
   const [tab, setTab] = useState<"ingredients" | "method">("ingredients");
   const [checked, setChecked] = useState<number[]>([]);
+  const [servings, setServings] = useState(recipe.servings);
   const [busy, setBusy] = useState(false);
   async function addIngredients() {
-    const items = ingredientsToShopping(data, [recipe.id]);
+    const lines = shoppingPlan(data, [{ recipeId: recipe.id, servings }]);
+    const items = lines
+      .filter((l) => !l.onList && !l.inPantry)
+      .map((l) => ({
+        id: uid(),
+        name: l.name,
+        quantity: l.quantity,
+        category: l.category,
+        done: false,
+      }));
     if (!items.length) {
       notify("You already have these ingredients on your list.");
       return;
@@ -78,7 +101,13 @@ export function RecipeModal({
     const ok = await apply({
       collection: "meals",
       action: "upsert",
-      value: { id: existing?.id ?? uid(), date, slot, recipeId: recipe.id },
+      value: {
+        id: existing?.id ?? uid(),
+        date,
+        slot,
+        recipeId: recipe.id,
+        servings,
+      },
     });
     setBusy(false);
     if (ok) {
@@ -101,6 +130,22 @@ export function RecipeModal({
         width={960}
         height={640}
       />
+      <RecipeSaveButtons recipe={recipe} />
+      {data.customRecipes?.some((r) => r.id === recipe.id) && (
+        <CustomRecipeButton recipe={recipe} />
+      )}
+      <Field label="Servings">
+        <input
+          type="number"
+          min={1}
+          max={50}
+          required
+          value={servings}
+          onChange={(e) =>
+            setServings(Math.max(1, Math.min(50, Number(e.target.value) || 1)))
+          }
+        />
+      </Field>
       <div className="recipe-modal-meta">
         <span>
           <Clock3 size={16} />
@@ -159,7 +204,9 @@ export function RecipeModal({
                   }
                 />
                 <span>{i.name}</span>
-                <strong>{i.quantity}</strong>
+                <strong>
+                  {scaleQuantity(i.quantity, servings / recipe.servings)}
+                </strong>
               </label>
             ))}
           </div>
@@ -256,7 +303,10 @@ function CalendarIcon() {
 }
 
 export function Meals({ openRecipe }: ViewProps) {
-  const { data, apply, applyWithUndo, notify } = usePlanner();
+  const { data, apply, applyWithUndo, notify, currentMemberId } = usePlanner();
+  const recipes = allRecipes(data);
+  const [shoppingOpen, setShoppingOpen] = useState(false);
+  const [mealNote, setMealNote] = useState("");
   const [week, setWeek] = useState(
     startOfWeek(new Date(), data.settings.weekStartsMonday),
   );
@@ -271,44 +321,50 @@ export function Meals({ openRecipe }: ViewProps) {
   const weekMeals = data.meals.filter(
     (m) => m.date >= dateKey(week) && m.date <= dateKey(addDays(week, 6)),
   );
-  const visible = recipes.filter(
-    (r) =>
-      matchesRecipe(r, search) &&
-      (filter === "All recipes" ||
-        (filter === "West African" && r.region === "West Africa") ||
-        (filter === "Ghanaian" && r.cuisine === "Ghana") ||
-        (filter === "Lighter meals" && r.lighter) ||
-        (filter === "Quick & easy" && r.time <= 30) ||
-        (filter === "Meat-free" && isMeatFree(r))),
-  );
-  async function shopWeek() {
-    const items = ingredientsToShopping(
-      data,
-      weekMeals.map((m) => m.recipeId),
+  const visible = recipes
+    .filter(
+      (r) =>
+        matchesRecipe(r, search) &&
+        (filter === "All recipes" ||
+          (filter === "Favourites" &&
+            data.recipePrefs?.some(
+              (p) =>
+                p.memberId === currentMemberId &&
+                p.recipeId === r.id &&
+                p.favourite,
+            )) ||
+          (filter === "Cook soon" &&
+            data.recipePrefs?.some(
+              (p) =>
+                p.memberId === currentMemberId &&
+                p.recipeId === r.id &&
+                p.cookSoon,
+            )) ||
+          (filter === "West African" && r.region === "West Africa") ||
+          (filter === "Ghanaian" && r.cuisine === "Ghana") ||
+          (filter === "Lighter meals" && r.lighter) ||
+          (filter === "Quick & easy" && r.time <= 30) ||
+          (filter === "Meat-free" && isMeatFree(r))),
+    )
+    .sort(
+      (a, b) => recipeSearchScore(b, search) - recipeSearchScore(a, search),
     );
-    if (!items.length) {
-      notify(
-        weekMeals.length
-          ? "Your list already has everything. Check quantities for repeat meals."
-          : "Plan a meal first, then we’ll help with the shopping.",
-      );
+  function shopWeek() {
+    if (!weekMeals.length) {
+      notify("Plan a meal first, then check your cupboards.");
       return;
     }
-    if (
-      await apply(
-        items.map((value) => ({
-          collection: "shopping",
-          action: "upsert",
-          value,
-        })),
-      )
-    )
-      notify(
-        `${items.length} missing ingredients added. Check quantities if you’re cooking a dish twice.`,
-      );
+    setShoppingOpen(true);
   }
   return (
     <>
+      {shoppingOpen && (
+        <ShoppingReview
+          meals={weekMeals}
+          onClose={() => setShoppingOpen(false)}
+        />
+      )}
+      <CustomRecipeButton />
       <section className="card meal-week">
         <div className="meal-week-header">
           <div className="date-navigation">
@@ -347,6 +403,7 @@ export function Meals({ openRecipe }: ViewProps) {
             </button>
           </div>
         </div>
+        <MealWeekTools start={dateKey(week)} meals={weekMeals} />
         <div className="meal-days">
           {days.map((d) => {
             const key = dateKey(d),
@@ -362,11 +419,33 @@ export function Meals({ openRecipe }: ViewProps) {
                   <strong>{d.getDate()}</strong>
                   {key === dateKey(new Date()) && <small>Today</small>}
                 </div>
-                {recipe ? (
+                {meal?.note ? (
+                  <>
+                    <div className="meal-note">{meal.note}</div>
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        void applyWithUndo(
+                          {
+                            collection: "meals",
+                            action: "remove",
+                            id: meal.id,
+                          },
+                          "Meal note removed.",
+                        )
+                      }
+                    >
+                      Remove note
+                    </button>
+                  </>
+                ) : recipe ? (
                   <>
                     <button
                       className="planned-meal"
-                      onClick={() => openRecipe(recipe)}
+                      onClick={() => {
+                        setPickDate(key);
+                        setChosen(recipe);
+                      }}
                     >
                       <img
                         src={recipe.image}
@@ -429,6 +508,8 @@ export function Meals({ openRecipe }: ViewProps) {
         <div className="family-filters">
           {[
             "All recipes",
+            "Favourites",
+            "Cook soon",
             "Ghanaian",
             "Lighter meals",
             "West African",
@@ -479,44 +560,40 @@ export function Meals({ openRecipe }: ViewProps) {
       </p>
       <div className="recipe-grid">
         {visible.slice(0, limit).map((r) => (
-          <button
-            className="card recipe-card"
-            key={r.id}
-            onClick={() => openRecipe(r)}
-          >
-            <div className="recipe-card-image">
-              <img
-                src={r.image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                width={960}
-                height={640}
-              />
-              <span className="recipe-heart">
-                <Heart size={17} />
-              </span>
-            </div>
-            <div className="recipe-card-content">
-              <span className={`recipe-category ${r.color}`}>
-                {r.lighter ? "Lighter meal" : r.category}
-              </span>
-              <span className="recipe-cuisine">{r.cuisine}</span>
-              <h3>{r.name}</h3>
-              <p>{r.subtitle}</p>
-              <div className="recipe-meta">
-                <span>
-                  <Clock3 size={14} />
-                  {r.time} min
-                </span>
-                <span>
-                  <Users size={14} />
-                  Serves {r.servings}
-                </span>
-                <ArrowRight size={17} />
+          <article className="card recipe-card" key={r.id}>
+            <button className="recipe-open" onClick={() => openRecipe(r)}>
+              <div className="recipe-card-image">
+                <img
+                  src={r.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width={960}
+                  height={640}
+                />
               </div>
-            </div>
-          </button>
+              <div className="recipe-card-content">
+                <span className={`recipe-category ${r.color}`}>
+                  {r.lighter ? "Lighter meal" : r.category}
+                </span>
+                <span className="recipe-cuisine">{r.cuisine}</span>
+                <h3>{r.name}</h3>
+                <p>{r.subtitle}</p>
+                <div className="recipe-meta">
+                  <span>
+                    <Clock3 size={14} />
+                    {r.time} min
+                  </span>
+                  <span>
+                    <Users size={14} />
+                    Serves {r.servings}
+                  </span>
+                  <ArrowRight size={17} />
+                </div>
+              </div>
+            </button>
+            <RecipeSaveButtons recipe={r} />
+          </article>
         ))}
       </div>
       {visible.length > limit && (
@@ -538,6 +615,41 @@ export function Meals({ openRecipe }: ViewProps) {
           subtitle={`Choose something delicious for ${formatDate(pickDate, { weekday: "long", day: "numeric", month: "long" })}.`}
           onClose={() => setPickDate(null)}
         >
+          <form
+            className="meal-note-form"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (
+                await apply({
+                  collection: "meals",
+                  action: "upsert",
+                  value: {
+                    id: uid(),
+                    date: pickDate,
+                    slot,
+                    note: mealNote.trim(),
+                  },
+                })
+              ) {
+                setPickDate(null);
+                setMealNote("");
+                notify("Meal note saved.");
+              }
+            }}
+          >
+            <Field label="Or add a meal note">
+              <input
+                placeholder="Leftovers, eating out, packed lunch…"
+                maxLength={150}
+                required
+                value={mealNote}
+                onChange={(e) => setMealNote(e.target.value)}
+              />
+            </Field>
+            <button className="button secondary" disabled={!mealNote.trim()}>
+              Save meal note
+            </button>
+          </form>
           <label className="search-field recipe-picker-search">
             <Search size={17} />
             <input
@@ -550,6 +662,11 @@ export function Meals({ openRecipe }: ViewProps) {
           <div className="recipe-picker">
             {recipes
               .filter((r) => matchesRecipe(r, pickerSearch))
+              .sort(
+                (a, b) =>
+                  recipeSearchScore(b, pickerSearch) -
+                  recipeSearchScore(a, pickerSearch),
+              )
               .map((r) => (
                 <button key={r.id} onClick={() => setChosen(r)}>
                   <img src={r.image} alt="" loading="lazy" decoding="async" />
@@ -583,8 +700,8 @@ export function Meals({ openRecipe }: ViewProps) {
       )}
       <div className="help-note">
         <Check size={15} /> Shopping adds missing ingredients without
-        duplicating items already on your list. Adjust quantities for your
-        family.
+        duplicating items already on your list. Review servings and cupboard
+        ingredients before saving.
       </div>
     </>
   );

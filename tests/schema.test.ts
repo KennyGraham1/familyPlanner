@@ -276,6 +276,11 @@ describe("planner_validate_data", () => {
       /create or replace function public\.planner_validate_data[\s\S]*?\n\$\$;/,
     );
     assert.ok(fn, "planner_validate_data not found in schema.sql");
+    await db.exec(
+      sql.match(
+        /create or replace function public\.planner_validate_features[\s\S]*?\n\$\$;/,
+      )![0],
+    );
     await db.exec(fn[0]);
   });
   after(() => db.close());

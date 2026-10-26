@@ -26,13 +26,14 @@ import {
   isMultiDay,
   nextUp,
   occurrenceLabel,
-  recipes,
+  allRecipes,
   startOfWeek,
   type FamilyEvent,
   type Recipe,
 } from "@/lib/data";
 import { directionsUrl } from "@/lib/places";
 import { cheer, completeChore, reopenChore } from "@/lib/chores";
+import { EventResponsibilities } from "./event-tools";
 import { InstallCard } from "./install-card";
 import { usePlanner } from "./planner-provider";
 import {
@@ -51,7 +52,8 @@ export type View =
   | "shopping"
   | "chores"
   | "board"
-  | "settings";
+  | "settings"
+  | "tools";
 export type ViewProps = {
   navigate: (view: View) => void;
   open: (editor: Editor) => void;
@@ -84,6 +86,7 @@ export function EventRow({
       <span className="event-stripe" />
       <span className="event-detail">
         <strong>{event.title}</strong>
+        <EventResponsibilities event={event} />
         <small>
           <MapPin size={12} />
           {event.location || event.category}
@@ -170,6 +173,7 @@ function UpNext({ open }: Pick<ViewProps, "open">) {
 }
 export function Overview({ navigate, open, openRecipe }: ViewProps) {
   const { data, apply, applyWithUndo, currentMemberId } = usePlanner();
+  const recipes = allRecipes(data);
   const [selectedDay, setSelectedDay] = useState(dateKey(new Date()));
   const [week, setWeek] = useState(
     startOfWeek(new Date(), data.settings.weekStartsMonday),

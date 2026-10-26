@@ -1,3 +1,4 @@
+import { matchScore } from "./text-search";
 import type { Recipe, ShoppingItem } from "./data";
 
 type RecipeInput = Omit<
@@ -35,26 +36,22 @@ export function defineRecipe(input: RecipeInput): Recipe {
   };
 }
 
-export function matchesRecipe(recipe: Recipe, query: string) {
-  const normalize = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-  const text = normalize(
+export function recipeSearchScore(recipe: Recipe, query: string) {
+  return matchScore(
+    recipe.name,
     [
-      recipe.name,
       recipe.subtitle,
       recipe.cuisine,
       recipe.region,
+      recipe.diet,
       recipe.lighter ? "lighter light meals weight management" : "",
       ...recipe.ingredients.map((i) => i.name),
     ].join(" "),
+    query,
   );
-  return normalize(query)
-    .trim()
-    .split(/\s+/)
-    .every((word) => text.includes(word));
+}
+export function matchesRecipe(recipe: Recipe, query: string) {
+  return recipeSearchScore(recipe, query) > 0;
 }
 
 export function isMeatFree(recipe: Recipe) {

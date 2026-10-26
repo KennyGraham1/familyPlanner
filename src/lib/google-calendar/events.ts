@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { Temporal } from "@js-temporal/polyfill";
 import { eventSchema, shiftDate, type FamilyEvent } from "../data";
+import { skippedDates } from "../planning";
 
 export type GoogleEvent = {
   id: string;
@@ -45,6 +46,7 @@ export function sharedEvent(event: FamilyEvent | null) {
       allDay: !!event.allDay,
       repeat: event.repeat,
       until: event.repeat === "none" ? null : (event.until ?? null),
+      excludedDates: skippedDates(event),
     }
   );
 }
@@ -91,7 +93,14 @@ export function toGoogle(event: FamilyEvent, timezone: string) {
     recurrence:
       event.repeat === "none"
         ? []
-        : [`RRULE:${frequencies[event.repeat]}${until}`],
+        : [
+            `RRULE:${frequencies[event.repeat]}${until}`,
+            ...skippedDates(event).map((date) =>
+              event.allDay
+                ? `EXDATE;VALUE=DATE:${compact(date)}`
+                : `EXDATE:${compact(at(date, event.start).toInstant().toString())}`,
+            ),
+          ],
   };
 }
 
@@ -115,7 +124,10 @@ function repeatRule(
 ): Pick<FamilyEvent, "repeat" | "until"> {
   if (!google.recurrence?.length) return { repeat: "none" };
   if (
-    google.recurrence.length !== 1 ||
+    google.recurrence.filter((r) => r.startsWith("RRULE:")).length !== 1 ||
+    google.recurrence.some(
+      (r) => !r.startsWith("RRULE:") && !r.startsWith("EXDATE"),
+    ) ||
     !google.recurrence[0].startsWith("RRULE:")
   )
     throw new Error("Custom repeat schedules stay in Google Calendar");
@@ -206,6 +218,10 @@ export function fromGoogle(
   const last = allDay ? shiftDate(end.date, -1) : end.date;
   const location = google.location ?? "";
   return eventSchema.parse({
+    ...(previous ?? {}),
+    endDate: undefined,
+    until: undefined,
+    place: undefined,
     id,
     title: google.summary?.trim() || "Untitled Google event",
     date: start.date,
@@ -214,6 +230,30 @@ export function fromGoogle(
     ...(last !== start.date ? { endDate: last } : {}),
     allDay,
     ...repeatRule(google, start.date, timezone),
+    excludedRanges: undefined,
+    excludedDates: google.recurrence
+      ?.filter((r) => r.startsWith("EXDATE"))
+      .flatMap((rule) =>
+        rule
+          .split(":")
+          .slice(1)
+          .join(":")
+          .split(",")
+          .map((raw) => {
+            if (/^\d{8}$/.test(raw))
+              return raw.replace(/^(\d{4})(\d{2})(\d{2})$/, "$1-$2-$3");
+            if (!/^\d{8}T\d{6}Z$/.test(raw))
+              throw new Error("Unsupported excluded date");
+            const iso = raw.replace(
+              /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/,
+              "$1-$2-$3T$4:$5:$6Z",
+            );
+            return Temporal.Instant.from(iso)
+              .toZonedDateTimeISO(timezone)
+              .toPlainDate()
+              .toString();
+          }),
+      ),
     memberIds: previous?.memberIds ?? [memberId],
     category: previous?.category ?? "Activity",
     location,

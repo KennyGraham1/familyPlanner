@@ -121,6 +121,7 @@ export function Settings({ open }: ViewProps) {
         collection: "settings",
         action: "settings",
         value: {
+          ...data.settings,
           familyName: familyName.trim(),
           currentMemberId: household
             ? data.settings.currentMemberId
@@ -172,6 +173,18 @@ export function Settings({ open }: ViewProps) {
       meals: [],
       shopping: [],
       notes: [],
+      recipePrefs: [],
+      customRecipes: [],
+      mealTemplates: [],
+      pantry: [],
+      routines: [],
+      routineChecks: [],
+      rewards: [],
+      rewardClaims: [],
+      comments: [],
+      eventLinks: [],
+      expenses: [],
+      activity: [],
     };
     if (replaceData(cleared)) {
       notify("A fresh page for your family.");
@@ -433,8 +446,9 @@ export function Settings({ open }: ViewProps) {
           onClose={() => setClearConfirm(false)}
         >
           <p className="settings-description">
-            This clears all events, chores, shopping items, meal plans and notes
-            in this browser. Download a backup first if you’d like to keep them.
+            This clears events, chores, shopping, meals, recipes, routines,
+            pantry items, rewards, spending, discussions and history in this
+            browser. Download a backup first if you’d like to keep them.
           </p>
           <div className="form-actions">
             <button

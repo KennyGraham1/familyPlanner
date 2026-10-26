@@ -41,9 +41,16 @@ import { eventConflicts } from "@/lib/event-conflicts";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, FormActions, Modal } from "./ui";
 import { PlaceInput } from "./place-input";
+import { EventCollaboration } from "./event-tools";
 
 export type Editor =
-  | { kind: "event"; item?: FamilyEvent; date?: string }
+  | {
+      kind: "event";
+      item?: FamilyEvent;
+      date?: string;
+      day?: string;
+      rescheduleFrom?: { eventId: string; day: string };
+    }
   | { kind: "task"; item?: Task; memberId?: string }
   | { kind: "shopping"; item?: ShoppingItem }
   | { kind: "note"; item?: Note }
@@ -115,6 +122,8 @@ export function EditorModal({
     event && !event.allDay ? event.end : "10:00",
   );
   const [repeatUntil, setRepeatUntil] = useState(event?.until ?? "");
+  const [dropOff, setDropOff] = useState(event?.dropOffMemberId ?? "");
+  const [pickup, setPickup] = useState(event?.pickupMemberId ?? "");
   const [selected, setSelected] = useState<string[]>(
     editor.kind === "event" && editor.item
       ? editor.item.memberIds
@@ -134,6 +143,12 @@ export function EditorModal({
       location: "",
       notes: "",
       category: "Activity",
+      ...(dropOff ? { dropOffMemberId: dropOff } : {}),
+      ...(pickup ? { pickupMemberId: pickup } : {}),
+      ...(event?.excludedDates ? { excludedDates: event.excludedDates } : {}),
+      ...(event?.excludedRanges
+        ? { excludedRanges: event.excludedRanges }
+        : {}),
       ...(multiDay ? { endDate } : {}),
       ...(repeat !== "none" && repeatUntil ? { until: repeatUntil } : {}),
       ...(allDay ? { allDay: true } : {}),
@@ -141,7 +156,7 @@ export function EditorModal({
     return draft.success ? eventConflicts(draft.data, data.events) : [];
   }, [
     editor.kind,
-    event?.id,
+    event,
     draftId,
     startDate,
     startTime,
@@ -153,6 +168,8 @@ export function EditorModal({
     repeatUntil,
     allDay,
     data.events,
+    dropOff,
+    pickup,
   ]);
   const [color, setColor] = useState(
     editor.kind === "member"
@@ -184,8 +201,47 @@ export function EditorModal({
         const date = get("date"),
           lastDate = multiDay ? get("endDate") : "",
           until = repeat !== "none" ? get("until") : "";
+        const previous = data.events.find((e) => e.id === id);
+        const titles = get("checklist")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const checklist = titles.map((title) => ({
+          id:
+            (previous ?? event)?.checklist?.find((c) => c.title === title)
+              ?.id ?? uid(),
+          title,
+        }));
+        const excludedDates = get("excludedDates")
+          .split(/[\s,]+/)
+          .filter(Boolean);
+        const holidayStart = get("holidayStart"),
+          holidayEnd = get("holidayEnd");
         const value = eventSchema.parse({
           id,
+          ...(previous?.origin ? { origin: previous.origin } : {}),
+          ...(dropOff ? { dropOffMemberId: dropOff } : {}),
+          ...(pickup ? { pickupMemberId: pickup } : {}),
+          ...(checklist.length ? { checklist } : {}),
+          ...(previous?.checklistDone
+            ? {
+                checklistDone: Object.fromEntries(
+                  Object.entries(previous.checklistDone).map(([day, ids]) => [
+                    day,
+                    ids.filter((id) => checklist.some((s) => s.id === id)),
+                  ]),
+                ),
+              }
+            : {}),
+          ...(excludedDates.length ? { excludedDates } : {}),
+          ...(holidayStart && holidayEnd
+            ? {
+                excludedRanges: [
+                  ...(previous?.excludedRanges?.slice(1) ?? []),
+                  { start: holidayStart, end: holidayEnd },
+                ],
+              }
+            : {}),
           title: get("title"),
           date,
           // All-day events keep placeholder times so older data stays compatible.
@@ -201,11 +257,41 @@ export function EditorModal({
           ...(allDay ? { allDay: true } : {}),
           ...(place ? { place } : {}),
         });
-        success = await apply({
-          collection: "events",
-          action: "upsert",
-          value,
-        });
+        const source = editor.rescheduleFrom
+          ? data.events.find((e) => e.id === editor.rescheduleFrom?.eventId)
+          : undefined;
+        if (editor.rescheduleFrom && !source)
+          throw new Error("The repeating event no longer exists.");
+        if (source && editor.rescheduleFrom) {
+          value.origin = editor.rescheduleFrom;
+          const done = source.checklistDone?.[editor.rescheduleFrom.day];
+          if (done)
+            value.checklistDone = {
+              [value.date]: done.filter((id) =>
+                value.checklist?.some((s) => s.id === id),
+              ),
+            };
+        }
+        success = await apply([
+          ...(source
+            ? [
+                {
+                  collection: "events" as const,
+                  action: "upsert" as const,
+                  value: {
+                    ...source,
+                    excludedDates: [
+                      ...new Set([
+                        ...(source.excludedDates ?? []),
+                        editor.rescheduleFrom!.day,
+                      ]),
+                    ],
+                  },
+                },
+              ]
+            : []),
+          { collection: "events", action: "upsert", value },
+        ]);
         if (success) savedEvent = value;
       } else if (editor.kind === "task") {
         const repeating = choreRepeat !== "none";
@@ -492,6 +578,40 @@ export function EditorModal({
                   ))}
                 </div>
               </div>
+              <div className="form-grid">
+                {(["Drop-off adult", "Pickup adult"] as const).map(
+                  (label, i) => (
+                    <Field key={label} label={label}>
+                      <select
+                        value={i ? pickup : dropOff}
+                        onChange={(e) =>
+                          (i ? setPickup : setDropOff)(e.target.value)
+                        }
+                      >
+                        <option value="">Unassigned</option>
+                        {data.members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  ),
+                )}
+              </div>
+              <Field
+                label="Bring-along checklist"
+                hint="One item per line. Ticks reset for each occurrence."
+              >
+                <textarea
+                  name="checklist"
+                  rows={3}
+                  defaultValue={event?.checklist
+                    ?.map((s) => s.title)
+                    .join("\n")}
+                  maxLength={6000}
+                />
+              </Field>
               <Field label="Where?">
                 <PlaceInput
                   value={location}
@@ -549,6 +669,37 @@ export function EditorModal({
                     onChange={(e) => setRepeatUntil(e.target.value)}
                   />
                 </Field>
+              )}
+              {repeat !== "none" && (
+                <details className="schedule-exceptions">
+                  <summary>School terms and skipped dates</summary>
+                  <Field
+                    label="Skip dates"
+                    hint="YYYY-MM-DD, separated by commas. Move one occurrence from preparation below."
+                  >
+                    <textarea
+                      name="excludedDates"
+                      defaultValue={event?.excludedDates?.join(", ")}
+                      rows={2}
+                    />
+                  </Field>
+                  <div className="form-grid">
+                    <Field label="Holiday starts">
+                      <input
+                        name="holidayStart"
+                        type="date"
+                        defaultValue={event?.excludedRanges?.[0]?.start}
+                      />
+                    </Field>
+                    <Field label="Holiday ends">
+                      <input
+                        name="holidayEnd"
+                        type="date"
+                        defaultValue={event?.excludedRanges?.[0]?.end}
+                      />
+                    </Field>
+                  </div>
+                </details>
               )}
               <div role="status" aria-live="polite" aria-atomic="true">
                 {conflicts.length > 0 && (
@@ -851,6 +1002,9 @@ export function EditorModal({
             deleteLabel={editor.kind === "member" ? "Remove" : "Delete"}
           />
         </form>
+      )}
+      {editor.kind === "event" && editor.item && !editor.rescheduleFrom && (
+        <EventCollaboration event={editor.item} day={editor.day} open={open} />
       )}
     </Modal>
   );

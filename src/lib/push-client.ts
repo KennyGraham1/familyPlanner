@@ -7,12 +7,36 @@ export type ReminderPreferences = {
   chore_time: string;
   events_enabled: boolean;
   chores_enabled: boolean;
+  snoozed_until?: string | null;
 };
 export async function deviceSubscription() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window))
     return null;
   const registration = await navigator.serviceWorker.getRegistration("/");
   return (await registration?.pushManager.getSubscription()) ?? null;
+}
+export async function sendPhonePushTest() {
+  const cloud = getCloud(),
+    session = cloud && (await cloud.auth.getSession());
+  const token = session?.data.session?.access_token;
+  if (!token) throw new Error("Sign in to your family account first.");
+  const subscription = await deviceSubscription();
+  if (!subscription) throw new Error("Enable reminders on this device first.");
+  const response = await fetch("/api/push/test", {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ endpoint: subscription.endpoint }),
+  });
+  const result = await response.json();
+  if (!response.ok)
+    throw new Error(
+      result.error ?? "Could not send the phone notification test.",
+    );
+  return result.message as string;
 }
 export async function saveDevicePush(
   subscription: PushSubscription,

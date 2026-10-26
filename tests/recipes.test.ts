@@ -132,6 +132,11 @@ describe("shared recipe validation", () => {
     await db.exec(
       "create schema extensions; create function extensions.jsonb_matches_schema(schema json, instance jsonb) returns boolean language sql as 'select true';",
     );
+    await db.exec(
+      sql.match(
+        /create or replace function public\.planner_validate_features[\s\S]*?\n\$\$;/,
+      )![0],
+    );
     await db.exec(fn(sql));
     await db.exec(fn(update));
   });

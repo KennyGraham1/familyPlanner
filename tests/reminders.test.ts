@@ -32,6 +32,61 @@ const candidate = (event: Partial<FamilyEvent>): PushCandidate => ({
 const titles = (c: PushCandidate, at: string) =>
   dueReminders(c, new Date(at)).map((r) => `${r.title}: ${r.body}`);
 
+describe("phone delivery preferences", () => {
+  it("honours quiet hours across midnight and a per-device pause", () => {
+    const c = candidate({ date: "2026-11-02", start: "01:00", end: "02:00" });
+    c.data.settings = {
+      ...c.data.settings,
+      quietStart: "22:00",
+      quietEnd: "07:00",
+    };
+    assert.deepEqual(dueReminders(c, new Date("2026-11-02T00:45:00Z")), []);
+    c.data.settings.quietStart = undefined;
+    c.data.settings.quietEnd = undefined;
+    c.snoozed_until = "2026-11-02T02:00:00Z";
+    assert.deepEqual(dueReminders(c, new Date("2026-11-02T00:45:00Z")), []);
+    c.snoozed_until = null;
+    assert.equal(dueReminders(c, new Date("2026-11-02T00:45:00Z")).length, 1);
+  });
+  it("uses the configured family digest day and time", () => {
+    const c = candidate({ date: "2026-11-03", start: "10:00", end: "11:00" });
+    c.data.settings = { ...c.data.settings, digestDay: 1, digestTime: "19:00" };
+    assert.equal(
+      dueReminders(c, new Date("2026-11-02T19:00:00Z")).filter((r) =>
+        r.key.startsWith("digest:"),
+      ).length,
+      1,
+    );
+  });
+  it("groups relevant changes, excludes your own changes, and links to the affected event", () => {
+    const c = candidate({ date: "2026-11-04" });
+    c.member_id = "alex";
+    c.scope = "mine";
+    c.data.activity = [
+      {
+        id: "a",
+        actorId: "jamie",
+        actorMemberId: "jamie",
+        actorName: "Jamie",
+        createdAt: "2026-11-02T09:44:15.000Z",
+        collection: "events",
+        recordId: "swim",
+        title: "Swimming",
+        before: "9 am",
+        after: "10 am",
+        memberIds: ["alex"],
+        source: "server",
+      },
+    ];
+    assert.equal(dueReminders(c, new Date("2026-11-02T09:44:30Z")).length, 0);
+    const due = dueReminders(c, new Date("2026-11-02T09:45:00Z"));
+    assert.equal(due.length, 1);
+    assert.equal(due[0].url, "/#calendar?event=swim");
+    c.member_id = "jamie";
+    assert.deepEqual(dueReminders(c, new Date("2026-11-02T09:45:00Z")), []);
+  });
+});
+
 describe("event reminders", () => {
   it("remind about yearly all-day events at 8 am", () => {
     const birthday = candidate({

@@ -1,4 +1,5 @@
 import { addDays, dateKey, type FamilyEvent } from "./data";
+import { skippedDates } from "./planning";
 
 // iCalendar (RFC 5545): used for the calendar download and the Apple Calendar feed.
 const escape = (value: string) =>
@@ -61,6 +62,11 @@ export function calendarFile(
       ...(e.location ? [`LOCATION:${escape(e.location)}`] : []),
       ...(e.notes ? [`DESCRIPTION:${escape(e.notes)}`] : []),
       ...(e.repeat !== "none" ? [`RRULE:${frequency[e.repeat]}${until}`] : []),
+      ...skippedDates(e).map((date) =>
+        e.allDay
+          ? `EXDATE;VALUE=DATE:${compact(date)}`
+          : `EXDATE:${compact(date)}T${e.start.replace(":", "")}00`,
+      ),
       "END:VEVENT",
     ];
   });

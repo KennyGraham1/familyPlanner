@@ -21,6 +21,35 @@
         },
         "weekStartsMonday": {
           "type": "boolean"
+        },
+        "timezone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "digestDay": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6
+        },
+        "digestTime": {
+          "type": "string",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "quietStart": {
+          "type": "string",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "quietEnd": {
+          "type": "string",
+          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "changeAlerts": {
+          "type": "boolean"
+        },
+        "monthlyBudget": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000000
         }
       },
       "required": [
@@ -153,6 +182,104 @@
           "allDay": {
             "type": "boolean"
           },
+          "dropOffMemberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "pickupMemberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "origin": {
+            "type": "object",
+            "properties": {
+              "eventId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "day": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              }
+            },
+            "required": [
+              "eventId",
+              "day"
+            ],
+            "additionalProperties": false
+          },
+          "checklist": {
+            "maxItems": 40,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "checklistDone": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "maxItems": 40,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            }
+          },
+          "excludedDates": {
+            "maxItems": 366,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          "excludedRanges": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false
+            }
+          },
           "place": {
             "type": "object",
             "properties": {
@@ -283,7 +410,7 @@
           },
           "quantity": {
             "type": "string",
-            "maxLength": 50
+            "maxLength": 500
           },
           "category": {
             "type": "string",
@@ -338,13 +465,22 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "servings": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
           }
         },
         "required": [
           "id",
           "date",
-          "slot",
-          "recipeId"
+          "slot"
         ],
         "additionalProperties": false
       }
@@ -403,6 +539,797 @@
           "color",
           "pinned",
           "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "recipePrefs": {
+      "maxItems": 5000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "recipeId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "favourite": {
+            "type": "boolean"
+          },
+          "cookSoon": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "memberId",
+          "recipeId",
+          "favourite",
+          "cookSoon"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "customRecipes": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "subtitle": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "time": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1440
+          },
+          "servings": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "image": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "lavender",
+              "sage",
+              "peach",
+              "blue",
+              "rose",
+              "yellow"
+            ]
+          },
+          "cuisine": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "region": {
+            "type": "string",
+            "enum": [
+              "West Africa",
+              "Everyday"
+            ]
+          },
+          "diet": {
+            "type": "string",
+            "enum": [
+              "Plant-based",
+              "Vegetarian",
+              "Meat & fish"
+            ]
+          },
+          "lighter": {
+            "type": "boolean"
+          },
+          "prepTime": {
+            "type": "number"
+          },
+          "cookTime": {
+            "type": "number"
+          },
+          "restTime": {
+            "type": "number"
+          },
+          "restLabel": {
+            "type": "string"
+          },
+          "servingSuggestion": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "tips": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 1000
+            }
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 150
+              },
+              "url": {
+                "type": "string",
+                "maxLength": 2000,
+                "format": "uri"
+              }
+            },
+            "required": [
+              "name",
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          "ingredients": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                },
+                "quantity": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "Produce",
+                    "Dairy & eggs",
+                    "Meat & fish",
+                    "Bakery",
+                    "Pantry",
+                    "Household",
+                    "Other"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "quantity",
+                "category"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "steps": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "subtitle",
+          "time",
+          "servings",
+          "category",
+          "image",
+          "color",
+          "ingredients",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "mealTemplates": {
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "entries": {
+            "minItems": 1,
+            "maxItems": 21,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "weekday": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 6
+                },
+                "slot": {
+                  "type": "string",
+                  "enum": [
+                    "Breakfast",
+                    "Lunch",
+                    "Dinner"
+                  ]
+                },
+                "recipeId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                },
+                "servings": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 50
+                }
+              },
+              "required": [
+                "weekday",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "entries"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "pantry": {
+      "maxItems": 1000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "quantity": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Produce",
+              "Dairy & eggs",
+              "Meat & fish",
+              "Bakery",
+              "Pantry",
+              "Household",
+              "Other"
+            ]
+          },
+          "useBy": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "quantity",
+          "category"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "routines": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "Morning",
+              "After school",
+              "Bedtime"
+            ]
+          },
+          "days": {
+            "minItems": 1,
+            "maxItems": 7,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            }
+          },
+          "steps": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 150
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "until": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "excludedDates": {
+            "maxItems": 366,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          "excludedRanges": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "memberId",
+          "period",
+          "days",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "routineChecks": {
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "routineId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "steps": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "required": [
+          "id",
+          "routineId",
+          "memberId",
+          "date",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rewards": {
+      "maxItems": 500,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "cost": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "memberId",
+          "cost"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rewardClaims": {
+      "maxItems": 5000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "rewardId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "cost": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "approved": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "rewardId",
+          "memberId",
+          "date",
+          "cost",
+          "approved"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "comments": {
+      "maxItems": 5000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "eventId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "day": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "memberId",
+          "body",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "eventLinks": {
+      "maxItems": 1000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "eventId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "format": "uri"
+          }
+        },
+        "required": [
+          "id",
+          "eventId",
+          "name",
+          "url"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "expenses": {
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "memberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "cents": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000000
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "Groceries",
+              "School",
+              "Transport",
+              "Home",
+              "Other"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "memberId",
+          "date",
+          "cents",
+          "category"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "activity": {
+      "maxItems": 200,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "actorMemberId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "actorName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "collection": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "recordId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "before": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "after": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "memberIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "device",
+              "server"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "actorId",
+          "actorMemberId",
+          "actorName",
+          "createdAt",
+          "collection",
+          "recordId",
+          "title",
+          "before",
+          "after",
+          "memberIds",
+          "source"
         ],
         "additionalProperties": false
       }

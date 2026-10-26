@@ -106,9 +106,7 @@ test("device reminders can be enabled, tested, persisted and turned off", async 
     .click();
   await expect.poll(() => shown(page)).toHaveLength(1);
   expect((await shown(page))[0].title).toBe("Kinfolk reminders are working");
-  await expect(page.locator(".toast")).toContainText(
-    "Test notification sent",
-  );
+  await expect(page.locator(".toast")).toContainText("Test notification sent");
   const axe = await new AxeBuilder({ page })
     .include("#phone-reminders")
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
@@ -183,7 +181,9 @@ test("due events and chores notify once, including after reloading", async ({
     "Morning appointment",
     "1 chore to do",
   ]);
-  expect((await shown(page))[0].options?.data.url).toBe("/#calendar");
+  expect((await shown(page))[0].options?.data.url).toBe(
+    "/#calendar?event=reminder-event&day=2026-10-25",
+  );
   await page.reload();
   await expect(
     settings.getByRole("button", { name: "Save reminder settings" }),

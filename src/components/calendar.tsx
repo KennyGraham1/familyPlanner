@@ -27,6 +27,7 @@ import { CalendarLinkSettings } from "./calendar-link";
 import { calendarFile } from "@/lib/ics";
 import { EventRow, type ViewProps } from "./overview";
 import { CalendarWeek } from "./calendar-week";
+import { NoticeImport } from "./notice-import";
 
 type Mode = "week" | "month" | "year" | "agenda";
 const AGENDA_DAYS = 30;
@@ -136,7 +137,7 @@ export function Calendar({ open }: ViewProps) {
         className={`calendar-event ${person?.color ?? "lavender"} ${event.allDay || spansDays ? "all-day" : ""}`}
         aria-label={label}
         title={label}
-        onClick={() => open({ kind: "event", item: event })}
+        onClick={() => open({ kind: "event", item: event, day: key })}
       >
         <span>
           <span className="calendar-event-time">
@@ -228,6 +229,7 @@ export function Calendar({ open }: ViewProps) {
           </button>
         </div>
         <div className="toolbar-actions calendar-actions">
+          <NoticeImport />
           <button
             className="button secondary small-button"
             onClick={() => setGoogleOpen(true)}
@@ -356,7 +358,7 @@ export function Calendar({ open }: ViewProps) {
                   key={event.id}
                   event={event}
                   day={key}
-                  onClick={() => open({ kind: "event", item: event })}
+                  onClick={() => open({ kind: "event", item: event, day: key })}
                 />
               ))}
             </div>
@@ -478,7 +480,9 @@ export function Calendar({ open }: ViewProps) {
                   key={event.id}
                   event={event}
                   day={selectedDay}
-                  onClick={() => open({ kind: "event", item: event })}
+                  onClick={() =>
+                    open({ kind: "event", item: event, day: selectedDay })
+                  }
                 />
               ))}
               {eventsFor(selectedDay).length === 0 && (

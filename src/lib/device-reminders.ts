@@ -11,6 +11,7 @@ const preferencesSchema = pushDeviceSchema
     chore_time: true,
     events_enabled: true,
     chores_enabled: true,
+    snoozed_until: true,
   })
   .extend({ enabled: z.boolean() })
   .refine((value) => {

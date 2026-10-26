@@ -32,6 +32,8 @@ import {
 } from "@/lib/network";
 import { familyContextSchema, type FamilyAccess } from "@/lib/family";
 import { disableDevicePush } from "@/lib/push-client";
+import { withLocalActivity } from "@/lib/activity";
+import { rewardBalance } from "@/lib/planning";
 
 const STORAGE_KEY = "kinfolk-planner-v1";
 // With a live connection, polling is only a safety net for missed messages.
@@ -49,6 +51,7 @@ type Context = {
   data: PlannerData;
   phase: Phase;
   apply: (input: Mutation | Mutation[]) => Promise<boolean>;
+  toggleShopping: (id: string) => Promise<boolean>;
   replaceData: (next: PlannerData) => boolean;
   restoreData: (
     next: PlannerData,
@@ -88,6 +91,13 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<PlannerData>(() =>
     createFamily("You", "Your family"),
   );
+  const shoppingPending = useRef(
+    new Map<string, { version: number; done: boolean }>(),
+  );
+  const shoppingVersion = useRef(0);
+  const [shoppingOverlay, setShoppingOverlay] = useState<
+    Record<string, boolean>
+  >({});
   const [phase, setPhase] = useState<Phase>("loading");
   const [toast, setToast] = useState<Toast | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -130,6 +140,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     setData(next);
   }, []);
   const clearFamily = useCallback(() => {
+    shoppingPending.current.clear();
+    setShoppingOverlay({});
     householdRef.current = null;
     scopeRef.current = "";
     setHousehold(null);
@@ -414,8 +426,27 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
             ? dataSchema.parse(JSON.parse(stored))
             : dataRef.current;
           const next = dataSchema.parse(
-            mutations.reduce(applyMutation, current),
+            withLocalActivity(
+              current,
+              mutations,
+              current.settings.currentMemberId,
+            ).reduce(applyMutation, current),
           );
+          if (
+            mutations.some(
+              (m) =>
+                m.collection === "rewardClaims" &&
+                m.action === "upsert" &&
+                !(current.rewardClaims ?? []).some(
+                  (c) => c.id === m.value.id,
+                ) &&
+                "memberId" in m.value &&
+                rewardBalance(next, m.value.memberId) < 0,
+            )
+          ) {
+            notify("Not enough stars for this reward.", true);
+            return false;
+          }
           localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
           update(next);
           return true;
@@ -494,6 +525,34 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       return saved;
     },
     [apply, notify],
+  );
+  const toggleShopping = useCallback(
+    async (id: string) => {
+      const item = dataRef.current.shopping.find((i) => i.id === id);
+      if (!item) return false;
+      const done = !(shoppingPending.current.get(id)?.done ?? item.done);
+      const version = ++shoppingVersion.current;
+      shoppingPending.current.set(id, { version, done });
+      setShoppingOverlay((previous) => ({ ...previous, [id]: done }));
+      // Let the checkbox paint before storage validation or a network request.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      const saved = await apply({
+        collection: "shopping",
+        action: "upsert",
+        value: { ...item, done },
+      });
+      // An earlier response must never undo a newer tap on the same checkbox.
+      if (shoppingPending.current.get(id)?.version === version) {
+        shoppingPending.current.delete(id);
+        setShoppingOverlay((previous) => {
+          const next = { ...previous };
+          delete next[id];
+          return next;
+        });
+      }
+      return saved;
+    },
+    [apply],
   );
   const replaceData = useCallback(
     (next: PlannerData) => {
@@ -649,9 +708,19 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   return (
     <PlannerContext.Provider
       value={{
-        data,
+        data: Object.keys(shoppingOverlay).length
+          ? {
+              ...data,
+              shopping: data.shopping.map((item) =>
+                Object.hasOwn(shoppingOverlay, item.id)
+                  ? { ...item, done: shoppingOverlay[item.id] }
+                  : item,
+              ),
+            }
+          : data,
         phase,
         apply,
+        toggleShopping,
         applyWithUndo,
         replaceData,
         restoreData,
