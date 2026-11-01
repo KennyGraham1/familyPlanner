@@ -351,6 +351,92 @@ test("shopping toggles respond before a slow save, preserve rapid taps and roll 
   await expect(checkbox).not.toBeChecked();
 });
 
+test("offline sync preserves a new shopping edit queued during a slow request", async ({
+  context,
+  page,
+}) => {
+  await page.goto("/#shopping");
+  await context.setOffline(true);
+  await page.getByRole("checkbox", { name: "Bought Avocados" }).click();
+  const queueLength = () =>
+    page.evaluate(
+      (family) =>
+        JSON.parse(localStorage.getItem(`kinfolk-outbox-${family}`) ?? "[]")
+          .length,
+      household,
+    );
+  await expect.poll(queueLength).toBe(1);
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let waiting = false;
+  await page.route(
+    `${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`,
+    async (route) => {
+      if (!waiting) {
+        waiting = true;
+        await held;
+      }
+      await supabase.handle(route);
+    },
+  );
+  await context.setOffline(false);
+  await expect.poll(() => waiting).toBe(true);
+  await page.getByLabel("New shopping item").fill("Bread rolls during sync");
+  await page
+    .locator(".quick-add-form")
+    .getByRole("button", { name: "Add item" })
+    .click();
+  await expect.poll(queueLength).toBe(2);
+  release();
+  await expect
+    .poll(() =>
+      supabase.plan.shopping.some(
+        (item) => item.name === "Bread rolls during sync",
+      ),
+    )
+    .toBe(true);
+  await expect.poll(queueLength).toBe(0);
+  expect(
+    supabase.plan.shopping.find((item) => item.name === "Avocados")?.done,
+  ).toBe(true);
+  await expect(
+    page.getByRole("checkbox", { name: "Bought Bread rolls during sync" }),
+  ).toBeVisible();
+});
+
+test("offline shopping rolls back when browser storage cannot save the change", async ({
+  context,
+  page,
+}) => {
+  await page.goto("/#shopping");
+  await page.evaluate(() => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key.startsWith("kinfolk-outbox-"))
+        throw new DOMException("Full", "QuotaExceededError");
+      return setItem.call(this, key, value);
+    };
+  });
+  await context.setOffline(true);
+  const checkbox = page.getByRole("checkbox", { name: "Bought Avocados" });
+  await checkbox.click();
+  await expect(page.locator(".toast.error")).toContainText(
+    "Could not save offline changes on this phone",
+  );
+  await expect(checkbox).not.toBeChecked();
+  expect(
+    await page.evaluate(
+      (family) => localStorage.getItem(`kinfolk-outbox-${family}`),
+      household,
+    ),
+  ).toBeNull();
+  expect(
+    supabase.plan.shopping.find((item) => item.name === "Avocados")?.done,
+  ).toBe(false);
+});
+
 test("opens with the plans kept on this phone when the server can't be reached", async ({
   page,
 }) => {
@@ -363,4 +449,50 @@ test("opens with the plans kept on this phone when the server can't be reached",
   await expect(
     page.getByRole("checkbox", { name: "Bought Avocados" }),
   ).toBeVisible();
+});
+
+test("reopening with queued edits clears the saving state after sync", async ({
+  page,
+}) => {
+  const item = { ...supabase.plan.shopping[0], done: true };
+  await page.evaluate(
+    ({ household, item }) => {
+      localStorage.setItem(
+        `kinfolk-outbox-${household}`,
+        JSON.stringify([
+          [
+            {
+              collection: "shopping",
+              action: "upsert",
+              value: item,
+            },
+          ],
+        ]),
+      );
+    },
+    { household, item },
+  );
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let waiting = false;
+  await page.route(
+    `${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`,
+    async (route) => {
+      waiting = true;
+      await held;
+      await supabase.handle(route);
+    },
+  );
+  await page.reload();
+  await expect.poll(() => waiting).toBe(true);
+  await expect(status(page)).toContainText("Saving");
+  release();
+  await expect
+    .poll(
+      () => supabase.plan.shopping.find((entry) => entry.id === item.id)?.done,
+    )
+    .toBe(true);
+  await expect(status(page)).toContainText("Connected");
 });

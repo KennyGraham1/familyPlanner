@@ -234,6 +234,32 @@ test("smart search finds misspellings and event notes, and notice imports requir
   );
 });
 
+test("search opens the recurring occurrence on the requested date", async ({
+  page,
+}) => {
+  await page.addInitScript((key) => {
+    const data = JSON.parse(localStorage.getItem(key)!);
+    data.events = [
+      {
+        ...data.events[0],
+        title: "Weekly swim check",
+        date: "2026-10-20",
+        repeat: "weekly",
+      },
+    ];
+    localStorage.setItem(key, JSON.stringify(data));
+  }, storage);
+  await page.goto("/#calendar");
+  await page.getByRole("button", { name: "Search family planner" }).click();
+  await page.getByLabel("Search your family planner").fill("events tomorrow");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /Weekly swim check/ })
+    .click();
+  await expect(page.getByLabel("Occurrence date")).toHaveValue("2026-10-27");
+  expect((await saved(page)).events[0].date).toBe("2026-10-20");
+});
+
 test("family tools fit both themes and custom recipe edits preserve planned dates", async ({
   page,
 }, testInfo) => {

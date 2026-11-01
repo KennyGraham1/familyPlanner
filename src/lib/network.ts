@@ -19,6 +19,21 @@ export function canRetry(url: string, method = "GET") {
   return method === "POST" && REPEATABLE_POSTS.some((p) => p.test(path));
 }
 
+function retryDelay(ms: number, signal?: AbortSignal | null) {
+  return new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted();
+    const stop = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", stop);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", stop, { once: true });
+  });
+}
+
 export function createResilientFetch({
   fetchImpl = (...args: Parameters<typeof fetch>) => fetch(...args),
   timeoutMs = TIMEOUT_MS,
@@ -39,22 +54,30 @@ export function createResilientFetch({
       init.method ?? (input instanceof Request ? input.method : "GET")
     ).toUpperCase();
     const retries = canRetry(url, method) ? delaysMs : [];
+    const caller =
+      init.signal === undefined && input instanceof Request
+        ? input.signal
+        : init.signal;
     for (let attempt = 0; ; attempt++) {
+      caller?.throwIfAborted();
       const controller = new AbortController();
-      const caller = init.signal;
       const stop = () => controller.abort(caller?.reason);
-      caller?.addEventListener("abort", stop);
+      caller?.addEventListener("abort", stop, { once: true });
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        return await fetchImpl(input, { ...init, signal: controller.signal });
+        // A Request body is a stream: keep a fresh copy for each safe retry.
+        const request =
+          input instanceof Request && retries.length ? input.clone() : input;
+        return await fetchImpl(request, { ...init, signal: controller.signal });
       } catch (error) {
         // HTTP errors are responses, not exceptions: only network failures get here.
-        if (caller?.aborted || attempt >= retries.length) throw error;
-        await new Promise((resolve) => setTimeout(resolve, retries[attempt]));
+        caller?.throwIfAborted();
+        if (attempt >= retries.length) throw error;
       } finally {
         clearTimeout(timer);
         caller?.removeEventListener("abort", stop);
       }
+      await retryDelay(retries[attempt], caller);
     }
   };
 }

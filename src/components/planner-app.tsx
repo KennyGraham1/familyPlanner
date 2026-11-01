@@ -758,7 +758,7 @@ function SearchModal({
     action: () => {
       if (entry.kind === "Calendar") {
         const item = data.events.find((e) => e.id === entry.id);
-        if (item) open({ kind: "event", item });
+        if (item) open({ kind: "event", item, day: entry.date });
       } else if (entry.kind === "Recipes") {
         const recipe = allRecipes(data).find((r) => r.id === entry.id);
         if (recipe) openRecipe(recipe);

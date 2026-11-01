@@ -3,13 +3,16 @@ import {
   dateKey,
   startsOn,
   occurrenceOn,
-  occursOn,
   fromKey,
   formatDate,
   shiftDate,
   startOfWeek,
+  type FamilyEvent,
   type PlannerData,
 } from "./data";
+import { familyDate } from "./planning";
+import { matchScore, normalizeSearch } from "./text-search";
+export { matchScore, normalizeSearch } from "./text-search";
 export type SearchKind =
   | "Calendar"
   | "Recipes"
@@ -29,22 +32,23 @@ export type SearchEntry = {
   date?: string;
   done?: boolean;
 };
-import { matchScore, normalizeSearch } from "./text-search";
-export { matchScore, normalizeSearch } from "./text-search";
+const calendarDetail = (event: FamilyEvent, day: string) =>
+  `Calendar · ${formatDate(day)}${event.location ? ` · ${event.location}` : ""}`;
+
 export function buildSearchIndex(data: PlannerData, now = new Date()) {
-  const today = data.settings.timezone
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: data.settings.timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(now)
-    : dateKey(now);
+  const today = familyDate(data, now);
+  const memberNames = new Map(data.members.map((m) => [m.id, m.name]));
   const people = (ids: string[]) =>
-    data.members
-      .filter((m) => ids.includes(m.id))
-      .map((m) => m.name)
-      .join(" ");
+    [...new Set(ids)].map((id) => memberNames.get(id) ?? "").join(" ");
+  const eventText = new Map<string, string[]>();
+  for (const item of [...(data.comments ?? []), ...(data.eventLinks ?? [])]) {
+    const words = eventText.get(item.eventId) ?? [];
+    words.push("body" in item ? item.body : item.name);
+    eventText.set(item.eventId, words);
+  }
+  const favourites = new Set(
+    data.recipePrefs?.filter((p) => p.favourite).map((p) => p.recipeId),
+  );
   const upcoming = new Map<string, string>();
   for (const event of data.events) {
     if (occurrenceOn(event, today)) {
@@ -71,18 +75,13 @@ export function buildSearchIndex(data: PlannerData, now = new Date()) {
       id: e.id,
       kind: "Calendar" as const,
       title: e.title,
-      detail: `Calendar · ${formatDate(upcoming.get(e.id) ?? e.date)}${e.location ? ` · ${e.location}` : ""}`,
+      detail: calendarDetail(e, upcoming.get(e.id) ?? e.date),
       text: [
         e.notes,
         e.location,
         e.category,
         ...(e.checklist ?? []).map((s) => s.title),
-        ...(data.comments ?? [])
-          .filter((c) => c.eventId === e.id)
-          .map((c) => c.body),
-        ...(data.eventLinks ?? [])
-          .filter((l) => l.eventId === e.id)
-          .map((l) => l.name),
+        ...(eventText.get(e.id) ?? []),
       ].join(" "),
       people: people([
         ...e.memberIds,
@@ -103,9 +102,7 @@ export function buildSearchIndex(data: PlannerData, now = new Date()) {
         r.region,
         r.diet,
         r.lighter ? "lighter healthy weight loss weight management" : "",
-        ...(data.recipePrefs
-          ?.filter((p) => p.recipeId === r.id && p.favourite)
-          .map(() => "favourite") ?? []),
+        favourites.has(r.id) ? "favourite" : "",
         ...r.ingredients.map((i) => i.name),
       ].join(" "),
       people: "",
@@ -172,14 +169,7 @@ export function plannerSearch(
   now = new Date(),
   index?: SearchEntry[],
 ) {
-  const today = data.settings.timezone
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: data.settings.timezone,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(now)
-    : dateKey(now);
+  const today = familyDate(data, now);
   const entries = index ?? buildSearchIndex(data, now);
   let q = normalizeSearch(query);
   let from: string | undefined, to: string | undefined;
@@ -219,23 +209,33 @@ export function plannerSearch(
     requested = aliases[first];
     q = q.trim().slice(first.length).trim();
   }
+  const matchingEvents = new Map<string, { date: string; detail: string }>();
+  if (from) {
+    const days = Array.from({ length: 7 }, (_, i) => shiftDate(from, i)).filter(
+      (day) => day <= to!,
+    );
+    for (const event of data.events) {
+      const day = days.find((day) => occurrenceOn(event, day));
+      if (day)
+        matchingEvents.set(event.id, {
+          date: day,
+          detail: calendarDetail(event, day),
+        });
+    }
+  }
   return entries
     .filter(
       (e) =>
         (requested === "All" || e.kind === requested) &&
         (!from ||
           (e.kind === "Calendar"
-            ? Array.from({ length: 7 }, (_, i) => shiftDate(from!, i))
-                .filter((d) => d <= to!)
-                .some((d) => {
-                  const event = data.events.find((x) => x.id === e.id);
-                  return event && occursOn(event, d);
-                })
+            ? matchingEvents.has(e.id)
             : e.date && e.date >= from && e.date <= to!)) &&
         (!overdue || (e.kind === "Chores" && !e.done && e.date! < today)),
     )
     .map((entry) => ({
       ...entry,
+      ...(entry.kind === "Calendar" ? matchingEvents.get(entry.id) : {}),
       score: matchScore(
         entry.title,
         `${entry.text} ${entry.people} ${entry.kind}`,

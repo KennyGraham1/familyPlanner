@@ -38,14 +38,29 @@ export function writeOutbox(
   family: string,
   batches: Mutation[][],
   store = browserStore(),
-) {
+): boolean {
+  if (!store) return false;
   try {
     if (batches.length)
-      store?.setItem(outboxKey(family), JSON.stringify(batches));
-    else store?.removeItem(outboxKey(family));
+      store.setItem(outboxKey(family), JSON.stringify(batches));
+    else store.removeItem(outboxKey(family));
+    return true;
   } catch {
-    // Storage full or blocked: the change stays on screen until the app closes.
+    return false;
   }
+}
+/** Remove only the sent head, preserving changes queued while its request ran. */
+export function acknowledgeOutbox(
+  family: string,
+  sent: Mutation[],
+  store = browserStore(),
+): Mutation[][] | null {
+  if (!store) return null;
+  const waiting = readOutbox(family, store);
+  // Another tab may already have removed this batch. Leave its queue alone.
+  if (JSON.stringify(waiting[0]) !== JSON.stringify(sent)) return waiting;
+  const remaining = waiting.slice(1);
+  return writeOutbox(family, remaining, store) ? remaining : null;
 }
 /** The server's plans with changes still waiting to be sent laid on top. */
 export function rebase(data: PlannerData, batches: Mutation[][]): PlannerData {

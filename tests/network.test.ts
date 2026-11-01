@@ -68,6 +68,72 @@ describe("resilient requests", () => {
     assert.equal((await request(save, { method: "POST" })).status, 400);
     assert.equal(calls.length, 1);
   });
+  it("does not send a request that was cancelled before it started", async () => {
+    const { impl, calls } = fakeFetch(200);
+    const controller = new AbortController();
+    const reason = new DOMException("Cancelled", "AbortError");
+    controller.abort(reason);
+    const request = createResilientFetch({ fetchImpl: impl });
+    await assert.rejects(
+      request(save, { signal: controller.signal }),
+      (error) => error === reason,
+    );
+    assert.equal(calls.length, 0);
+  });
+  it("honours cancellation inherited from a Request and preserves its reason", async () => {
+    const { impl, calls } = fakeFetch("hang", 200);
+    const controller = new AbortController();
+    const reason = new Error("Screen closed");
+    const request = createResilientFetch({ fetchImpl: impl, delaysMs: [1] });
+    const result = request(new Request(save, { signal: controller.signal }));
+    controller.abort(reason);
+    await assert.rejects(result, (error) => error === reason);
+    assert.equal(calls.length, 1);
+  });
+  it("uses an explicit signal override rather than the original Request signal", async () => {
+    const { impl, calls } = fakeFetch(200);
+    const controller = new AbortController();
+    controller.abort();
+    const request = createResilientFetch({ fetchImpl: impl });
+    const result = await request(
+      new Request(save, { signal: controller.signal }),
+      { signal: null },
+    );
+    assert.equal(result.status, 200);
+    assert.equal(calls.length, 1);
+  });
+  it(
+    "cancels during retry backoff without starting another attempt",
+    { timeout: 2000 },
+    async () => {
+      const { impl, calls } = fakeFetch("fail", 200);
+      const controller = new AbortController();
+      const reason = new DOMException("Cancelled", "AbortError");
+      const request = createResilientFetch({
+        fetchImpl: impl,
+        delaysMs: [60000],
+      });
+      const result = request(save, { signal: controller.signal });
+      setTimeout(() => controller.abort(reason), 0);
+      await assert.rejects(result, (error) => error === reason);
+      assert.equal(calls.length, 1);
+    },
+  );
+  it("replays the same JSON body when retrying a Request", async () => {
+    const bodies: string[] = [];
+    const request = createResilientFetch({
+      delaysMs: [1],
+      fetchImpl: async (input) => {
+        bodies.push(await (input as Request).text());
+        if (bodies.length === 1) throw loadFailed();
+        return new Response("{}");
+      },
+    });
+    await request(
+      new Request(save, { method: "POST", body: '[{"id":"item"}]' }),
+    );
+    assert.deepEqual(bodies, ['[{"id":"item"}]', '[{"id":"item"}]']);
+  });
   it("knows which requests are safe to repeat", () => {
     assert.equal(canRetry(save, "POST"), true);
     assert.equal(

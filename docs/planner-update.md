@@ -21,7 +21,15 @@ Existing family files remain valid: new shared collections and settings are opti
 
 ## Verification
 
-The production build, lint and TypeScript checks passed. Automated verification includes 163 unit tests and 92 browser checks across desktop, mobile and signed-in use. Browser coverage includes delayed shopping saves and failure rollback, misspelled searches, notification registration and the server-test request, custom recipe editing, both colour themes and accessibility checks for the new family tools. These checks do not establish delivery to a physical phone.
+The production build, lint and TypeScript checks passed. Automated verification includes 175 unit tests and 97 browser checks across desktop, mobile and signed-in use. Browser coverage includes delayed shopping saves and failure rollback, misspelled searches, notification registration and the server-test request, custom recipe editing, both colour themes and accessibility checks for the new family tools. These checks do not establish delivery to a physical phone.
+
+## Code maintenance follow-up
+
+- Offline sync removes only the batch it sent, preserving edits added while the request was running. Browser storage failures are reported before an edit is shown as saved. Sync responses are validated before queued changes are acknowledged, and responses from a previous account/family are ignored.
+- Reopening with offline changes clears the saving state when sync finishes, so settings controls become available again.
+- Calendar searches for tomorrow or this week carry the matched date into event preparation, including repeating and multi-day events. Search reuses the family-date helper and groups member names, comments, document names and favourites to reduce repeated scanning.
+- Requests respect cancellation before sending, during a request and during retry delays. Safe retries of a Request preserve its JSON body.
+- Regression checks cover edits added during a slow sync, full/blocked browser storage, the saving indicator, dated search results, request cancellation and body replay. The README now describes quantity combining and custom recipes accurately.
 
 ## Shared database rollout
 

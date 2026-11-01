@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { createSeed, fromKey } from "../src/lib/data";
 import {
+  acknowledgeOutbox,
   readOutbox,
   rebase,
   readSnapshot,
@@ -52,6 +53,50 @@ describe("offline changes", () => {
       shown.shopping.find((i) => i.id === seed.shopping[0].id)?.done,
       true,
     );
+  });
+  it("keeps edits queued while an earlier batch was being sent", () => {
+    const store = memory();
+    const first = tick(seed.shopping[0].id),
+      second = tick(seed.shopping[1].id);
+    writeOutbox("fam", [first], store);
+    const sending = readOutbox("fam", store)[0];
+    writeOutbox("fam", [...readOutbox("fam", store), second], store);
+    assert.deepEqual(acknowledgeOutbox("fam", sending, store), [second]);
+    assert.deepEqual(readOutbox("fam", store), [second]);
+    assert.deepEqual(acknowledgeOutbox("fam", second, store), []);
+    assert.equal(store.items.size, 0);
+  });
+  it("does not remove a different head already advanced by another tab", () => {
+    const store = memory();
+    const first = tick(seed.shopping[0].id),
+      second = tick(seed.shopping[1].id);
+    writeOutbox("fam", [second], store);
+    assert.deepEqual(acknowledgeOutbox("fam", first, store), [second]);
+    assert.deepEqual(readOutbox("fam", store), [second]);
+  });
+  it("reports unavailable storage without pretending an offline edit was saved", () => {
+    const store = memory();
+    const first = tick(seed.shopping[0].id),
+      second = tick(seed.shopping[1].id);
+    assert.equal(writeOutbox("fam", [first], store), true);
+    const full = {
+      ...store,
+      setItem: () => {
+        throw new DOMException("Full", "QuotaExceededError");
+      },
+    };
+    assert.equal(writeOutbox("fam", [first, second], full), false);
+    assert.deepEqual(readOutbox("fam", store), [first]);
+    assert.equal(writeOutbox("fam", [first], null), false);
+    assert.equal(acknowledgeOutbox("fam", first, null), null);
+    const blocked = {
+      ...store,
+      removeItem: () => {
+        throw new DOMException("Blocked", "SecurityError");
+      },
+    };
+    assert.equal(acknowledgeOutbox("fam", first, blocked), null);
+    assert.deepEqual(readOutbox("fam", store), [first]);
   });
   it("skip a change that no longer fits", () => {
     const gone = [

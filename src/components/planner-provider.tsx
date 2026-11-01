@@ -18,6 +18,7 @@ import {
 import { getCloud, cloudConfigured } from "@/lib/cloud";
 import { errorMessage } from "@/lib/errors";
 import {
+  acknowledgeOutbox,
   forgetOffline,
   readOutbox,
   readSnapshot,
@@ -178,7 +179,13 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           mutations.reduce(applyMutation, dataRef.current),
         );
         const waiting = readOutbox(familyId);
-        writeOutbox(familyId, [...waiting, mutations]);
+        if (!writeOutbox(familyId, [...waiting, mutations])) {
+          notify(
+            "Could not save offline changes on this phone. Check your browser storage and try again.",
+            true,
+          );
+          return false;
+        }
         update(next);
         noteReachable(false);
         // Say it once, not for every item ticked off in the shop.
@@ -198,30 +205,55 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     const familyId = householdRef.current,
       cloud = getCloud();
     if (!familyId || !cloud || flushing.current) return;
+    const scope = scopeRef.current;
     flushing.current = true;
     pending.current++;
     try {
       let batches = readOutbox(familyId);
-      while (batches.length) {
+      while (batches.length && scopeRef.current === scope) {
+        const batch = batches[0];
         const { data: result, error } = await cloud.rpc(
           "planner_apply_changes",
-          { family_id: familyId, changes: batches[0] },
+          { family_id: familyId, changes: batch },
         );
+        if (scopeRef.current !== scope) return;
         // Still unreachable: try again on the next reconnect.
-        if (error && isNetworkError(error)) break;
-        batches = batches.slice(1);
-        writeOutbox(familyId, batches);
+        if (error && isNetworkError(error)) {
+          noteReachable(false);
+          return;
+        }
+        // Validate the response before acknowledging any saved changes.
+        const confirmed = error ? null : dataSchema.parse(result);
+        const remaining = acknowledgeOutbox(familyId, batch);
+        if (remaining === null) {
+          notify(
+            "Could not update this phone’s saved changes. Check your browser storage and try again.",
+            true,
+          );
+          noteReachable(false);
+          return;
+        }
+        batches = remaining;
         if (error)
           notify(
             `A change made offline couldn’t be saved: ${errorMessage(error, "it no longer fits the family’s plans")}`,
             true,
           );
-        else update(rebase(dataSchema.parse(result), batches));
+        else if (confirmed) update(rebase(confirmed, batches));
       }
-      if (!batches.length) noteReachable(true);
+      if (!batches.length && scopeRef.current === scope) noteReachable(true);
+    } catch (error) {
+      if (scopeRef.current !== scope) return;
+      if (isNetworkError(error)) noteReachable(false);
+      else
+        notify(
+          "Could not sync this phone’s saved changes. They have been kept for another attempt.",
+          true,
+        );
     } finally {
       flushing.current = false;
       pending.current--;
+      if (!pending.current) setBusy(false);
     }
   }, [noteReachable, notify, update]);
   const refreshCloud = useCallback(
