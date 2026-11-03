@@ -38,6 +38,7 @@ import {
   type Member,
 } from "@/lib/data";
 import { eventConflicts } from "@/lib/event-conflicts";
+import { lineItems } from "@/lib/planning";
 import { usePlanner } from "./planner-provider";
 import { Avatar, Field, FormActions, Modal } from "./ui";
 import { PlaceInput } from "./place-input";
@@ -202,21 +203,26 @@ export function EditorModal({
           lastDate = multiDay ? get("endDate") : "",
           until = repeat !== "none" ? get("until") : "";
         const previous = data.events.find((e) => e.id === id);
-        const titles = get("checklist")
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean);
-        const checklist = titles.map((title) => ({
-          id:
-            (previous ?? event)?.checklist?.find((c) => c.title === title)
-              ?.id ?? uid(),
-          title,
-        }));
+        const checklist = lineItems(
+          get("checklist"),
+          (previous ?? event)?.checklist,
+        );
         const excludedDates = get("excludedDates")
           .split(/[\s,]+/)
           .filter(Boolean);
         const holidayStart = get("holidayStart"),
           holidayEnd = get("holidayEnd");
+        // The form edits the first holiday in place; any others stay as they are.
+        // Clearing both dates removes it. Events that don't repeat skip nothing.
+        const excludedRanges =
+          repeat === "none"
+            ? []
+            : [
+                ...(holidayStart && holidayEnd
+                  ? [{ start: holidayStart, end: holidayEnd }]
+                  : []),
+                ...(previous?.excludedRanges?.slice(1) ?? []),
+              ];
         const value = eventSchema.parse({
           id,
           ...(previous?.origin ? { origin: previous.origin } : {}),
@@ -234,14 +240,7 @@ export function EditorModal({
               }
             : {}),
           ...(excludedDates.length ? { excludedDates } : {}),
-          ...(holidayStart && holidayEnd
-            ? {
-                excludedRanges: [
-                  ...(previous?.excludedRanges?.slice(1) ?? []),
-                  { start: holidayStart, end: holidayEnd },
-                ],
-              }
-            : {}),
+          ...(excludedRanges.length ? { excludedRanges } : {}),
           title: get("title"),
           date,
           // All-day events keep placeholder times so older data stays compatible.

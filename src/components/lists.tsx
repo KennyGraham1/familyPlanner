@@ -24,13 +24,8 @@ import {
 } from "@/lib/data";
 import { guessAisle } from "@/lib/shopping";
 import { matchScore } from "@/lib/text-search";
-import {
-  cheer,
-  completeChore,
-  nextInTurn,
-  reopenChore,
-  starsThisWeek,
-} from "@/lib/chores";
+import { downloadFile } from "@/lib/download";
+import { cheer, nextInTurn, setChoreDone, starsThisWeek } from "@/lib/chores";
 import { usePlanner } from "./planner-provider";
 import { Avatar, CheckButton, EmptyState } from "./ui";
 import type { ViewProps } from "./overview";
@@ -96,16 +91,11 @@ export function Shopping({ open }: ViewProps) {
       })
       .filter(Boolean)
       .join("\n\n");
-    const url = URL.createObjectURL(
-      new Blob([`${data.settings.familyName} — Shopping list\n\n${content}`], {
-        type: "text/plain",
-      }),
+    downloadFile(
+      "kinfolk-shopping.txt",
+      `${data.settings.familyName} — Shopping list\n\n${content}`,
+      "text/plain;charset=utf-8",
     );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "kinfolk-shopping.txt";
-    a.click();
-    URL.revokeObjectURL(url);
     notify("Your shopping list is ready to share.");
   }
   return (
@@ -366,9 +356,9 @@ export function Chores({ open }: ViewProps) {
                           label={`Complete ${task.title}`}
                           onClick={() =>
                             void (task.done
-                              ? apply(reopenChore(data, task))
+                              ? apply(setChoreDone(task.id, false))
                               : applyWithUndo(
-                                  completeChore(data, task),
+                                  setChoreDone(task.id, true),
                                   cheer(data.tasks, task, m.name),
                                 ))
                           }

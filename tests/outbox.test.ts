@@ -108,6 +108,33 @@ describe("offline changes", () => {
     ];
     assert.deepEqual(rebase(seed, [gone]), seed);
   });
+  it("lay many queued ticks on top in order", () => {
+    const ticks = seed.shopping.map((item) => tick(item.id));
+    const untick = [{ ...tick(seed.shopping[0].id)[0] }];
+    untick[0].value = { ...untick[0].value, done: false };
+    const shown = rebase(seed, [...ticks, untick]);
+    assert.deepEqual(
+      shown.shopping.map((i) => i.done),
+      seed.shopping.map((_, i) => i !== 0),
+    );
+  });
+  it("skip only the change that no longer fits, keeping later ones", () => {
+    const gone = [
+      {
+        collection: "tasks" as const,
+        action: "upsert" as const,
+        value: { ...seed.tasks[0], memberId: "nobody" },
+      },
+    ];
+    const shown = rebase(seed, [
+      tick(seed.shopping[0].id),
+      gone,
+      tick(seed.shopping[1].id),
+    ]);
+    assert.equal(shown.tasks[0].memberId, seed.tasks[0].memberId);
+    assert.equal(shown.shopping[0].done, true);
+    assert.equal(shown.shopping[1].done, true);
+  });
   it("keep the last plans seen until sign-out", () => {
     const store = memory();
     const context = {

@@ -472,7 +472,9 @@ export const dataSchema = z
         code: "custom",
         message: "An item refers to a missing family member",
       });
+    // Lookups by id: this runs on every save and sync, for up to thousands of items.
     const catalogue = [...recipes, ...(data.customRecipes ?? [])];
+    const recipeIds = new Set(catalogue.map((r) => r.id));
     if (
       new Set(data.recipePrefs?.map((p) => `${p.memberId}:${p.recipeId}`))
         .size !== (data.recipePrefs?.length ?? 0)
@@ -489,27 +491,24 @@ export const dataSchema = z
         code: "custom",
         message: "A template slot cannot have two meals",
       });
-    if (new Set(catalogue.map((r) => r.id)).size !== catalogue.length)
+    if (recipeIds.size !== catalogue.length)
       ctx.addIssue({ code: "custom", message: "Recipe IDs must be unique" });
     if (
-      data.meals.some(
-        (m) => m.recipeId && !catalogue.some((r) => r.id === m.recipeId),
-      ) ||
-      data.recipePrefs?.some(
-        (p) => !catalogue.some((r) => r.id === p.recipeId),
-      ) ||
+      data.meals.some((m) => m.recipeId && !recipeIds.has(m.recipeId)) ||
+      data.recipePrefs?.some((p) => !recipeIds.has(p.recipeId)) ||
       data.mealTemplates?.some((t) =>
         t.entries.some(
           (e) =>
             Boolean(e.recipeId) === Boolean(e.note) ||
-            (e.recipeId && !catalogue.some((r) => r.id === e.recipeId)),
+            (e.recipeId && !recipeIds.has(e.recipeId)),
         ),
       )
     )
       ctx.addIssue({ code: "custom", message: "An unknown recipe was found" });
+    const eventIds = new Set(data.events.map((e) => e.id));
     if (
       [...(data.comments ?? []), ...(data.eventLinks ?? [])].some(
-        (c) => !data.events.some((e) => e.id === c.eventId),
+        (c) => !eventIds.has(c.eventId),
       )
     )
       ctx.addIssue({ code: "custom", message: "The event no longer exists" });
@@ -528,9 +527,10 @@ export const dataSchema = z
         code: "custom",
         message: "Check routine dates and steps",
       });
+    const routines = new Map(data.routines?.map((r) => [r.id, r]));
     if (
       data.routineChecks?.some((c) => {
-        const r = data.routines?.find((r) => r.id === c.routineId);
+        const r = routines.get(c.routineId);
         return (
           !r ||
           r.memberId !== c.memberId ||
@@ -541,9 +541,10 @@ export const dataSchema = z
       })
     )
       ctx.addIssue({ code: "custom", message: "Invalid routine completion" });
+    const rewards = new Map(data.rewards?.map((r) => [r.id, r]));
     if (
       data.rewardClaims?.some((c) => {
-        const r = data.rewards?.find((r) => r.id === c.rewardId);
+        const r = rewards.get(c.rewardId);
         return (
           !r ||
           r.memberId !== c.memberId ||
@@ -779,7 +780,15 @@ export function eventsOn(data: PlannerData, day: string, member = "all") {
     );
 }
 export function uid() {
-  return crypto.randomUUID();
+  // randomUUID needs a secure context; phones on a home network often use plain http.
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
+    "",
+  );
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 export function applyMutation(
   data: PlannerData,
@@ -854,7 +863,8 @@ export function ownedBy(data: PlannerData, memberId: string) {
 }
 /**
  * Removes a member as one batch. Their chores, notes and events only they were in
- * move to `heirId`; shared events simply drop them.
+ * move to `heirId`; shared events simply drop them. Recipe favourites are personal,
+ * so they go with the member (the heir may already favour the same dish).
  */
 export function removeMemberChanges(
   data: PlannerData,
@@ -915,8 +925,14 @@ export function removeMemberChanges(
       action: "settings",
       value: { ...data.settings, currentMemberId: heirId },
     });
+  for (const pref of data.recipePrefs ?? [])
+    if (pref.memberId === memberId)
+      changes.push({
+        collection: "recipePrefs",
+        action: "remove",
+        id: pref.id,
+      });
   for (const collection of [
-    "recipePrefs",
     "routines",
     "routineChecks",
     "rewards",

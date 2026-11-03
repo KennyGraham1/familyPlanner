@@ -64,12 +64,18 @@ export function acknowledgeOutbox(
 }
 /** The server's plans with changes still waiting to be sent laid on top. */
 export function rebase(data: PlannerData, batches: Mutation[][]): PlannerData {
+  if (!batches.length) return data;
+  // Usually everything still fits: one check, not one per batch (syncing many
+  // offline ticks rebases after each one, so per-batch checks grow quadratically).
+  const together = dataSchema.safeParse(
+    batches.flat().reduce(applyMutation, data),
+  );
+  if (together.success) return together.data;
   let result = data;
   for (const batch of batches) {
-    try {
-      // A batch that no longer fits (say, its item was deleted elsewhere) is skipped.
-      result = dataSchema.parse(batch.reduce(applyMutation, result));
-    } catch {}
+    // A batch that no longer fits (say, its item was deleted elsewhere) is skipped.
+    const next = dataSchema.safeParse(batch.reduce(applyMutation, result));
+    if (next.success) result = next.data;
   }
   return result;
 }

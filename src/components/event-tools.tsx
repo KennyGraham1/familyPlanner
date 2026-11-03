@@ -10,6 +10,7 @@ import {
   featureSchemas,
   type FamilyEvent,
 } from "@/lib/data";
+import { setChecklistItem } from "@/lib/planning";
 import { usePlanner } from "./planner-provider";
 import { Field } from "./ui";
 import type { Editor } from "./forms";
@@ -132,19 +133,14 @@ export function EventCollaboration({
                 type="checkbox"
                 checked={done.includes(step.id)}
                 onChange={() =>
-                  void apply({
-                    collection: "events",
-                    action: "upsert",
-                    value: {
-                      ...event,
-                      checklistDone: {
-                        ...event.checklistDone,
-                        [key]: done.includes(step.id)
-                          ? done.filter((id) => id !== step.id)
-                          : [...done, step.id],
-                      },
-                    },
-                  })
+                  void apply(
+                    setChecklistItem(
+                      event.id,
+                      key,
+                      step.id,
+                      !done.includes(step.id),
+                    ),
+                  )
                 }
               />
               {step.title}

@@ -97,6 +97,89 @@ export function familyDate(data: PlannerData, now = new Date()) {
       }).format(now)
     : dateKey(now);
 }
+/** Non-empty lines of pasted or typed text, whatever the line endings. */
+export const lines = (text: string) =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+/**
+ * Items typed one per line, such as checklist or routine steps. Lines that were
+ * there before keep their ids (and ticks); repeated lines get ids of their own.
+ */
+export function lineItems(
+  text: string,
+  previous: { id: string; title: string }[] = [],
+) {
+  const unused = [...previous];
+  return lines(text).map((title) => {
+    const at = unused.findIndex((item) => item.title === title);
+    return { id: at >= 0 ? unused.splice(at, 1)[0].id : uid(), title };
+  });
+}
+/**
+ * Ticks or unticks one bring-along item for an occurrence, from the latest plans
+ * when the change is saved, so quick taps on different items all count.
+ */
+export function setChecklistItem(
+  eventId: string,
+  day: string,
+  itemId: string,
+  checked: boolean,
+) {
+  return (data: PlannerData): Mutation[] => {
+    const event = data.events.find((e) => e.id === eventId);
+    const ticked = event?.checklistDone?.[day] ?? [];
+    if (
+      !event?.checklist?.some((item) => item.id === itemId) ||
+      ticked.includes(itemId) === checked
+    )
+      return [];
+    return [
+      {
+        collection: "events",
+        action: "upsert",
+        value: {
+          ...event,
+          checklistDone: {
+            ...event.checklistDone,
+            [day]: checked
+              ? [...ticked, itemId]
+              : ticked.filter((id) => id !== itemId),
+          },
+        },
+      },
+    ];
+  };
+}
+/** Ticks or unticks one routine step for a day, from the latest plans. */
+export function setRoutineStep(
+  routineId: string,
+  date: string,
+  stepId: string,
+  checked: boolean,
+) {
+  return (data: PlannerData): Mutation[] => {
+    const routine = data.routines?.find((r) => r.id === routineId);
+    if (!routine?.steps.some((s) => s.id === stepId)) return [];
+    const id = `${routineId}:${date}`;
+    const done = data.routineChecks?.find((c) => c.id === id)?.steps ?? [];
+    if (done.includes(stepId) === checked) return [];
+    return [
+      {
+        collection: "routineChecks",
+        action: "upsert",
+        value: {
+          id,
+          routineId,
+          memberId: routine.memberId,
+          date,
+          steps: checked ? [...done, stepId] : done.filter((s) => s !== stepId),
+        },
+      },
+    ];
+  };
+}
 export function routineDue(routine: Feature<"routines">, date: string) {
   return (
     routine.days.includes(fromKey(date).getDay()) &&

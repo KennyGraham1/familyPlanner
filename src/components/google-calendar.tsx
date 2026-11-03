@@ -401,12 +401,15 @@ export function GoogleCalendarSettings({
 export function GoogleCalendarAutoSync() {
   const { household, phase, data, refreshCloud } = usePlanner();
   const inFlight = useRef(false);
+  // The server isn't set up for Google Calendar: that only changes on redeploy.
+  const unavailable = useRef(false);
   const previousEvents = useRef("");
   const check = useCallback(async () => {
     if (
       !household ||
       phase !== "ready" ||
       inFlight.current ||
+      unavailable.current ||
       document.visibilityState === "hidden" ||
       !navigator.onLine
     )
@@ -414,7 +417,8 @@ export function GoogleCalendarAutoSync() {
     inFlight.current = true;
     try {
       const status = await calendarRequest<CalendarStatus>();
-      if (status.enabled) {
+      if (!status.configured) unavailable.current = true;
+      else if (status.enabled) {
         await calendarRequest("/sync", {});
         await refreshCloud();
         window.dispatchEvent(new Event(checked));
@@ -443,6 +447,7 @@ export function GoogleCalendarAutoSync() {
     };
   }, [household, phase, check]);
   useEffect(() => {
+    if (unavailable.current) return;
     const next = JSON.stringify(data.events);
     if (next === previousEvents.current) return;
     previousEvents.current = next;

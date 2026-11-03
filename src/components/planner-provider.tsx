@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -16,7 +17,7 @@ import {
   type PlannerData,
 } from "@/lib/data";
 import { getCloud, cloudConfigured } from "@/lib/cloud";
-import { errorMessage } from "@/lib/errors";
+import { errorMessage, validationMessage } from "@/lib/errors";
 import {
   acknowledgeOutbox,
   forgetOffline,
@@ -48,10 +49,21 @@ type Toast = {
   action?: ToastAction;
 };
 export type Phase = "loading" | "signin" | "setup" | "profile" | "ready";
+/**
+ * Changes to save, or a function that works them out from the latest plans when
+ * their turn comes. Toggles use a function, so quick taps made while an earlier
+ * save is still on its way build on it instead of undoing it.
+ */
+export type Changes =
+  Mutation | Mutation[] | ((data: PlannerData) => Mutation | Mutation[]);
+const changesFor = (input: Changes, data: PlannerData) => {
+  const changes = typeof input === "function" ? input(data) : input;
+  return Array.isArray(changes) ? changes : [changes];
+};
 type Context = {
   data: PlannerData;
   phase: Phase;
-  apply: (input: Mutation | Mutation[]) => Promise<boolean>;
+  apply: (input: Changes) => Promise<boolean>;
   toggleShopping: (id: string) => Promise<boolean>;
   replaceData: (next: PlannerData) => boolean;
   restoreData: (
@@ -60,10 +72,7 @@ type Context = {
   ) => Promise<boolean>;
   notify: (message: string, error?: boolean, action?: ToastAction) => void;
   /** Saves a change and offers to reverse it from the confirmation message. */
-  applyWithUndo: (
-    input: Mutation | Mutation[],
-    message: string,
-  ) => Promise<boolean>;
+  applyWithUndo: (input: Changes, message: string) => Promise<boolean>;
   toast: Toast | null;
   dismissToast: () => void;
   cloudConfigured: boolean;
@@ -192,8 +201,12 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         if (!waiting.length)
           notify("Saved on this phone. It’ll sync when you’re back online.");
         return true;
-      } catch {
-        notify("Your change was not saved. Please try again.", true);
+      } catch (error) {
+        notify(
+          validationMessage(error) ??
+            "Your change was not saved. Please try again.",
+          true,
+        );
         return false;
       }
     },
@@ -342,7 +355,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   );
   useEffect(() => {
     // Retry soon after a failure instead of waiting for the next regular check.
-    if (!failures) return;
+    // A device that knows it's offline waits for its "online" event instead.
+    if (!failures || !navigator.onLine) return;
     const timer = setTimeout(() => void refreshCloud(true), 5000);
     return () => clearTimeout(timer);
   }, [failures, refreshCloud]);
@@ -437,8 +451,7 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timer);
   }, [toast]);
   const apply = useCallback(
-    async (input: Mutation | Mutation[]) => {
-      const mutations = Array.isArray(input) ? input : [input];
+    async (input: Changes) => {
       const familyId = householdRef.current;
       if (!familyId) {
         if (cloudConfigured) {
@@ -457,6 +470,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           const current = stored
             ? dataSchema.parse(JSON.parse(stored))
             : dataRef.current;
+          const mutations = changesFor(input, current);
+          if (!mutations.length) return true;
           const next = dataSchema.parse(
             withLocalActivity(
               current,
@@ -482,24 +497,31 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
           update(next);
           return true;
-        } catch {
+        } catch (error) {
           notify(
-            "Could not save this change. Check your browser storage and try again.",
+            validationMessage(error) ??
+              "Could not save this change. Check your browser storage and try again.",
             true,
           );
           return false;
         }
       }
-      // Offline, or with older offline changes still waiting: queue behind them.
-      if (!navigator.onLine || readOutbox(familyId).length)
-        return queueOffline(familyId, mutations);
       const scope = scopeRef.current;
       ++generation.current;
       pending.current++;
-      setBusy(true);
       const job = queue.current.then(async () => {
+        let mutations: Mutation[] = [];
+        let sent = false;
         try {
           if (scopeRef.current !== scope) return false;
+          mutations = changesFor(input, dataRef.current);
+          if (!mutations.length) return true;
+          // Offline, or with older offline changes still waiting: queue behind them.
+          // Deciding in turn keeps a change made offline after a slow request behind it.
+          if (!navigator.onLine || readOutbox(familyId).length)
+            return queueOffline(familyId, mutations);
+          sent = true;
+          setBusy(true);
           const { data: result, error } = await getCloud()!.rpc(
             "planner_apply_changes",
             { family_id: familyId, changes: mutations },
@@ -515,26 +537,34 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
           if (scopeRef.current === scope && isNetworkError(e))
             return queueOffline(familyId, mutations);
           if (scopeRef.current === scope) {
-            const reason = isNetworkError(e)
-              ? "Couldn’t reach your family space, so this wasn’t saved. Check your connection and try again."
-              : errorMessage(e, "Your change was not saved. Please try again.");
-            notify(
-              // The server rejects data its (older) database rules don't recognise.
+            const reason = errorMessage(
+              e,
+              "Your change was not saved. Please try again.",
+            );
+            // The database turned the plans down: say why if Kinfolk's own rules
+            // agree. If they don't, the database's (older) rules are out of date.
+            const check =
               reason === "The updated family data is not valid."
-                ? "The family database didn’t accept this change. If Kinfolk was just updated, its database script (supabase/schema.sql) needs to be run again."
-                : reason,
+                ? dataSchema.safeParse(
+                    mutations.reduce(applyMutation, dataRef.current),
+                  )
+                : null;
+            notify(
+              !check
+                ? reason
+                : check.success
+                  ? "The family database didn’t accept this change. If Kinfolk was just updated, its database script (supabase/schema.sql) needs to be run again."
+                  : (validationMessage(check.error) ?? reason),
               true,
             );
-            // A network failure is already explained by the message above.
-            if (isNetworkError(e)) noteReachable(false);
-            else setSyncError("A change could not be saved. Please try again.");
+            setSyncError("A change could not be saved. Please try again.");
           }
           return false;
         } finally {
           pending.current--;
           if (!pending.current) {
             setBusy(false);
-            void refreshCloud(true);
+            if (sent) void refreshCloud(true);
           }
         }
       });
@@ -544,11 +574,16 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
     [noteReachable, notify, queueOffline, refreshCloud, update],
   );
   const applyWithUndo = useCallback(
-    async (input: Mutation | Mutation[], message: string) => {
-      const mutations = Array.isArray(input) ? input : [input];
-      const undo = inverseOf(dataRef.current, mutations);
-      const saved = await apply(mutations);
-      if (saved)
+    async (input: Changes, message: string) => {
+      // Worked out with the change itself, from the plans it's applied to.
+      let undo: Mutation[] = [];
+      const saved = await apply((data) => {
+        const mutations = changesFor(input, data);
+        undo = inverseOf(data, mutations);
+        return mutations;
+      });
+      // Nothing changed (say, a second tap on a chore already done): nothing to undo.
+      if (saved && undo.length)
         notify(message, false, {
           label: "Undo",
           run: () =>
@@ -568,10 +603,18 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
       setShoppingOverlay((previous) => ({ ...previous, [id]: done }));
       // Let the checkbox paint before storage validation or a network request.
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      const saved = await apply({
-        collection: "shopping",
-        action: "upsert",
-        value: { ...item, done },
+      // From the latest plans: a rename saved meanwhile is kept, not overwritten.
+      const saved = await apply((data) => {
+        const latest = data.shopping.find((i) => i.id === id);
+        return latest && latest.done !== done
+          ? [
+              {
+                collection: "shopping",
+                action: "upsert",
+                value: { ...latest, done },
+              },
+            ]
+          : [];
       });
       // An earlier response must never undo a newer tap on the same checkbox.
       if (shoppingPending.current.get(id)?.version === version) {
@@ -732,55 +775,96 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
   );
   const startOver = useCallback(() => {
     if (cloudConfigured) return;
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Blocked storage has nothing of ours to remove.
+    }
     localDataInvalid.current = false;
     clearFamily();
     setPhase("setup");
   }, [clearFamily]);
+  const dismissToast = useCallback(() => setToast(null), []);
+  // A new object only when the plans (or a pending tick) change, so search
+  // indexes and other memoised views don't rebuild for toasts or saving states.
+  const shown = useMemo(
+    () =>
+      Object.keys(shoppingOverlay).length
+        ? {
+            ...data,
+            shopping: data.shopping.map((item) =>
+              Object.hasOwn(shoppingOverlay, item.id)
+                ? { ...item, done: shoppingOverlay[item.id] }
+                : item,
+            ),
+          }
+        : data,
+    [data, shoppingOverlay],
+  );
+  const currentMemberId = profileId ?? data.settings.currentMemberId;
+  const value = useMemo(
+    () => ({
+      data: shown,
+      phase,
+      apply,
+      toggleShopping,
+      applyWithUndo,
+      replaceData,
+      restoreData,
+      notify,
+      toast,
+      dismissToast,
+      cloudConfigured,
+      email,
+      userId,
+      household,
+      currentMemberId,
+      isOwner,
+      access,
+      revision,
+      syncError,
+      busy,
+      live,
+      connection,
+      refreshCloud,
+      signOut,
+      startFamily,
+      joinFamily,
+      chooseProfile,
+      startOver,
+    }),
+    [
+      shown,
+      phase,
+      apply,
+      toggleShopping,
+      applyWithUndo,
+      replaceData,
+      restoreData,
+      notify,
+      toast,
+      dismissToast,
+      email,
+      userId,
+      household,
+      currentMemberId,
+      isOwner,
+      access,
+      revision,
+      syncError,
+      busy,
+      live,
+      connection,
+      refreshCloud,
+      signOut,
+      startFamily,
+      joinFamily,
+      chooseProfile,
+      startOver,
+    ],
+  );
   return (
-    <PlannerContext.Provider
-      value={{
-        data: Object.keys(shoppingOverlay).length
-          ? {
-              ...data,
-              shopping: data.shopping.map((item) =>
-                Object.hasOwn(shoppingOverlay, item.id)
-                  ? { ...item, done: shoppingOverlay[item.id] }
-                  : item,
-              ),
-            }
-          : data,
-        phase,
-        apply,
-        toggleShopping,
-        applyWithUndo,
-        replaceData,
-        restoreData,
-        notify,
-        toast,
-        dismissToast: () => setToast(null),
-        cloudConfigured,
-        email,
-        userId,
-        household,
-        currentMemberId: profileId ?? data.settings.currentMemberId,
-        isOwner,
-        access,
-        revision,
-        syncError,
-        busy,
-        live,
-        connection,
-        refreshCloud,
-        signOut,
-        startFamily,
-        joinFamily,
-        chooseProfile,
-        startOver,
-      }}
-    >
-      {children}
-    </PlannerContext.Provider>
+    <PlannerContext.Provider value={value}>{children}</PlannerContext.Provider>
   );
 }
 export function usePlanner() {

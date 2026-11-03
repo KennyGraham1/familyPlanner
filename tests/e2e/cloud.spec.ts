@@ -351,6 +351,89 @@ test("shopping toggles respond before a slow save, preserve rapid taps and roll 
   await expect(checkbox).not.toBeChecked();
 });
 
+/** Holds the first save until `release` is called, as on a slow phone connection. */
+async function holdFirstSave(page: Page) {
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const state = { waiting: false, release: () => release() };
+  await page.route(
+    `${CLOUD_SUPABASE}/rest/v1/rpc/planner_apply_changes`,
+    async (route) => {
+      if (!state.waiting) {
+        state.waiting = true;
+        await held;
+      }
+      await supabase.handle(route);
+    },
+  );
+  return state;
+}
+
+test("checklist ticks made while an earlier tick is saving are all kept", async ({
+  page,
+}) => {
+  const day = supabase.plan.events.find((e) => e.id === "e2")!.date;
+  supabase.plan.events = supabase.plan.events.map((e) =>
+    e.id === "e2"
+      ? {
+          ...e,
+          checklist: [
+            { id: "boots", title: "Boots" },
+            { id: "water", title: "Water bottle" },
+          ],
+        }
+      : e,
+  );
+  await page.goto(`/?fresh#calendar?event=e2&day=${day}`);
+  const dialog = page.getByRole("dialog");
+  const save = await holdFirstSave(page);
+  await dialog.getByRole("checkbox", { name: "Boots", exact: true }).click();
+  await expect.poll(() => save.waiting).toBe(true);
+  await dialog.getByRole("checkbox", { name: "Water bottle" }).click();
+  save.release();
+  await expect
+    .poll(
+      () =>
+        supabase.plan.events.find((e) => e.id === "e2")?.checklistDone?.[day],
+    )
+    .toEqual(["boots", "water"]);
+  await expect(
+    dialog.getByRole("checkbox", { name: "Water bottle" }),
+  ).toBeChecked();
+});
+
+test("a second tap on a repeating chore doesn't schedule it twice", async ({
+  page,
+}) => {
+  supabase.plan.tasks.push({
+    id: "bins",
+    title: "Take out the bins",
+    memberId: "alex",
+    due: supabase.plan.events[0].date,
+    done: false,
+    priority: "normal",
+    repeat: "weekly",
+  });
+  await page.goto("/?fresh#chores");
+  const save = await holdFirstSave(page);
+  const tick = page.getByRole("checkbox", {
+    name: "Complete Take out the bins",
+  });
+  await tick.click();
+  await expect.poll(() => save.waiting).toBe(true);
+  await tick.click();
+  save.release();
+  await expect
+    .poll(() => supabase.plan.tasks.find((t) => t.id === "bins")?.done)
+    .toBe(true);
+  await expect(status(page)).not.toContainText("Saving", { timeout: 10000 });
+  expect(
+    supabase.plan.tasks.filter((t) => t.series === "bins" && !t.done),
+  ).toHaveLength(1);
+});
+
 test("offline sync preserves a new shopping edit queued during a slow request", async ({
   context,
   page,

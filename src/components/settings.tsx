@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { dataSchema, type PlannerData } from "@/lib/data";
 import { getCloud } from "@/lib/cloud";
+import { downloadFile } from "@/lib/download";
 import { errorMessage } from "@/lib/errors";
 import { FamilyAccessSettings } from "./family-access";
 import { ReminderSettings } from "./reminder-settings";
@@ -135,14 +136,11 @@ export function Settings({ open }: ViewProps) {
     }
   }
   function download() {
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
+    downloadFile(
+      `kinfolk-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      JSON.stringify(data, null, 2),
+      "application/json",
     );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `kinfolk-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
     notify("Your family backup has been downloaded.");
   }
   async function readBackup(e: React.ChangeEvent<HTMLInputElement>) {
@@ -502,6 +500,7 @@ function CloudSettings() {
     refreshCloud,
     signOut,
     busy,
+    live,
   } = usePlanner();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -550,7 +549,8 @@ function CloudSettings() {
               </li>
               <li>
                 Add <code>NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-                <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your Vercel
+                <code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code> (or the older{" "}
+                <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>) to your Vercel
                 environment.
               </li>
               <li>
@@ -573,8 +573,9 @@ function CloudSettings() {
             </div>
           </div>
           <p className="form-hint">
-            Family plans refresh every 15 seconds and when you return to the
-            app.
+            {live
+              ? "Family changes appear instantly, and plans refresh when you return to the app."
+              : "Family plans refresh every 15 seconds and when you return to the app."}
           </p>
           <div className="backup-buttons">
             {isOwner && (

@@ -189,7 +189,8 @@ export function RecipeModal({
           <div className="ingredient-list">
             {recipe.ingredients.map((i, n) => (
               <label
-                key={i.name}
+                // Family recipes may list the same ingredient twice.
+                key={n}
                 className={checked.includes(n) ? "is-done" : ""}
               >
                 <input
@@ -223,7 +224,7 @@ export function RecipeModal({
         <>
           <ol className="method-list">
             {recipe.steps.map((step, i) => (
-              <li key={step}>
+              <li key={i}>
                 <span>{i + 1}</span>
                 <p>{step}</p>
               </li>
@@ -233,8 +234,8 @@ export function RecipeModal({
             <div className="recipe-notes">
               <h3>Cooking tips & substitutions</h3>
               <ul>
-                {recipe.tips.map((tip) => (
-                  <li key={tip}>{tip}</li>
+                {recipe.tips.map((tip, i) => (
+                  <li key={i}>{tip}</li>
                 ))}
               </ul>
             </div>

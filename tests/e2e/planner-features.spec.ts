@@ -156,6 +156,19 @@ test("event preparation, comments, links and a single moved repeat stay connecte
     }),
   );
 });
+test("a change the family's rules can't accept says why, not that storage failed", async ({
+  page,
+}) => {
+  await page.goto("/#tools");
+  await page.getByLabel("Quiet hours start").fill("21:00");
+  await page
+    .getByRole("button", { name: "Save family reminder schedule" })
+    .click();
+  await expect(page.locator(".toast.error")).toContainText(
+    "Choose both the start and end of quiet hours",
+  );
+  expect((await saved(page)).settings.quietStart).toBeUndefined();
+});
 test("school-day routines support a child view and rewards without duplicate credit", async ({
   page,
 }) => {

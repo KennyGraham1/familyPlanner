@@ -1,5 +1,6 @@
 import {
   applyMutation,
+  uid,
   type Feature,
   type Mutation,
   type PlannerData,
@@ -62,7 +63,7 @@ export function withLocalActivity(
             ? [record.memberId]
             : []);
       activity.push({
-        id: crypto.randomUUID(),
+        id: uid(),
         actorId: actorMemberId,
         actorMemberId,
         actorName:

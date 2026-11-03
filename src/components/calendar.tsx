@@ -25,6 +25,7 @@ import { EmptyState, Modal, PHONE, useDismiss, useMediaQuery } from "./ui";
 import { GoogleCalendarSettings } from "./google-calendar";
 import { CalendarLinkSettings } from "./calendar-link";
 import { calendarFile } from "@/lib/ics";
+import { downloadFile } from "@/lib/download";
 import { EventRow, type ViewProps } from "./overview";
 import { CalendarWeek } from "./calendar-week";
 import { NoticeImport } from "./notice-import";
@@ -110,19 +111,15 @@ export function Calendar({ open }: ViewProps) {
   }
 
   function exportCalendar() {
-    const content = calendarFile(
-      data.events.filter(
-        (e) => member === "all" || e.memberIds.includes(member),
+    downloadFile(
+      "kinfolk-calendar.ics",
+      calendarFile(
+        data.events.filter(
+          (e) => member === "all" || e.memberIds.includes(member),
+        ),
       ),
+      "text/calendar;charset=utf-8",
     );
-    const url = URL.createObjectURL(
-      new Blob([content], { type: "text/calendar;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "kinfolk-calendar.ics";
-    a.click();
-    URL.revokeObjectURL(url);
     notify("Calendar exported. Import it into your calendar app.");
   }
 

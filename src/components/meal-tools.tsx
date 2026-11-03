@@ -13,7 +13,7 @@ import {
   type Mutation,
   type Recipe,
 } from "@/lib/data";
-import { copyMeals, shoppingPlan, weekEntries } from "@/lib/planning";
+import { copyMeals, lines, shoppingPlan, weekEntries } from "@/lib/planning";
 import { ingredientKey } from "@/lib/quantities";
 import { usePlanner } from "./planner-provider";
 import { Field, Modal } from "./ui";
@@ -383,30 +383,39 @@ export function CustomRecipeButton({ recipe }: { recipe?: Recipe } = {}) {
                 cuisine: get("cuisine"),
                 image: recipe?.image ?? "/images/recipe-placeholder.svg",
                 color: "sage",
-                ingredients: get("ingredients")
-                  .split("\n")
-                  .filter(Boolean)
-                  .map((line) => {
-                    const [name, quantity, category] = line
-                      .split("|")
-                      .map((s) => s.trim());
-                    return {
-                      name,
-                      quantity: quantity ?? "",
-                      category: categories.includes(
-                        category as (typeof categories)[number],
-                      )
-                        ? category
-                        : "Other",
-                    };
-                  }),
-                steps: get("steps").split("\n").filter(Boolean),
+                // Pasted recipes bring blank lines, spaces and Windows line endings.
+                ingredients: lines(get("ingredients")).map((line) => {
+                  const [name, quantity, category] = line
+                    .split("|")
+                    .map((s) => s.trim());
+                  return {
+                    name,
+                    quantity: quantity ?? "",
+                    category: categories.includes(
+                      category as (typeof categories)[number],
+                    )
+                      ? category
+                      : "Other",
+                  };
+                }),
+                steps: lines(get("steps")),
                 ...(get("source")
                   ? { source: { name: "Original recipe", url: get("source") } }
                   : {}),
               });
               if (!parsed.success) {
-                setError(parsed.error.issues[0].message);
+                // Point at the pasted line that needs fixing.
+                const [issue] = parsed.error.issues;
+                const [field, index] = issue.path;
+                const where =
+                  typeof index !== "number"
+                    ? ""
+                    : field === "ingredients"
+                      ? `Ingredient ${index + 1}: `
+                      : field === "steps"
+                        ? `Step ${index + 1}: `
+                        : "";
+                setError(where + issue.message);
                 return;
               }
               setBusy(true);

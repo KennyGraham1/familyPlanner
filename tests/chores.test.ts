@@ -5,6 +5,7 @@ import {
   completeChore,
   nextDue,
   reopenChore,
+  setChoreDone,
   starsThisWeek,
 } from "../src/lib/chores";
 import {
@@ -123,6 +124,53 @@ describe("repeating chores", () => {
       sophieGone.tasks.find((t) => t.id === "bins")?.rotation,
       undefined,
     );
+  });
+  it("keeps a monthly chore on its day after a short month", () => {
+    const rent: Task = {
+      id: "rent",
+      title: "Pay the rent",
+      memberId: "alex",
+      due: "2026-01-31",
+      done: false,
+      priority: "high",
+      repeat: "monthly",
+      series: "rent",
+    };
+    let family = { ...seed, tasks: [...seed.tasks, rent] };
+    const dues: string[] = [];
+    for (let month = 0; month < 4; month++) {
+      const open = family.tasks.find((t) => t.series === "rent" && !t.done)!;
+      family = completeChore(family, open, at(open.due)).reduce(
+        applyMutation,
+        family,
+      );
+      dues.push(family.tasks.find((t) => t.series === "rent" && !t.done)!.due);
+    }
+    // Not 28 Feb → 28 Mar → 28 Apr: the 31st comes back whenever it exists.
+    assert.deepEqual(dues, [
+      "2026-02-28",
+      "2026-03-31",
+      "2026-04-30",
+      "2026-05-31",
+    ]);
+    assert.equal(dataSchema.safeParse(family).success, true);
+  });
+  it("keeps a monthly chore's day when catching up late", () => {
+    assert.equal(
+      nextDue("2026-01-31", "monthly", "2026-05-10", 31),
+      "2026-05-31",
+    );
+    // A chore moved to the 15th keeps to the 15th.
+    assert.equal(nextDue("2026-02-15", "monthly", "2026-02-15"), "2026-03-15");
+  });
+  it("ignores a second tap made before the first was saved", () => {
+    const tap = setChoreDone("bins", true, at("2026-10-06"));
+    const once = tap(plan).reduce(applyMutation, plan);
+    // The second tap is worked out from the plans the first one saved.
+    assert.deepEqual(tap(once), []);
+    assert.equal(once.tasks.filter((t) => t.series === "bins").length, 2);
+    assert.deepEqual(setChoreDone("bins", false)(plan), []);
+    assert.deepEqual(setChoreDone("missing", true)(plan), []);
   });
   it("rejects turns for people who aren't in the family", () => {
     const bad = {

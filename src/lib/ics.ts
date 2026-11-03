@@ -5,8 +5,8 @@ import { skippedDates } from "./planning";
 const escape = (value: string) =>
   value
     .replace(/\\/g, "\\\\")
-    .replace(/\r?\n/g, "\\n")
-    .replace(/;/g, "\;")
+    .replace(/\r\n|\r|\n/g, "\\n")
+    .replace(/;/g, "\\;")
     .replace(/,/g, "\\,");
 const compact = (key: string) => key.replaceAll("-", "");
 const nextDay = (key: string) =>

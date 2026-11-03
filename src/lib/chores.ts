@@ -23,20 +23,44 @@ export function cheer(
 }
 
 type Repeat = NonNullable<Task["repeat"]>;
-function step(due: string, repeat: Repeat) {
+const daysInMonth = (key: string) => {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+};
+function step(due: string, repeat: Repeat, day: number) {
   if (repeat === "daily") return shiftDate(due, 1);
   if (repeat === "weekly") return shiftDate(due, 7);
   if (repeat === "fortnightly") return shiftDate(due, 14);
-  // Monthly: same day next month, or its last day when shorter (31 Jan → 28 Feb).
-  const [y, m, d] = due.split("-").map(Number);
-  const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
-  return `${m === 12 ? y + 1 : y}-${String((m % 12) + 1).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
+  // Monthly: the chore's day next month, or its last day when shorter (31 Jan → 28 Feb).
+  const [y, m] = due.split("-").map(Number);
+  const next = `${m === 12 ? y + 1 : y}-${String((m % 12) + 1).padStart(2, "0")}`;
+  return `${next}-${String(Math.min(day, daysInMonth(`${next}-01`))).padStart(2, "0")}`;
 }
-/** The next due date after `today`, keeping the chore's rhythm (bins stay on Tuesdays). */
-export function nextDue(due: string, repeat: Repeat, today: string) {
-  let next = step(due, repeat);
-  while (next <= today) next = step(next, repeat);
+/**
+ * The next due date after `today`, keeping the chore's rhythm (bins stay on Tuesdays).
+ * Monthly chores keep to `day` of the month, so 31 Jan → 28 Feb → 31 Mar.
+ */
+export function nextDue(
+  due: string,
+  repeat: Repeat,
+  today: string,
+  day = Number(due.slice(8)),
+) {
+  let next = step(due, repeat, day);
+  while (next <= today) next = step(next, repeat, day);
   return next;
+}
+/**
+ * The day of the month a monthly chore keeps to. A short month moves one
+ * occurrence to its last day; the occurrence before still shows the real day.
+ */
+function monthDay(data: PlannerData, task: Task) {
+  const day = Number(task.due.slice(8));
+  if (!task.series || day < daysInMonth(task.due)) return day;
+  const previous = data.tasks
+    .filter((t) => t.series === task.series && t.due < task.due)
+    .sort((a, b) => b.due.localeCompare(a.due))[0];
+  return previous ? Math.max(day, Number(previous.due.slice(8))) : day;
 }
 /** Who does the next one: the next person in the turn order, or the same person. */
 export function nextInTurn(task: Pick<Task, "memberId" | "rotation">) {
@@ -81,7 +105,12 @@ export function completeChore(
         ...(task.rotation ? { rotation: task.rotation } : {}),
         series: series!,
         memberId: nextInTurn(task),
-        due: nextDue(task.due, task.repeat, dateKey(now)),
+        due: nextDue(
+          task.due,
+          task.repeat,
+          dateKey(now),
+          task.repeat === "monthly" ? monthDay(data, task) : undefined,
+        ),
         done: false,
       },
     });
@@ -107,6 +136,18 @@ export function reopenChore(data: PlannerData, task: Task): Mutation[] {
   if (next)
     changes.push({ collection: "tasks", action: "remove", id: next.id });
   return changes;
+}
+/**
+ * Ticks a chore off or reopens it, worked out from the latest plans when the
+ * change is saved. A quick second tap then does nothing, instead of scheduling
+ * the next occurrence twice.
+ */
+export function setChoreDone(taskId: string, done: boolean, now = new Date()) {
+  return (data: PlannerData): Mutation[] => {
+    const task = data.tasks.find((t) => t.id === taskId);
+    if (!task || task.done === done) return [];
+    return done ? completeChore(data, task, now) : reopenChore(data, task);
+  };
 }
 /** Stars this week: one for each chore a person finished. */
 export function starsThisWeek(

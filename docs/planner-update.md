@@ -21,7 +21,7 @@ Existing family files remain valid: new shared collections and settings are opti
 
 ## Verification
 
-The production build, lint and TypeScript checks passed. Automated verification includes 175 unit tests and 97 browser checks across desktop, mobile and signed-in use. Browser coverage includes delayed shopping saves and failure rollback, misspelled searches, notification registration and the server-test request, custom recipe editing, both colour themes and accessibility checks for the new family tools. These checks do not establish delivery to a physical phone.
+The production build, lint and TypeScript checks passed. Automated verification includes 190 unit tests and 101 browser checks across desktop, mobile and signed-in use. Browser coverage includes delayed shopping saves and failure rollback, misspelled searches, notification registration and the server-test request, custom recipe editing, both colour themes and accessibility checks for the new family tools. These checks do not establish delivery to a physical phone.
 
 ## Code maintenance follow-up
 
@@ -30,6 +30,20 @@ The production build, lint and TypeScript checks passed. Automated verification 
 - Calendar searches for tomorrow or this week carry the matched date into event preparation, including repeating and multi-day events. Search reuses the family-date helper and groups member names, comments, document names and favourites to reduce repeated scanning.
 - Requests respect cancellation before sending, during a request and during retry delays. Safe retries of a Request preserve its JSON body.
 - Regression checks cover edits added during a slow sync, full/blocked browser storage, the saving indicator, dated search results, request cancellation and body replay. The README now describes quantity combining and custom recipes accurately.
+
+## Code review fixes
+
+No database changes; existing families need no migration.
+
+- Quick ticks in a shared family are no longer lost or doubled. Checklist items, routine steps, chores and shopping ticks are worked out from the latest plans when their turn to save comes, so two quick ticks both count and a second tap on a chore can't schedule its next occurrence twice. A change made after going offline now stays behind an earlier request that was still sending.
+- Removing a family member removes their recipe favourites instead of reassigning them. Shared databases refused the reassignment ("Choose your own recipe favourites"), and it duplicated favourites both people shared.
+- Monthly chores keep their day after a short month (31 Jan → 28 Feb → 31 Mar), including when ticked off late.
+- Calendar files and subscription links escape semicolons, as RFC 5545 requires.
+- Editing a repeating event keeps its other holiday ranges in order; clearing the holiday dates removes only that holiday. Repeated checklist or routine lines no longer fail validation, and pasted family recipes accept blank lines and Windows line endings.
+- When a change breaks the family's rules (for example, quiet hours with only a start time), the message gives the reason instead of blaming browser storage or an out-of-date database.
+- Syncing many offline changes checks the plans once per batch rather than once per remaining batch: 50 offline ticks went from about 1.6 s to 0.09 s of processing for a small family, and from 34 s to 1.1 s for a very large one. Plan validation uses id lookups instead of nested scans.
+- Recipe scaling multiplies counted items ("3 cloves" → "6 cloves", "2 × 400 g cans" → "4 × 400 g cans") and leaves "to taste" alone.
+- The app works on phones opening it over plain http on a home network, where browsers don't offer `crypto.randomUUID`. Google Calendar background checks stop when the server isn't configured for it, and failed-connection retries wait for the device to come back online.
 
 ## Shared database rollout
 

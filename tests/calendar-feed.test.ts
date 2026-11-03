@@ -47,7 +47,8 @@ describe("calendar file", () => {
     );
     assert.match(file, /RRULE:FREQ=YEARLY\r\n/);
     assert.match(file, /DTSTART:20261106T170000\r\nDTEND:20261108T120000\r\n/);
-    assert.match(file, /SUMMARY:Camp\\, with tents\; and more\r\n/);
+    // RFC 5545 TEXT escapes commas and semicolons with a backslash.
+    assert.match(file, /SUMMARY:Camp\\, with tents\\; and more\r\n/);
     assert.match(file, /END:VCALENDAR\r\n$/);
   });
   it("folds long lines at 75 bytes without splitting characters", () => {

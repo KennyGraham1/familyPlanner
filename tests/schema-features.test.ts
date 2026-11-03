@@ -6,6 +6,7 @@ import {
   createSeed,
   dataSchema,
   recipes,
+  removeMemberChanges,
   type Mutation,
   type PlannerData,
 } from "../src/lib/data";
@@ -294,5 +295,40 @@ describe("shared planner feature transactions", () => {
       ).rows.length,
       2,
     );
+  });
+  it("removes a member who saved recipe favourites", async () => {
+    // Oliver's own account saved this; only that account may change it.
+    await db.query(
+      `update public.planner_households set data=jsonb_set(data,'{recipePrefs}',coalesce(data->'recipePrefs','[]')||$2::jsonb) where id=$1`,
+      [
+        family,
+        JSON.stringify([
+          {
+            id: "oliver-pasta",
+            memberId: "oliver",
+            recipeId: "pasta",
+            favourite: true,
+            cookSoon: true,
+          },
+        ]),
+      ],
+    );
+    const current = (
+      await db.query<{ data: PlannerData }>(
+        "select data from public.planner_households where id=$1",
+        [family],
+      )
+    ).rows[0].data;
+    // Handing the favourite to Sophie would be refused as someone else's choice.
+    const data = await apply(removeMemberChanges(current, "oliver", "sophie"));
+    assert.equal(
+      data.members.some((m) => m.id === "oliver"),
+      false,
+    );
+    assert.equal(
+      data.recipePrefs?.some((p) => p.id === "oliver-pasta"),
+      false,
+    );
+    assert.ok(dataSchema.safeParse(data).success);
   });
 });

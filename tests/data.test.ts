@@ -20,7 +20,30 @@ import {
   removeMemberChanges,
   startsOn,
   startOfWeek,
+  uid,
 } from "../src/lib/data";
+
+describe("new ids", () => {
+  it("work on a phone opening the app over plain http on the home network", () => {
+    // Browsers only offer randomUUID in secure contexts.
+    Object.defineProperty(crypto, "randomUUID", {
+      value: undefined,
+      configurable: true,
+    });
+    try {
+      const ids = new Set(Array.from({ length: 200 }, uid));
+      assert.equal(ids.size, 200);
+      for (const id of ids)
+        assert.match(
+          id,
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        );
+    } finally {
+      delete (crypto as { randomUUID?: unknown }).randomUUID;
+    }
+    assert.equal(typeof crypto.randomUUID, "function");
+  });
+});
 
 describe("new families", () => {
   it("start empty with the creator as the only, current member", () => {
@@ -76,6 +99,35 @@ describe("removing a family member", () => {
         after.events.find((e) => e.id === event.id)?.memberIds,
         event.memberIds.filter((id) => id !== "alex"),
       );
+  });
+  it("drops their recipe favourites instead of giving them away", () => {
+    const pref = (id: string, memberId: string) => ({
+      id,
+      memberId,
+      recipeId: "pasta",
+      favourite: true,
+      cookSoon: false,
+    });
+    // Both like the same dish: handing Alex's favourite to Jamie would duplicate it.
+    const family = {
+      ...seed,
+      recipePrefs: [pref("a", "alex"), pref("j", "jamie")],
+    };
+    const changes = removeMemberChanges(family, "alex", "jamie");
+    const result = dataSchema.safeParse(changes.reduce(applyMutation, family));
+    assert.equal(result.success, true);
+    assert.deepEqual(
+      result.data?.recipePrefs?.map((p) => p.id),
+      ["j"],
+    );
+    // Undo brings the favourite back with its owner.
+    assert.deepEqual(
+      inverseOf(family, changes)
+        .reduce(applyMutation, changes.reduce(applyMutation, family))
+        .recipePrefs?.map((p) => p.id)
+        .sort(),
+      ["a", "j"],
+    );
   });
   it("moves the greeting to the person taking over", () => {
     assert.equal(seed.settings.currentMemberId, "alex");

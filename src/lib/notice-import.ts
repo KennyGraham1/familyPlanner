@@ -35,7 +35,7 @@ export function parseNotice(text: string, reference: string): NoticeDraft[] {
       const iso = source.match(/\b(\d{4}-\d{2}-\d{2})\b/),
         numeric = source.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/),
         named = source.match(
-          /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})\b/i,
+          /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept|Sep|Oct|Nov|Dec)\.?\s+(\d{4})\b/i,
         );
       if (iso) {
         date = iso[1];

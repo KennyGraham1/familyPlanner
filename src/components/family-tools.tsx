@@ -10,7 +10,14 @@ import {
   uid,
   type Feature,
 } from "@/lib/data";
-import { familyDate, rewardBalance, routineDue } from "@/lib/planning";
+import { downloadFile } from "@/lib/download";
+import {
+  familyDate,
+  lineItems,
+  rewardBalance,
+  routineDue,
+  setRoutineStep,
+} from "@/lib/planning";
 import { usePlanner } from "./planner-provider";
 import { Field, Modal } from "./ui";
 import type { ViewProps } from "./overview";
@@ -334,19 +341,9 @@ function Routines() {
                     type="checkbox"
                     checked={done.includes(s.id)}
                     onChange={() =>
-                      void apply({
-                        collection: "routineChecks",
-                        action: "upsert",
-                        value: {
-                          id: `${r.id}:${today}`,
-                          routineId: r.id,
-                          memberId: r.memberId,
-                          date: today,
-                          steps: done.includes(s.id)
-                            ? done.filter((id) => id !== s.id)
-                            : [...done, s.id],
-                        },
-                      })
+                      void apply(
+                        setRoutineStep(r.id, today, s.id, !done.includes(s.id)),
+                      )
                     }
                   />
                   <span>
@@ -554,15 +551,7 @@ function Routines() {
               setError("");
               const f = new FormData(e.currentTarget),
                 get = (key: string) => String(f.get(key) ?? "").trim();
-              const steps = get("steps")
-                .split("\n")
-                .map((x) => x.trim())
-                .filter(Boolean)
-                .map((title) => ({
-                  id:
-                    existing?.steps.find((s) => s.title === title)?.id ?? uid(),
-                  title,
-                }));
+              const steps = lineItems(get("steps"), existing?.steps);
               const value = featureSchemas.routines.safeParse({
                 id: existing?.id ?? uid(),
                 title: get("title"),
@@ -873,16 +862,11 @@ function Spending() {
         data.members.find((m) => m.id === e.memberId)?.name ?? "",
       ]),
     ];
-    const url = URL.createObjectURL(
-      new Blob([rows.map((r) => r.map(cell).join(",")).join("\r\n")], {
-        type: "text/csv;charset=utf-8",
-      }),
+    downloadFile(
+      `kinfolk-spending-${month}.csv`,
+      rows.map((r) => r.map(cell).join(",")).join("\r\n"),
+      "text/csv;charset=utf-8",
     );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `kinfolk-spending-${month}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   }
   return (
     <>

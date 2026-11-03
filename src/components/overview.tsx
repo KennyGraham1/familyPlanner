@@ -32,7 +32,7 @@ import {
   type Recipe,
 } from "@/lib/data";
 import { directionsUrl } from "@/lib/places";
-import { cheer, completeChore, reopenChore } from "@/lib/chores";
+import { cheer, setChoreDone } from "@/lib/chores";
 import { EventResponsibilities } from "./event-tools";
 import { InstallCard } from "./install-card";
 import { usePlanner } from "./planner-provider";
@@ -172,7 +172,8 @@ function UpNext({ open }: Pick<ViewProps, "open">) {
   );
 }
 export function Overview({ navigate, open, openRecipe }: ViewProps) {
-  const { data, apply, applyWithUndo, currentMemberId } = usePlanner();
+  const { data, apply, applyWithUndo, toggleShopping, currentMemberId } =
+    usePlanner();
   const recipes = allRecipes(data);
   const [selectedDay, setSelectedDay] = useState(dateKey(new Date()));
   const [week, setWeek] = useState(
@@ -424,9 +425,9 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                   label={`Complete ${task.title}`}
                   onClick={() =>
                     void (task.done
-                      ? apply(reopenChore(data, task))
+                      ? apply(setChoreDone(task.id, false))
                       : applyWithUndo(
-                          completeChore(data, task),
+                          setChoreDone(task.id, true),
                           cheer(
                             todayTasks,
                             task,
@@ -466,13 +467,7 @@ export function Overview({ navigate, open, openRecipe }: ViewProps) {
                 <CheckButton
                   done={false}
                   label={`Bought ${item.name}`}
-                  onClick={() =>
-                    void apply({
-                      collection: "shopping",
-                      action: "upsert",
-                      value: { ...item, done: true },
-                    })
-                  }
+                  onClick={() => void toggleShopping(item.id)}
                 />
                 <span>{item.name}</span>
                 <small>{item.quantity}</small>

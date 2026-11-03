@@ -38,8 +38,9 @@ export async function calendarRequest<T>(
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  const value = await response.json();
-  if (!response.ok)
-    throw new Error(value.error || "Google Calendar could not be reached.");
+  // A proxy or timeout page isn't JSON: report it plainly, not as a parse error.
+  const value = await response.json().catch(() => null);
+  if (!response.ok || !value)
+    throw new Error(value?.error || "Google Calendar could not be reached.");
   return value as T;
 }

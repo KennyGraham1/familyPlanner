@@ -16,11 +16,16 @@ import { combineQuantities, scaleQuantity } from "../src/lib/quantities";
 import {
   copyMeals,
   familyDate,
+  lineItems,
+  lines,
   rewardBalance,
   routineDue,
+  setChecklistItem,
+  setRoutineStep,
   shoppingPlan,
   weekEntries,
 } from "../src/lib/planning";
+import { validationMessage } from "../src/lib/errors";
 import { plannerSearch } from "../src/lib/search";
 import { parseNotice } from "../src/lib/notice-import";
 import { calendarFile } from "../src/lib/ics";
@@ -39,6 +44,25 @@ describe("meal planning and groceries", () => {
     assert.equal(combineQuantities("2 tbsp", "3 tsp"), "3 tbsp");
     assert.equal(scaleQuantity("1–2, to taste", 2), "2 × (1–2, to taste)");
     assert.equal(combineQuantities("1 cup", "200 g"), "1 cup + 200 g");
+  });
+  it("scales counted items and leaves amounts without numbers alone", () => {
+    assert.equal(scaleQuantity("3 cloves", 2), "6 cloves");
+    assert.equal(scaleQuantity("2 × 400 g cans", 1.5), "3 × 400 g cans");
+    assert.equal(scaleQuantity("⅛ tsp", 2), "0.25 tsp");
+    assert.equal(
+      scaleQuantity("600 g (sealed ready-to-heat packs)", 2),
+      "1200 g (sealed ready-to-heat packs)",
+    );
+    assert.equal(scaleQuantity("to taste", 2), "to taste");
+    assert.equal(scaleQuantity("a pinch", 3), "a pinch");
+    assert.equal(
+      scaleQuantity("4 large (about 1 kg)", 2),
+      "2 × (4 large (about 1 kg))",
+    );
+    assert.equal(combineQuantities("3 cloves", "2 cloves"), "5 cloves");
+    assert.equal(combineQuantities("2 tablespoons", "1 tsp"), "2.33 tbsp");
+    assert.equal(combineQuantities("to taste", "to taste"), "to taste");
+    assert.equal(combineQuantities("2 cans", "3 cloves"), "2 cans + 3 cloves");
   });
   it("counts each planned meal and serving, with explicit pantry and already-listed flags", () => {
     const data = createSeed();
@@ -299,5 +323,114 @@ describe("smart search and notice import", () => {
     assert.match(drafts[2].warning, /Relative/);
     assert.equal(drafts[3].date, "");
     assert.equal(dateKey(fromKey(drafts[0].date)), drafts[0].date);
+  });
+  it("reads abbreviated months as written in school newsletters", () => {
+    const [sept, nov] = parseNotice(
+      "Photo day 5 Sept 2026\nPrize-giving 12 Nov. 2026 6pm–7pm",
+      "2026-08-01",
+    );
+    assert.equal(sept.date, "2026-09-05");
+    assert.equal(sept.title, "Photo day");
+    assert.equal(nov.date, "2026-11-12");
+    assert.equal(nov.title, "Prize-giving");
+  });
+});
+
+describe("lists typed one per line", () => {
+  it("handle pasted line endings and blank lines", () => {
+    assert.deepEqual(lines("Rice | 300 g\r\n  \r\n\tTomatoes \n"), [
+      "Rice | 300 g",
+      "Tomatoes",
+    ]);
+  });
+  it("keep ids for unchanged lines and give repeated lines their own", () => {
+    const before = [
+      { id: "a", title: "Water bottle" },
+      { id: "b", title: "Towel" },
+    ];
+    const items = lineItems("Towel\nWater bottle\nWater bottle", before);
+    assert.deepEqual(
+      items.slice(0, 2).map((i) => i.id),
+      ["b", "a"],
+    );
+    assert.equal(new Set(items.map((i) => i.id)).size, 3);
+  });
+});
+
+describe("ticks made while an earlier save is on its way", () => {
+  const seed = createSeed(fromKey("2026-10-05"));
+  const data = {
+    ...seed,
+    events: seed.events.map((e) =>
+      e.id === "e2"
+        ? {
+            ...e,
+            checklist: [
+              { id: "boots", title: "Boots" },
+              { id: "water", title: "Water bottle" },
+            ],
+          }
+        : e,
+    ),
+    routines: [
+      {
+        id: "morning",
+        title: "Morning",
+        memberId: "oliver",
+        period: "Morning" as const,
+        days: [0, 1, 2, 3, 4, 5, 6],
+        steps: [
+          { id: "teeth", title: "Brush teeth" },
+          { id: "bag", title: "Pack bag" },
+        ],
+      },
+    ],
+  };
+  const day = seed.events.find((e) => e.id === "e2")!.date;
+  it("keep every checklist tick, not just the last", () => {
+    // Both taps were made on the same (stale) screen; each is worked out in turn.
+    const first = setChecklistItem("e2", day, "boots", true);
+    const second = setChecklistItem("e2", day, "water", true);
+    const once = first(data).reduce(applyMutation, data);
+    const after = second(once).reduce(applyMutation, once);
+    assert.deepEqual(
+      after.events.find((e) => e.id === "e2")?.checklistDone?.[day],
+      ["boots", "water"],
+    );
+    assert.equal(dataSchema.safeParse(after).success, true);
+    // An item removed elsewhere meanwhile is left alone.
+    assert.deepEqual(setChecklistItem("e2", day, "gone", true)(data), []);
+  });
+  it("keep every routine step tick, and repeated taps change nothing", () => {
+    const teeth = setRoutineStep("morning", "2026-10-05", "teeth", true);
+    const bag = setRoutineStep("morning", "2026-10-05", "bag", true);
+    const once = teeth(data).reduce(applyMutation, data);
+    const both = bag(once).reduce(applyMutation, once);
+    assert.deepEqual(both.routineChecks?.[0].steps, ["teeth", "bag"]);
+    assert.deepEqual(teeth(both), []);
+    assert.equal(dataSchema.safeParse(both).success, true);
+    assert.equal(rewardBalance(both, "oliver"), 1);
+  });
+});
+
+describe("explaining a change the plans can't accept", () => {
+  it("uses the planner's own reason, and leaves other failures alone", () => {
+    const settings = createSeed().settings;
+    const rejected = dataSchema.safeParse({
+      ...createSeed(),
+      settings: { ...settings, quietStart: "21:00" },
+    });
+    assert.equal(
+      validationMessage(rejected.error),
+      "Choose both the start and end of quiet hours",
+    );
+    assert.equal(
+      validationMessage(new DOMException("Full", "QuotaExceededError")),
+      null,
+    );
+    assert.match(
+      validationMessage(dataSchema.safeParse({}).error) ?? "",
+      /check them/,
+    );
   });
 });

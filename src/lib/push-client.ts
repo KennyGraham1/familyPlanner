@@ -31,10 +31,11 @@ export async function sendPhonePushTest() {
     },
     body: JSON.stringify({ endpoint: subscription.endpoint }),
   });
-  const result = await response.json();
-  if (!response.ok)
+  // A proxy or timeout page isn't JSON: report it plainly, not as a parse error.
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result)
     throw new Error(
-      result.error ?? "Could not send the phone notification test.",
+      result?.error ?? "Could not send the phone notification test.",
     );
   return result.message as string;
 }

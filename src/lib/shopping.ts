@@ -135,7 +135,6 @@ const keywords: Record<Exclude<Aisle, "Other">, string[]> = {
     "noodle",
     "chocolate",
     "vinegar",
-    "cracker",
   ],
 };
 const normalize = (text: string) =>
